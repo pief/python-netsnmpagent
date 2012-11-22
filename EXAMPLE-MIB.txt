@@ -1,0 +1,258 @@
+EXAMPLE-MIB DEFINITIONS ::= BEGIN
+
+------------------------------------------------------------------------
+-- Example MIB for python-netsnmpagent
+-- Copyright (c) 2012 Pieter Hollants <pieter@hollants.com>
+-- Licensed under the GNU Public License (GPL) version 3
+------------------------------------------------------------------------
+
+-- Imports
+IMPORTS
+    MODULE-IDENTITY, OBJECT-TYPE, NOTIFICATION-TYPE,
+    Integer32, Unsigned32, enterprises
+        FROM SNMPv2-SMI
+    TEXTUAL-CONVENTION, DisplayString
+        FROM SNMPv2-TC
+    MODULE-COMPLIANCE, OBJECT-GROUP, NOTIFICATION-GROUP
+        FROM SNMPv2-CONF
+    agentxObjects
+        FROM AGENTX-MIB;
+
+-- Description and update information                                                                                                            
+exampleMIB MODULE-IDENTITY
+    LAST-UPDATED "201211210000Z"
+    ORGANIZATION "N/A"
+    CONTACT-INFO
+        "Editor:
+        Pieter Hollants
+        EMail: <pieter@hollants.com>"
+    DESCRIPTION
+        "Example MIB for python-netsnmpagent"
+
+    REVISION    "201211210000Z"
+    DESCRIPTION
+        "An example MIB for python-netsnmpagent's example.py."
+
+    ::= { agentxObjects 30187 }
+
+-- Definition of a generic ExampleNotificationStatus type
+ExampleNotificationStatus ::= TEXTUAL-CONVENTION
+    STATUS current
+    DESCRIPTION
+        "Indicates the enabling or disabling of a particular class of
+        notifications."
+    SYNTAX INTEGER {
+        disabled (0),   -- This class of notifications is disabled
+        enabled  (1)    -- This class of notifications is enabled
+}
+
+-- Definition of MIB's root nodes
+
+exampleMIBObjects         OBJECT IDENTIFIER ::= { exampleMIB 1 }
+exampleMIBNotifications   OBJECT IDENTIFIER ::= { exampleMIB 2 }
+exampleMIBConformance     OBJECT IDENTIFIER ::= { exampleMIB 3 }
+
+exampleScalars            OBJECT IDENTIFIER ::= { exampleMIBObjects 1 }
+exampleTables             OBJECT IDENTIFIER ::= { exampleMIBObjects 2 }
+
+------------------------------------------------------------------------
+-- Scalars
+------------------------------------------------------------------------
+
+exampleUnsigned OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "A read-write, unsigned, 32-bits integer value."
+    ::= { exampleScalars 1 }
+
+exampleUnsignedRO OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "A read-only, unsigned, 32-bits integer value."
+    ::= { exampleScalars 2 }
+
+exampleInteger OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "A read-write, signed, 32-bits integer value."
+    ::= { exampleScalars 3 }
+
+exampleIntegerRO OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "A read-only, signed, 32-bits integer value."
+    ::= { exampleScalars 4 }
+
+exampleString OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "A string value."
+    ::= { exampleScalars 5 }
+
+------------------------------------------------------------------------
+-- Table
+------------------------------------------------------------------------
+
+exampleTableNumber OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "The number of entries in the exampleTable."
+    ::= { exampleTables 1 }
+
+exampleTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF ExampleTableEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "An example table"
+    ::= { exampleTables 2 }
+
+ExampleTableEntry ::=
+    SEQUENCE {
+        exampleTableEntryIndex  Unsigned32,
+        exampleTableEntryDesc   DisplayString,
+        exampleTableEntryValue  Integer32
+    }
+
+exampleTableEntry OBJECT-TYPE
+    SYNTAX      ExampleTableEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "A particular exampleTable row."
+    INDEX { exampleTableEntryIndex }
+    ::= { exampleTable 1 }
+
+exampleTableEntryIndex OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "The index column used to generate numerical indices into
+        exampleTable."
+    ::= { exampleTableEntry 1 }
+
+exampleTableEntryDesc OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "An exampleTableEntry's description."
+    ::= { exampleTableEntry 2 }
+
+exampleTableEntryValue OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "An exampleTableEntry's value."
+    ::= { exampleTableEntry 4 }
+
+------------------------------------------------------------------------
+-- Notifications
+------------------------------------------------------------------------
+
+events      OBJECT IDENTIFIER ::= { exampleMIBNotifications 0 }
+operation   OBJECT IDENTIFIER ::= { exampleMIBNotifications 1 }
+
+exampleUnsignedROChange NOTIFICATION-TYPE
+    OBJECTS {
+        exampleUnsignedRO
+    }
+    STATUS  current
+    DESCRIPTION
+        "An exampleScalarsChange notification signifies that there has
+        been a change to the value of exampleUnsignedRO."
+    ::= { events 1 }
+
+exampleTableChange NOTIFICATION-TYPE
+    OBJECTS {
+        exampleTableEntryDesc, exampleTableEntryValue
+    }
+    STATUS  current
+    DESCRIPTION
+        "An exampleTableChange notification signifies that there has
+        been a change to an exampleTableEntry."
+    ::= { events 2 }
+
+exampleUnsignedROChangeNotificationsEnabled OBJECT-TYPE
+    SYNTAX      ExampleNotificationStatus
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Controls whether exampleUnsignedROChange notifications are
+        enabled or disabled."
+    ::= { operation 1 }
+
+exampleTableChangeNotificationsEnabled OBJECT-TYPE
+    SYNTAX      ExampleNotificationStatus
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Controls whether exampleTableChange notifications are
+        enabled or disabled."
+    ::= { operation 2 }
+
+------------------------------------------------------------------------
+-- Conformance
+------------------------------------------------------------------------
+
+exampleMIBGroups      OBJECT IDENTIFIER ::= { exampleMIBConformance 1 }
+exampleMIBCompliances OBJECT IDENTIFIER ::= { exampleMIBConformance 2 }
+
+exampleMIBScalarsGroup OBJECT-GROUP
+    OBJECTS {
+        exampleInteger, exampleIntegerRO,
+        exampleUnsigned, exampleUnsignedRO,
+        exampleString,
+        exampleUnsignedROChangeNotificationsEnabled
+    }
+    STATUS  current
+    DESCRIPTION
+        "A collection of objects related to exampleScalars."
+    ::= { exampleMIBGroups 1 }
+
+exampleMIBTablesGroup OBJECT-GROUP
+    OBJECTS {
+        exampleTableNumber,
+        exampleTableEntryDesc, exampleTableEntryValue,
+        exampleTableChangeNotificationsEnabled
+    }
+    STATUS  current
+    DESCRIPTION
+        "A collection of objects related to exampleTables."
+    ::= { exampleMIBGroups 2 }
+
+exampleMIBScalarsNotificationsGroup NOTIFICATION-GROUP
+    NOTIFICATIONS {
+        exampleUnsignedROChange
+    }
+    STATUS  current
+    DESCRIPTION
+        "The notifications which indicate specific changes in
+        exampleMIBScalars."
+    ::= { exampleMIBGroups 3 }
+
+exampleMIBTablesNotificationsGroup NOTIFICATION-GROUP
+    NOTIFICATIONS {
+        exampleTableChange
+    }
+    STATUS  current
+    DESCRIPTION
+        "The notifications which indicate specific changes in
+        exampleTables."
+    ::= { exampleMIBGroups 4 }
+
+END

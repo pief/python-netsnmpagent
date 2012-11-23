@@ -180,8 +180,8 @@ class netsnmpAgent(object):
 			},
 			"Unsigned32": {
 				"flags"     : WATCHER_FIXED_SIZE,
-				"data_size" : ctypes.sizeof(ctypes.c_long()),
-				"max_size"  : ctypes.sizeof(ctypes.c_long()),
+				"data_size" : ctypes.sizeof(ctypes.c_ulong()),
+				"max_size"  : ctypes.sizeof(ctypes.c_ulong()),
 				"asn_type"  : ASN_UNSIGNED
 			},
 			"Counter32": {

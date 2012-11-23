@@ -43,11 +43,11 @@ import ctypes
 #
 # We initialize them here and will modify them later in our main
 # loop below.
-exampleInteger		= ctypes.c_long(0)
-exampleIntegerRO	= ctypes.c_long(0)
-exampleUnsigned		= ctypes.c_ulong(0)
-exampleUnsignedRO	= ctypes.c_ulong(0)
-exampleString		= ctypes.c_char_p("Test string")
+exampleInteger          = ctypes.c_long(0)
+exampleIntegerRO        = ctypes.c_long(0)
+exampleUnsigned         = ctypes.c_ulong(0)
+exampleUnsignedRO       = ctypes.c_ulong(0)
+exampleString           = ctypes.c_char_p("Test string")
 
 # First, we initialize the netsnmpAgent class itself. We specify the
 # fully-qualified path to EXAMPLE-MIB.txt ourselves here, so that you

@@ -91,13 +91,21 @@ exampleIntegerRO OBJECT-TYPE
         "A read-only, signed, 32-bits integer value."
     ::= { exampleScalars 4 }
 
+exampleCounter OBJECT-TYPE
+    SYNTAX      Counter32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "A read-only, unsigned, 32-bits counter value."
+    ::= { exampleScalars 5 }
+
 exampleString OBJECT-TYPE
     SYNTAX      DisplayString
     MAX-ACCESS  read-only
     STATUS      current
     DESCRIPTION
         "A string value."
-    ::= { exampleScalars 5 }
+    ::= { exampleScalars 6 }
 
 ------------------------------------------------------------------------
 -- Table

@@ -41,12 +41,13 @@ import ctypes
 # pass them to net-snmp's C API, the variables must be of types
 # ctypes.c_ulong, ctypes.c_long etc.
 #
-# We initialize them here and will modify them later in our main
+# We initialize them here and will modify the counter variable later in our main
 # loop below.
 exampleInteger          = ctypes.c_long(0)
 exampleIntegerRO        = ctypes.c_long(0)
 exampleUnsigned         = ctypes.c_ulong(0)
 exampleUnsignedRO       = ctypes.c_ulong(0)
+exampleCounter          = ctypes.c_ulong(0)
 exampleString           = ctypes.c_char_p("Test string")
 
 # First, we initialize the netsnmpAgent class itself. We specify the
@@ -89,6 +90,12 @@ agent.registerInstance("exampleUnsignedRO",
                        "Unsigned32",
                        True)
 
+agent.registerInstance("exampleCounter",
+                       ctypes.byref(exampleCounter),
+                       "EXAMPLE-MIB::exampleCounter",
+                       "Counter32",
+                       True)
+
 agent.registerInstance("exampleString",
                        exampleString,
                        "EXAMPLE-MIB::exampleString",
@@ -114,5 +121,6 @@ print "Serving SNMP requests, press ^C to terminate..."
 loop = True
 while (loop):
 	agent.poll()
+	exampleCounter = ctypes.c_ulong(exampleCounter.value + 1)
 
 print "Terminating."

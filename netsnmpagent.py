@@ -163,6 +163,7 @@ class netsnmpAgent(object):
 		ASN_APPLICATION             = 0x40
 
 		# From include/net-snmp/library/snmp_impl.h
+		ASN_COUNTER                 = (ASN_APPLICATION | 1)
 		ASN_UNSIGNED                = (ASN_APPLICATION | 2)
 
 		# From include/net-snmp/agent/watcher.h
@@ -182,6 +183,12 @@ class netsnmpAgent(object):
 				"data_size" : ctypes.sizeof(ctypes.c_long()),
 				"max_size"  : ctypes.sizeof(ctypes.c_long()),
 				"asn_type"  : ASN_UNSIGNED
+			},
+			"Counter32": {
+				"flags"     : WATCHER_FIXED_SIZE,
+				"data_size" : ctypes.sizeof(ctypes.c_ulong()),
+				"max_size"  : ctypes.sizeof(ctypes.c_ulong()),
+				"asn_type"  : ASN_COUNTER
 			},
 			"DisplayString": {
 				"flags"     : WATCHER_SIZE_STRLEN,

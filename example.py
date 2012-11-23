@@ -48,6 +48,7 @@ exampleIntegerRO        = ctypes.c_long(0)
 exampleUnsigned         = ctypes.c_ulong(0)
 exampleUnsignedRO       = ctypes.c_ulong(0)
 exampleCounter          = ctypes.c_ulong(0)
+exampleTimeTicks        = ctypes.c_ulong(0)
 exampleString           = ctypes.c_char_p("Test string")
 
 # First, we initialize the netsnmpAgent class itself. We specify the
@@ -96,6 +97,12 @@ agent.registerInstance("exampleCounter",
                        "Counter32",
                        True)
 
+agent.registerInstance("exampleTimeTicks",
+                       ctypes.byref(exampleTimeTicks),
+                       "EXAMPLE-MIB::exampleTimeTicks",
+                       "TimeTicks",
+                       False)
+
 agent.registerInstance("exampleString",
                        exampleString,
                        "EXAMPLE-MIB::exampleString",
@@ -120,7 +127,13 @@ print "Serving SNMP requests, press ^C to terminate..."
 
 loop = True
 while (loop):
+	# Block until something happens
 	agent.poll()
-	exampleCounter = ctypes.c_ulong(exampleCounter.value + 1)
+
+	# Since we didn't give exampleCounter and exampleTimeTicks a real
+	# meaning in the EXAMPLE-MIB, we can basically do with them whatever
+	# we want. Here, we just increase both, although in different manners.
+	exampleCounter = ctypes.c_ulong(exampleCounter.value + 2)
+	exampleTimeTicks = ctypes.c_ulong(exampleTimeTicks.value + 1)
 
 print "Terminating."

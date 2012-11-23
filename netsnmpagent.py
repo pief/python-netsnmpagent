@@ -165,6 +165,7 @@ class netsnmpAgent(object):
 		# From include/net-snmp/library/snmp_impl.h
 		ASN_COUNTER                 = (ASN_APPLICATION | 1)
 		ASN_UNSIGNED                = (ASN_APPLICATION | 2)
+		ASN_TIMETICKS               = (ASN_APPLICATION | 3)
 
 		# From include/net-snmp/agent/watcher.h
 		WATCHER_FIXED_SIZE          = 0x01
@@ -189,6 +190,12 @@ class netsnmpAgent(object):
 				"data_size" : ctypes.sizeof(ctypes.c_ulong()),
 				"max_size"  : ctypes.sizeof(ctypes.c_ulong()),
 				"asn_type"  : ASN_COUNTER
+			},
+			"TimeTicks": {
+				"flags"     : WATCHER_FIXED_SIZE,
+				"data_size" : ctypes.sizeof(ctypes.c_ulong()),
+				"max_size"  : ctypes.sizeof(ctypes.c_ulong()),
+				"asn_type"  : ASN_TIMETICKS
 			},
 			"DisplayString": {
 				"flags"     : WATCHER_SIZE_STRLEN,

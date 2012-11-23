@@ -99,13 +99,21 @@ exampleCounter OBJECT-TYPE
         "A read-only, unsigned, 32-bits counter value."
     ::= { exampleScalars 5 }
 
+exampleTimeTicks OBJECT-TYPE
+    SYNTAX      TimeTicks
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "A read-only, unsigned, 32-bits TimeTicks value."
+    ::= { exampleScalars 6 }
+
 exampleString OBJECT-TYPE
     SYNTAX      DisplayString
     MAX-ACCESS  read-only
     STATUS      current
     DESCRIPTION
         "A string value."
-    ::= { exampleScalars 6 }
+    ::= { exampleScalars 7 }
 
 ------------------------------------------------------------------------
 -- Table

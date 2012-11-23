@@ -68,27 +68,32 @@ agent = netsnmpagent.netsnmpAgent(
 agent.registerInstance("exampleInteger",
                        ctypes.byref(exampleInteger),
                        "EXAMPLE-MIB::exampleInteger",
-                       "Integer32")
+                       "Integer32",
+                       False)
 
 agent.registerInstance("exampleIntegerRO",
                        ctypes.byref(exampleIntegerRO),
                        "EXAMPLE-MIB::exampleIntegerRO",
-                       "Integer32")
+                       "Integer32",
+                       True)
 
 agent.registerInstance("exampleUnsigned",
                        ctypes.byref(exampleUnsigned),
                        "EXAMPLE-MIB::exampleUnsigned",
-                       "Unsigned32")
+                       "Unsigned32",
+                       False)
 
 agent.registerInstance("exampleUnsignedRO",
                        ctypes.byref(exampleUnsignedRO),
                        "EXAMPLE-MIB::exampleUnsignedRO",
-                       "Unsigned32")
+                       "Unsigned32",
+                       True)
 
 agent.registerInstance("exampleString",
                        exampleString,
                        "EXAMPLE-MIB::exampleString",
-                       "DisplayString")
+                       "DisplayString",
+                       False)
 
 # Finally, we tell the agent to "start". This actually connects the
 # agent to the master agent.
@@ -109,9 +114,5 @@ print "Serving SNMP requests, press ^C to terminate..."
 loop = True
 while (loop):
 	agent.poll()
-	exampleInteger    = ctypes.c_long(exampleInteger.value + 1)
-	exampleIntegerRO  = ctypes.c_long(exampleIntegerRO.value + 1)
-	exampleUnsigned   = ctypes.c_ulong(exampleUnsigned.value + 1)
-	exampleUnsignedRO = ctypes.c_ulong(exampleUnsignedRO.value + 1)
 
 print "Terminating."

@@ -145,10 +145,11 @@ class netsnmpAgent(object):
 		final_oid = (c_oid * work_oid_len.value)(*work_oid[0:work_oid_len.value])
 		return (final_oid, work_oid_len.value)
 
-	def registerInstance(self, name, var, oidstr, type):
+	def registerInstance(self, name, var, oidstr, type, readonly):
 		# From include/net-snmp/agent/agent_handler.h
 		HANDLER_CAN_GETANDGETNEXT	= 0x01
 		HANDLER_CAN_SET             = 0x02
+		HANDLER_CAN_RONLY           = HANDLER_CAN_GETANDGETNEXT
 		HANDLER_CAN_RWRITE			= (HANDLER_CAN_GETANDGETNEXT |
 									   HANDLER_CAN_SET)
 
@@ -164,6 +165,7 @@ class netsnmpAgent(object):
 		WATCHER_FIXED_SIZE			= 0x01
 		WATCHER_SIZE_STRLEN         = 0x08
 
+		# Tells the net-snmp API how to handle the variable
 		watcher_args = {
 			"Integer32": {
 				"flags"		: WATCHER_FIXED_SIZE,
@@ -185,14 +187,21 @@ class netsnmpAgent(object):
 			},
 		}
 
+		# Convert textual OID to net-snmp's internal representation
 		(oid, oid_len) = self.oidstr2oid(oidstr)
+
+		# Create a handler registration
+		handler_modes = HANDLER_CAN_RONLY if readonly else HANDLER_CAN_RWRITE
 		registration = self.agentlib.netsnmp_create_handler_registration(
 			name,								# const char *name
 			None,								# Netsnmp_Node_Handler *handler_access_method
 			oid,								# const oid *reg_oid
 			oid_len,							# size_t reg_oid_len
-			HANDLER_CAN_RWRITE					# int modes
+			handler_modes						# int modes
 		)
+
+		# Create a watcher instance to handle the specified SNMP
+		# variable
 		watcher = self.agentlib.netsnmp_create_watcher_info6(
 			var,								# void *data
 			watcher_args[type]["data_size"],	# size_t size
@@ -201,6 +210,8 @@ class netsnmpAgent(object):
 			watcher_args[type]["max_size"],		# size_t max_size
 			None								# size_t *size_p
 		)
+
+		# Now register both handler and watcher
 		return self.agentlib.netsnmp_register_watched_instance(
 			registration,
 			watcher

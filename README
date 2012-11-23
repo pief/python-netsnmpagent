@@ -152,6 +152,13 @@ time. You might want to follow development on the GitHub repo:
   https://github.com/pief/python-netsnmpagent.git
 
 
+TODO
+
+- wrap ctypes variables so that Python code does not have to know about ctypes
+- implement table support
+- stabilize API?
+
+
 CREDITS
 
 python-netsnmpagent was inspired by python-agentx, courtesy of Bozhin Zafirov

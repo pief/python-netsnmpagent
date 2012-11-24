@@ -49,6 +49,7 @@ exampleUnsigned         = ctypes.c_ulong(0)
 exampleUnsignedRO       = ctypes.c_ulong(0)
 exampleCounter          = ctypes.c_ulong(0)
 exampleTimeTicks        = ctypes.c_ulong(0)
+exampleIPAddress        = ctypes.c_uint(16777343) # 127.0.0.1 = 1*2^24+127*2^0
 exampleString           = ctypes.c_char_p("Test string")
 
 # First, we initialize the netsnmpAgent class itself. We specify the
@@ -101,6 +102,12 @@ agent.registerInstance("exampleTimeTicks",
                        ctypes.byref(exampleTimeTicks),
                        "EXAMPLE-MIB::exampleTimeTicks",
                        "TimeTicks",
+                       False)
+
+agent.registerInstance("exampleIPAddress",
+                       ctypes.byref(exampleIPAddress),
+                       "EXAMPLE-MIB::exampleIPAddress",
+                       "IPAddress",
                        False)
 
 agent.registerInstance("exampleString",

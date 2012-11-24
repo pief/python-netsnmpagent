@@ -107,13 +107,21 @@ exampleTimeTicks OBJECT-TYPE
         "A read-only, unsigned, 32-bits TimeTicks value."
     ::= { exampleScalars 6 }
 
+exampleIPAddress OBJECT-TYPE
+    SYNTAX      IPAddress
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "A 32-bits IPv4 address."
+    ::= { exampleScalars 7 }
+
 exampleString OBJECT-TYPE
     SYNTAX      DisplayString
     MAX-ACCESS  read-only
     STATUS      current
     DESCRIPTION
         "A string value."
-    ::= { exampleScalars 7 }
+    ::= { exampleScalars 8 }
 
 ------------------------------------------------------------------------
 -- Table

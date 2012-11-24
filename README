@@ -106,6 +106,7 @@ instructions:
      EXAMPLE-MIB::exampleIntegerRO = INTEGER: 0
      EXAMPLE-MIB::exampleCounter = Counter32: 240
      EXAMPLE-MIB::exampleTimeTicks = Timeticks: (79) 0:00:00.7
+     EXAMPLE-MIB::exampleIPAddress = IpAddress: 127.0.0.1
      EXAMPLE-MIB::exampleString = STRING: Test string
 
    The "-v" option selects version 2c of the SNMP protocol, "-c" specifies the
@@ -139,6 +140,7 @@ instructions:
      EXAMPLE-MIB::exampleIntegerRO = INTEGER: 0
      EXAMPLE-MIB::exampleCounter = Counter32: 319
      EXAMPLE-MIB::exampleTimeTicks = Timeticks: (324) 0:00:03.24
+     EXAMPLE-MIB::exampleIPAddress = IpAddress: 127.0.0.1
      EXAMPLE-MIB::exampleString = STRING: Hello
 
    Note that we used the read/write community string here we configured in step

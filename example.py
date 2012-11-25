@@ -35,24 +35,8 @@
 
 import sys, os, signal
 import netsnmpagent
-import ctypes
 
-# This example agent will serve some scalar variables. As we have to
-# pass them to net-snmp's C API, the variables must be of types
-# ctypes.c_ulong, ctypes.c_long etc.
-#
-# We initialize them here and will modify the counter variable later in our main
-# loop below.
-exampleInteger          = ctypes.c_long(0)
-exampleIntegerRO        = ctypes.c_long(0)
-exampleUnsigned         = ctypes.c_ulong(0)
-exampleUnsignedRO       = ctypes.c_ulong(0)
-exampleCounter          = ctypes.c_ulong(0)
-exampleTimeTicks        = ctypes.c_ulong(0)
-exampleIPAddress        = ctypes.c_uint(16777343) # 127.0.0.1 = 1*2^24+127*2^0
-exampleString           = ctypes.c_char_p("Test string")
-
-# First, we initialize the netsnmpAgent class itself. We specify the
+# First, create an instance of the netsnmpAgent class. We specify the
 # fully-qualified path to EXAMPLE-MIB.txt ourselves here, so that you
 # don't have to copy the MIB to /usr/share/snmp/mibs.
 agent = netsnmpagent.netsnmpAgent(
@@ -62,59 +46,15 @@ agent = netsnmpagent.netsnmpAgent(
 	                 "/EXAMPLE-MIB.txt" ]
 )
 
-# Then we register all SNMP variables we're willing to serve. Since
-# we want the net-snmp C API to access (and modify) variables that are
-# under our control (ie. not under the netsnmpagent module's control),
-# we must make sure that we pass a C-style pointer to the variable
-# itself (to its memory location, to be precisely). This is achieved
-# by using ctypes.byref(<variablename>). 
-agent.registerInstance("exampleInteger",
-                       ctypes.byref(exampleInteger),
-                       "EXAMPLE-MIB::exampleInteger",
-                       "Integer32",
-                       False)
-
-agent.registerInstance("exampleIntegerRO",
-                       ctypes.byref(exampleIntegerRO),
-                       "EXAMPLE-MIB::exampleIntegerRO",
-                       "Integer32",
-                       True)
-
-agent.registerInstance("exampleUnsigned",
-                       ctypes.byref(exampleUnsigned),
-                       "EXAMPLE-MIB::exampleUnsigned",
-                       "Unsigned32",
-                       False)
-
-agent.registerInstance("exampleUnsignedRO",
-                       ctypes.byref(exampleUnsignedRO),
-                       "EXAMPLE-MIB::exampleUnsignedRO",
-                       "Unsigned32",
-                       True)
-
-agent.registerInstance("exampleCounter",
-                       ctypes.byref(exampleCounter),
-                       "EXAMPLE-MIB::exampleCounter",
-                       "Counter32",
-                       True)
-
-agent.registerInstance("exampleTimeTicks",
-                       ctypes.byref(exampleTimeTicks),
-                       "EXAMPLE-MIB::exampleTimeTicks",
-                       "TimeTicks",
-                       False)
-
-agent.registerInstance("exampleIPAddress",
-                       ctypes.byref(exampleIPAddress),
-                       "EXAMPLE-MIB::exampleIPAddress",
-                       "IPAddress",
-                       False)
-
-agent.registerInstance("exampleString",
-                       exampleString,
-                       "EXAMPLE-MIB::exampleString",
-                       "DisplayString",
-                       False)
+# Then we create all SNMP variables we're willing to serve.
+exampleInteger    = agent.Integer32("EXAMPLE-MIB::exampleInteger")
+exampleIntegerRO  = agent.Integer32("EXAMPLE-MIB::exampleIntegerRO", False)
+exampleUnsigned   = agent.Unsigned32("EXAMPLE-MIB::exampleUnsigned")
+exampleUnsignedRO = agent.Unsigned32("EXAMPLE-MIB::exampleUnsignedRO", False)
+exampleCounter    = agent.Counter32("EXAMPLE-MIB::exampleCounter")
+exampleTimeTicks  = agent.TimeTicks("EXAMPLE-MIB::exampleTimeTicks")
+exampleIPAddress  = agent.IPAddress("EXAMPLE-MIB::exampleIPAddress")
+exampleString     = agent.DisplayString("EXAMPLE-MIB::exampleString")
 
 # Finally, we tell the agent to "start". This actually connects the
 # agent to the master agent.
@@ -140,7 +80,7 @@ while (loop):
 	# Since we didn't give exampleCounter and exampleTimeTicks a real
 	# meaning in the EXAMPLE-MIB, we can basically do with them whatever
 	# we want. Here, we just increase both, although in different manners.
-	exampleCounter = ctypes.c_ulong(exampleCounter.value + 2)
-	exampleTimeTicks = ctypes.c_ulong(exampleTimeTicks.value + 1)
+	exampleCounter.update(exampleCounter.value() + 2)
+	exampleTimeTicks.update(exampleTimeTicks.value() + 1)
 
 print "Terminating."

@@ -56,6 +56,12 @@ exampleTimeTicks  = agent.TimeTicks("EXAMPLE-MIB::exampleTimeTicks")
 exampleIPAddress  = agent.IPAddress("EXAMPLE-MIB::exampleIPAddress")
 exampleString     = agent.DisplayString("EXAMPLE-MIB::exampleString")
 
+# Just to verify that all variables were created successfully. You wouldn't
+# need to do this in production code.
+print "Registered SNMP variables: "
+vars = agent.getVars().__str__()
+print vars.replace("},", "}\n")
+
 # Finally, we tell the agent to "start". This actually connects the
 # agent to the master agent.
 agent.start()

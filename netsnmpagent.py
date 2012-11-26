@@ -348,6 +348,7 @@ class netsnmpAgent(object):
 	def start(self):
 		""" Starts the agent. Among other things, this means connecting
 		    to the master agent, if configured that way. """
+		self._may_addvars = False
 		self._agentlib.init_snmp(self.AgentName)
 
 	def poll(self):

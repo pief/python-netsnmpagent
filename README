@@ -160,7 +160,6 @@ time. You might want to follow development on the GitHub repo:
 
 TODO
 
-- wrap ctypes variables so that Python code does not have to know about ctypes
 - implement table support
 - stabilize API?
 

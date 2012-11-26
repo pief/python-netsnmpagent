@@ -77,7 +77,6 @@ class netsnmpAgent(object):
 		                MIBs are not located in net-snmp's
 		                default MIB path (/usr/share/snmp/mibs). """
 
-
 		# Default settings
 		defaults = {
 			"AgentName"     : os.path.splitext(os.path.basename(sys.argv[0]))[0],
@@ -99,21 +98,19 @@ class netsnmpAgent(object):
 		self._agentlib.snmp_enable_stderrlog()
 
 		# Make us an AgentX client
-		args = [
+		self._agentlib.netsnmp_ds_set_boolean(
 			NETSNMP_DS_APPLICATION_ID,
 			NETSNMP_DS_AGENT_ROLE,
 			1
-		]
-		self._agentlib.netsnmp_ds_set_boolean(*args)
+		)
 
 		# Use an alternative Unix domain socket to connect to the master?
 		if self.MasterSocket:
-			args = [
+			self._agentlib.netsnmp_ds_set_string(
 				NETSNMP_DS_APPLICATION_ID,
 				NETSNMP_DS_AGENT_X_SOCKET,
 				self.MasterSocket
-			]
-			self._agentlib.netsnmp_ds_set_string(*args)
+			)
 
 		# Initialize net-snmp library (see netsnmp_agent_api(3))
 		if self._agentlib.init_agent(self.AgentName) != 0:

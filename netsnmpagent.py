@@ -79,9 +79,9 @@ class netsnmpAgent(object):
 
 		# Default settings
 		defaults = {
-			"AgentName"     : os.path.splitext(os.path.basename(sys.argv[0]))[0],
-			"MasterSocket"  : None,
-			"MIBFiles"      : None
+			"AgentName"    : os.path.splitext(os.path.basename(sys.argv[0]))[0],
+			"MasterSocket" : None,
+			"MIBFiles"     : None
 		}
 		for key in defaults:
 			setattr(self, key, args.get(key, defaults[key]))
@@ -90,7 +90,8 @@ class netsnmpAgent(object):
 
 		# Get access to libnetsnmpagent
 		try:
-			self._agentlib = ctypes.cdll.LoadLibrary(ctypes.util.find_library("netsnmpagent"))
+			libname = ctypes.util.find_library("netsnmpagent")
+			self._agentlib = ctypes.cdll.LoadLibrary(libname)
 		except:
 			raise netsnmpAgentException("Could not load libnetsnmpagent!")
 
@@ -139,22 +140,24 @@ class netsnmpAgent(object):
 		# We can't know the length of the internal OID representation
 		# beforehand, so we use a maximum-length buffer for the
 		# call to read_objid() below
-		work_oid = (c_oid * MAX_OID_LEN)()
-		work_oid_len = ctypes.c_size_t(MAX_OID_LEN)
+		workoid = (c_oid * MAX_OID_LEN)()
+		workoid_len = ctypes.c_size_t(MAX_OID_LEN)
 
 		# Let libsnmpagent parse it
 		result = self._agentlib.read_objid(
 			oidstr,
-			ctypes.byref(work_oid),
-			ctypes.byref(work_oid_len)
+			ctypes.byref(workoid),
+			ctypes.byref(workoid_len)
 		)
 		if result == 0:
-			raise netsnmpAgentException("read_objid({0}) failed!".format(oidstr))
+			raise netsnmpAgentException(
+				"read_objid({0}) failed!".format(oidstr)
+			)
 
 		# Now we know the length and return a copy of just the required
 		# length
-		final_oid = (c_oid * work_oid_len.value)(*work_oid[0:work_oid_len.value])
-		return (final_oid, work_oid_len.value)
+		finaloid = (c_oid * workoid_len.value)(*workoid[0:workoid_len.value])
+		return (finaloid, workoid_len.value)
 
 	def VarTypeClass(property_func):
 		""" Decorator that transforms a simple property_func into a SNMP
@@ -181,7 +184,8 @@ class netsnmpAgent(object):
 		def define_and_register(self, oidstr, *args):
 			# Make sure the agent has not been start()ed yet
 			if self._may_addvars == False:
-				raise netsnmpAgentException("Attempt to add variable after agent has been started!")
+				raise netsnmpAgentException("Attempt to add variable after " \
+				                            "agent has been started!")
 
 			# property_func is by convention named after the variable type
 			vartype = property_func.__name__
@@ -331,7 +335,8 @@ class netsnmpAgent(object):
 		}
 
 	def getVars(self):
-		""" Returns a dictionary with the currently registered SNMP variables. """
+		""" Returns a dictionary with the currently registered SNMP
+		    variables. """
 		myvars = {}
 		for (oidstr,varclass) in self._vars.iteritems():
 			myvars[oidstr] = {
@@ -356,4 +361,3 @@ class netsnmpAgent(object):
 
 class netsnmpAgentException(Exception):
 	pass
-

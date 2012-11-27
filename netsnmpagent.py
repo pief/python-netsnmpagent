@@ -51,7 +51,7 @@ ASN_COUNTER                 = ASN_APPLICATION | 1
 ASN_UNSIGNED                = ASN_APPLICATION | 2
 ASN_TIMETICKS               = ASN_APPLICATION | 3
 
-# From include/net-snmp/agent/watcher.h
+# include/net-snmp/agent/watcher.h
 WATCHER_FIXED_SIZE          = 0x01
 WATCHER_SIZE_STRLEN         = 0x08
 

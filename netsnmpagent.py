@@ -236,16 +236,25 @@ class netsnmpAgent(object):
 				handler_modes
 			)
 
-			# Create the net-snmp watcher to handle the variable
-			data = var._cval if props["ctype"] == ctypes.c_char_p \
-			                 else ctypes.byref(var._cval)
+			# Create the net-snmp watcher to handle the variable. c_char_p
+			# requires special handling: no byref() necessary because it is
+			# a pointer itself, no fixed size because the size is determined
+			# by net-snmp through strlen().
+			if props["ctype"] == ctypes.c_char_p:
+				data = var._cval
+				data_size = 0
+				flags = WATCHER_SIZE_STRLEN
+			else:
+				data = ctypes.byref(var._cval)
+				data_size = ctypes.sizeof(props["ctype"])
+				flags = WATCHER_FIXED_SIZE
 			watcher = self._agentlib.netsnmp_create_watcher_info6(
-				data,                           # data
-				ctypes.sizeof(props["ctype"]),  # data_size
-				props["asntype"],               # asn_type
-				props["flags"],                 # flags
-				ctypes.sizeof(props["ctype"]),  # max_size
-				None                            # size_p
+				data,               # data
+				data_size,          # data_size
+				props["asntype"],   # asn_type
+				flags,              # flags
+				0,                  # max_size
+				None                # size_p
 			)
 
 			# Now register both handler and watcher
@@ -269,7 +278,6 @@ class netsnmpAgent(object):
 		return {
 			"asntype"   : ASN_INTEGER,
 			"ctype"     : ctypes.c_long,
-			"flags"     : WATCHER_FIXED_SIZE,
 			"initval"   : 0,
 			"writable"  : writable
 		}
@@ -279,7 +287,6 @@ class netsnmpAgent(object):
 		return {
 			"asntype"   : ASN_UNSIGNED,
 			"ctype"     : ctypes.c_ulong,
-			"flags"     : WATCHER_FIXED_SIZE,
 			"initval"   : 0,
 			"writable"  : writable
 		}
@@ -289,7 +296,6 @@ class netsnmpAgent(object):
 		return {
 			"asntype"   : ASN_COUNTER,
 			"ctype"     : ctypes.c_ulong,
-			"flags"     : WATCHER_FIXED_SIZE,
 			"initval"   : 0,
 			"writable"  : False
 		}
@@ -299,7 +305,6 @@ class netsnmpAgent(object):
 		return {
 			"asntype"   : ASN_TIMETICKS,
 			"ctype"     : ctypes.c_ulong,
-			"flags"     : WATCHER_FIXED_SIZE,
 			"initval"   : 0,
 			"writable"  : writable
 		}
@@ -309,7 +314,6 @@ class netsnmpAgent(object):
 		return {
 			"asntype"   : ASN_IPADDRESS,
 			"ctype"     : ctypes.c_uint,
-			"flags"     : WATCHER_FIXED_SIZE,
 			"initval"   : 0,
 			"writable"  : writable
 		}
@@ -319,7 +323,6 @@ class netsnmpAgent(object):
 		return {
 			"asntype"   : ASN_OCTET_STR,
 			"ctype"     : ctypes.c_char_p,
-			"flags"     : WATCHER_SIZE_STRLEN,
 			"initval"   : "",
 			"writable"  : writable
 		}
@@ -329,7 +332,6 @@ class netsnmpAgent(object):
 		return {
 			"asntype"   : ASN_OCTET_STR,
 			"ctype"     : ctypes.c_char_p,
-			"flags"     : WATCHER_SIZE_STRLEN,
 			"initval"   : "",
 			"writable"  : writable
 		}

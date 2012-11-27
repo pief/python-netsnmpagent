@@ -56,11 +56,15 @@ exampleTimeTicks  = agent.TimeTicks("EXAMPLE-MIB::exampleTimeTicks")
 exampleIPAddress  = agent.IPAddress("EXAMPLE-MIB::exampleIPAddress")
 exampleString     = agent.DisplayString("EXAMPLE-MIB::exampleString")
 
-# Just to verify that all variables were created successfully. You wouldn't
-# need to do this in production code.
-print "Registered SNMP variables: "
-vars = agent.getVars().__str__()
-print vars.replace("},", "}\n")
+# An empty string looks strange, so we give it a nicer default value
+exampleString.update("Hello world!")
+
+# Helper function that dumps the state of all registered SNMP variables
+def DumpVars():
+	print "Registered SNMP variables: "
+	vars = agent.getVars().__str__()
+	print vars.replace("},", "}\n")
+DumpVars()
 
 # Finally, we tell the agent to "start". This actually connects the
 # agent to the master agent.
@@ -73,6 +77,12 @@ def TermHandler(signum, frame):
 	loop = False
 signal.signal(signal.SIGINT, TermHandler)
 signal.signal(signal.SIGTERM, TermHandler)
+
+# Install a signal handler that dumps the state of all registered values
+# when SIGHUP is received
+def HupHandler(signum, frame):
+	DumpVars()
+signal.signal(signal.SIGHUP, HupHandler)
 
 # The example agent's main loop. We loop endlessly until our signal
 # handler above changes the "loop" variable.

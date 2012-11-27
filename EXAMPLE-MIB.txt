@@ -9,7 +9,7 @@ EXAMPLE-MIB DEFINITIONS ::= BEGIN
 -- Imports
 IMPORTS
     MODULE-IDENTITY, OBJECT-TYPE, NOTIFICATION-TYPE,
-    Integer32, Unsigned32, enterprises
+    Integer32, Unsigned32, Counter32, TimeTicks, IpAddress, enterprises
         FROM SNMPv2-SMI
     TEXTUAL-CONVENTION, DisplayString
         FROM SNMPv2-TC
@@ -107,21 +107,29 @@ exampleTimeTicks OBJECT-TYPE
         "A read-only, unsigned, 32-bits TimeTicks value."
     ::= { exampleScalars 6 }
 
-exampleIPAddress OBJECT-TYPE
-    SYNTAX      IPAddress
+exampleIpAddress OBJECT-TYPE
+    SYNTAX      IpAddress
     MAX-ACCESS  read-write
     STATUS      current
     DESCRIPTION
         "A 32-bits IPv4 address."
     ::= { exampleScalars 7 }
 
-exampleString OBJECT-TYPE
-    SYNTAX      DisplayString
+exampleOctetString OBJECT-TYPE
+    SYNTAX      OCTET STRING
     MAX-ACCESS  read-only
     STATUS      current
     DESCRIPTION
         "A string value."
     ::= { exampleScalars 8 }
+
+exampleDisplayString OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "A string value supposed to contain printable characters only."
+    ::= { exampleScalars 9 }
 
 ------------------------------------------------------------------------
 -- Table
@@ -240,7 +248,10 @@ exampleMIBScalarsGroup OBJECT-GROUP
     OBJECTS {
         exampleInteger, exampleIntegerRO,
         exampleUnsigned, exampleUnsignedRO,
-        exampleString,
+        exampleCounter,
+        exampleTimeTicks,
+        exampleIpAddress,
+        exampleOctetString, exampleDisplayString,
         exampleUnsignedROChangeNotificationsEnabled
     }
     STATUS  current

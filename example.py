@@ -47,17 +47,19 @@ agent = netsnmpagent.netsnmpAgent(
 )
 
 # Then we create all SNMP variables we're willing to serve.
-exampleInteger    = agent.Integer32("EXAMPLE-MIB::exampleInteger")
-exampleIntegerRO  = agent.Integer32("EXAMPLE-MIB::exampleIntegerRO", False)
-exampleUnsigned   = agent.Unsigned32("EXAMPLE-MIB::exampleUnsigned")
-exampleUnsignedRO = agent.Unsigned32("EXAMPLE-MIB::exampleUnsignedRO", False)
-exampleCounter    = agent.Counter32("EXAMPLE-MIB::exampleCounter")
-exampleTimeTicks  = agent.TimeTicks("EXAMPLE-MIB::exampleTimeTicks")
-exampleIPAddress  = agent.IPAddress("EXAMPLE-MIB::exampleIPAddress")
-exampleString     = agent.DisplayString("EXAMPLE-MIB::exampleString")
+exampleInteger       = agent.Integer32("EXAMPLE-MIB::exampleInteger")
+exampleIntegerRO     = agent.Integer32("EXAMPLE-MIB::exampleIntegerRO", False)
+exampleUnsigned      = agent.Unsigned32("EXAMPLE-MIB::exampleUnsigned")
+exampleUnsignedRO    = agent.Unsigned32("EXAMPLE-MIB::exampleUnsignedRO", False)
+exampleCounter       = agent.Counter32("EXAMPLE-MIB::exampleCounter")
+exampleTimeTicks     = agent.TimeTicks("EXAMPLE-MIB::exampleTimeTicks")
+exampleIpAddress     = agent.IpAddress("EXAMPLE-MIB::exampleIpAddress")
+exampleOctetString   = agent.OctetString("EXAMPLE-MIB::exampleOctetString")
+exampleDisplayString = agent.DisplayString("EXAMPLE-MIB::exampleDisplayString")
 
-# An empty string looks strange, so we give it a nicer default value
-exampleString.update("Hello world!")
+# Empty strings look strange, so we give them a nicer default value
+exampleOctetString.update("Hello world!")
+exampleDisplayString.update("Nice to meet you!")
 
 # Helper function that dumps the state of all registered SNMP variables
 def DumpVars():

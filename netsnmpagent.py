@@ -344,7 +344,7 @@ class netsnmpAgent(object):
 		}
 
 	@VarTypeClass
-	def IPAddress(self, oidstr, writable = True):
+	def IpAddress(self, oidstr, writable = True):
 		return {
 			"asntype"   : ASN_IPADDRESS,
 			"ctype"     : ctypes.c_uint,

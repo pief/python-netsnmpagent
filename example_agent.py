@@ -34,16 +34,38 @@
 #
 
 import sys, os, signal
+import optparse
 import netsnmpagent
+
+prgname = sys.argv[0]
+
+# Process command line arguments
+parser = optparse.OptionParser()
+parser.add_option(
+	"-m",
+	"--master-socket",
+	dest="mastersocket",
+	help="Sets the path to the master agent's AgentX unix domain socket",
+	default="/var/run/agentx/master"
+)
+parser.add_option(
+	"-p",
+	"--persistent-dir",
+	dest="persistentdir",
+	help="Sets the path to the persistance directory",
+	default="/var/lib/net-snmp"
+)
+(options, args) = parser.parse_args()
 
 # First, create an instance of the netsnmpAgent class. We specify the
 # fully-qualified path to EXAMPLE-MIB.txt ourselves here, so that you
 # don't have to copy the MIB to /usr/share/snmp/mibs.
 agent = netsnmpagent.netsnmpAgent(
-	AgentName    = "ExampleAgent",
-	MasterSocket = "/var/run/agentx/master",
-	MIBFiles     = [ os.path.abspath(os.path.dirname(sys.argv[0])) +
-	                 "/EXAMPLE-MIB.txt" ]
+	AgentName     = "ExampleAgent",
+	MasterSocket  = options.mastersocket,
+	PersistentDir = options.persistentdir,
+	MIBFiles      = [ os.path.abspath(os.path.dirname(sys.argv[0])) +
+	                  "/EXAMPLE-MIB.txt" ]
 )
 
 # Then we create all SNMP variables we're willing to serve.
@@ -63,7 +85,7 @@ exampleDisplayString.update("Nice to meet you!")
 
 # Helper function that dumps the state of all registered SNMP variables
 def DumpVars():
-	print "Registered SNMP variables: "
+	print "{0}: Registered SNMP variables: ".format(prgname)
 	vars = agent.getVars().__str__()
 	print vars.replace("},", "}\n")
 DumpVars()
@@ -88,7 +110,7 @@ signal.signal(signal.SIGHUP, HupHandler)
 
 # The example agent's main loop. We loop endlessly until our signal
 # handler above changes the "loop" variable.
-print "Serving SNMP requests, press ^C to terminate..."
+print "{0}: Serving SNMP requests, press ^C to terminate...".format(prgname)
 
 loop = True
 while (loop):
@@ -101,4 +123,4 @@ while (loop):
 	exampleCounter.update(exampleCounter.value() + 2)
 	exampleTimeTicks.update(exampleTimeTicks.value() + 1)
 
-print "Terminating."
+print "{0}: Terminating.".format(prgname)

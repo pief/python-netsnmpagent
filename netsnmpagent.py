@@ -22,41 +22,43 @@ import sys, os
 import ctypes, ctypes.util
 
 # include/net-snmp/library/default_store.h
-NETSNMP_DS_APPLICATION_ID   = 1
+NETSNMP_DS_LIBRARY_ID           = 0
+NETSNMP_DS_APPLICATION_ID       = 1
+NETSNMP_DS_LIB_PERSISTENT_DIR   = 8
 
 # include/net-snmp/agent/ds_agent.h
-NETSNMP_DS_AGENT_ROLE       = 1
-NETSNMP_DS_AGENT_X_SOCKET   = 1
+NETSNMP_DS_AGENT_ROLE           = 1
+NETSNMP_DS_AGENT_X_SOCKET       = 1
 
 # include/net-snmp/library/oid.h
-c_oid                       = ctypes.c_ulong
+c_oid                           = ctypes.c_ulong
 
 # include/net-snmp/types.h
-MAX_OID_LEN                 = 128
+MAX_OID_LEN                     = 128
 
 # include/net-snmp/agent/agent_handler.h
-HANDLER_CAN_GETANDGETNEXT   = 0x01
-HANDLER_CAN_SET             = 0x02
-HANDLER_CAN_RONLY           = HANDLER_CAN_GETANDGETNEXT
-HANDLER_CAN_RWRITE          = (HANDLER_CAN_GETANDGETNEXT | HANDLER_CAN_SET)
+HANDLER_CAN_GETANDGETNEXT       = 0x01
+HANDLER_CAN_SET                 = 0x02
+HANDLER_CAN_RONLY               = HANDLER_CAN_GETANDGETNEXT
+HANDLER_CAN_RWRITE              = (HANDLER_CAN_GETANDGETNEXT | HANDLER_CAN_SET)
 
 # include/net-snmp/library/asn1.h
-ASN_INTEGER                 = 0x02
-ASN_OCTET_STR               = 0x04
-ASN_APPLICATION             = 0x40
+ASN_INTEGER                     = 0x02
+ASN_OCTET_STR                   = 0x04
+ASN_APPLICATION                 = 0x40
 
 # include/net-snmp/library/snmp_impl.h
-ASN_IPADDRESS               = ASN_APPLICATION | 0
-ASN_COUNTER                 = ASN_APPLICATION | 1
-ASN_UNSIGNED                = ASN_APPLICATION | 2
-ASN_TIMETICKS               = ASN_APPLICATION | 3
+ASN_IPADDRESS                   = ASN_APPLICATION | 0
+ASN_COUNTER                     = ASN_APPLICATION | 1
+ASN_UNSIGNED                    = ASN_APPLICATION | 2
+ASN_TIMETICKS                   = ASN_APPLICATION | 3
 
 # include/net-snmp/agent/watcher.h
-WATCHER_FIXED_SIZE          = 0x01
-WATCHER_SIZE_STRLEN         = 0x08
+WATCHER_FIXED_SIZE              = 0x01
+WATCHER_SIZE_STRLEN             = 0x08
 
 # Maximum string size supported by python-netsnmpagent
-MAX_STRING_SIZE             = 1024
+MAX_STRING_SIZE                 = 1024
 
 class netsnmpAgent(object):
 	""" Implements an SNMP agent using the net-snmp libraries. """
@@ -67,23 +69,25 @@ class netsnmpAgent(object):
 		"args" is a dictionary that can contain the following
 		optional parameters:
 		
-		- AgentName:    The agent's name used for registration
-		                with net-snmp.
-		- MasterSocket: The Unix domain socket of the running
-		                snmpd instance to connect to. Useful for
-		                automatic testing with a custom
-		                user-space snmpd instance.
-		- MIBFiles:     A list of filenames of MIBs to be
-		                loaded. Required if the OIDs, for which
-		                variables will be registered, do not
-		                belong to standard MIBs and the custom
-		                MIBs are not located in net-snmp's
-		                default MIB path (/usr/share/snmp/mibs). """
+		- AgentName    : The agent's name used for registration with net-snmp.
+		- MasterSocket : The Unix domain socket of the running snmpd instance to
+		                 connect to. Change this if you want to use a custom
+		                 snmpd instance, eg. in example.sh or for automatic
+		                 testing.
+		- PersistentDir: The directory to use to store persistance information.
+		                 Change this if you want to use a custom snmpd instance,
+		                 eg. in example.sh or for automatic testing.
+		- MIBFiles     : A list of filenames of MIBs to be loaded. Required if
+		                 the OIDs, for which variables will be registered, do
+		                 not belong to standard MIBs and the custom MIBs are not
+		                 located in net-snmp's default MIB path
+		                 (/usr/share/snmp/mibs). """
 
 		# Default settings
 		defaults = {
 			"AgentName"    : os.path.splitext(os.path.basename(sys.argv[0]))[0],
 			"MasterSocket" : None,
+			"PersistentDir": None,
 			"MIBFiles"     : None
 		}
 		for key in defaults:
@@ -114,6 +118,14 @@ class netsnmpAgent(object):
 				NETSNMP_DS_APPLICATION_ID,
 				NETSNMP_DS_AGENT_X_SOCKET,
 				self.MasterSocket
+			)
+
+		# Use an alternative persistence directory?
+		if self.PersistentDir:
+			self._agentlib.netsnmp_ds_set_string(
+				NETSNMP_DS_LIBRARY_ID,
+				NETSNMP_DS_LIB_PERSISTENT_DIR,
+				ctypes.c_char_p(self.PersistentDir)
 			)
 
 		# Initialize net-snmp library (see netsnmp_agent_api(3))

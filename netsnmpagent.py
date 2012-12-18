@@ -137,275 +137,290 @@ class netsnmpAgent(object):
 
 		# If MIBFiles were specified (ie. MIBs that can not be found in
 		# net-snmp's default MIB directory /usr/share/snmp/mibs), read
-		# them in so we can translate OIDs in oidstr2oid()
+		# them in so we can translate OID strings to net-snmp's internal OID
+		# format.
 		if self.MIBFiles:
 			for mib in self.MIBFiles:
 				if self._agentlib.read_mib(mib) == 0:
 					raise netsnmpAgentException("netsnmp_read_module({0}) " +
 					                            "failed!".format(mib))
 
-		# Initialize our variable registry
-		self._vars = {}
-		self._may_addvars = True
+		# Initialize our SNMP object registry
+		self._objs    = {}
+		self._started = False
 
-	def oidstr2oid(self, oidstr):
-		""" Converts a textual or numeric OID into net-snmp's internal
-			OID representation. """
+	def register(self, snmpobj, oidstr, allow_set = True):
+		""" Registers the supplied SNMP object at the specified OID.
+		
+		    "snmpobj" is a class instance representing a particular SNMP object,
+		    as returned by the appropriate netsnmpAgent methods, eg. Integer32,
+		    Unsigned32 or Table. The instance's "register_func" property must
+		    point to the callback function used to create and register a
+		    suitable net-snmp handler.
+		
+		    "allow_set" indicates whether "snmpset" is allowed. """
+
+		# Make sure the agent has not been start()ed yet
+		if self._started == True:
+			raise netsnmpAgentException("Attempt to register SNMP object " \
+			                            "after agent has been started!")
 
 		# We can't know the length of the internal OID representation
-		# beforehand, so we use a maximum-length buffer for the
-		# call to read_objid() below
-		workoid = (c_oid * MAX_OID_LEN)()
-		workoid_len = ctypes.c_size_t(MAX_OID_LEN)
+		# beforehand, so we use a MAX_OID_LEN sized buffer for the call to
+		# read_objid() below
+		oid = (c_oid * MAX_OID_LEN)()
+		oid_len = ctypes.c_size_t(MAX_OID_LEN)
 
-		# Let libsnmpagent parse it
+		# Let libsnmpagent parse the OID
 		result = self._agentlib.read_objid(
 			oidstr,
-			ctypes.byref(workoid),
-			ctypes.byref(workoid_len)
+			ctypes.byref(oid),
+			ctypes.byref(oid_len)
 		)
 		if result == 0:
 			raise netsnmpAgentException(
 				"read_objid({0}) failed!".format(oidstr)
 			)
 
-		# Now we know the length and return a copy of just the required
-		# length
-		finaloid = (c_oid * workoid_len.value)(*workoid[0:workoid_len.value])
-		return (finaloid, workoid_len.value)
+		# Do we allow SNMP SETting to this OID?
+		handler_modes = HANDLER_CAN_RWRITE if allow_set \
+		                                   else HANDLER_CAN_RONLY
+
+		# Create the netsnmp_handler_registration structure. It notifies
+		# net-snmp that we will be responsible for anything below the given
+		# OID. We use this for leaf nodes only, processing of subtress will be
+		# left to net-snmp.
+		handler_reginfo = self._agentlib.netsnmp_create_handler_registration(
+			oidstr,         # *oidstr
+			None,           # (*handler_access_method)()
+			oid,            # *oid
+			oid_len,        # oid_len
+			handler_modes   # handler_modes
+		)
+
+		# Call the object's register_func callback function.
+		snmpobj._register_func(snmpobj, oidstr, handler_reginfo)
+
+		# Finally, we keep track of all registered SNMP objects for the
+		# getRegistered() method.
+		self._objs[oidstr] = snmpobj
+
+	def _registerWatcher(self, snmpobj, oidstr, handler_reginfo):
+		""" Creates and registers a watcher to handle SNMP variables. This
+		    method is a callback method to register().
+		
+			watchers are net-snmp helper handlers that take care of
+			all SNMP details such as GET, GETNEXT etc. for simple
+			variables.
+		
+		    "snmpobj" is a class instance representing a particular SNMP object
+		    (either a variable or a table), as returned by the appropriate
+		    netsnmpAgent methods, eg. Integer32, Unsigned32 or Table. The
+		    instance's "register_func" property must point to the callback
+		    function used to create and register a suitable net-snmp handler.
+		
+			"handler_reginfo" is the netsnmp_handler_registration structure
+			prepared by Register(). """
+
+		# Create the netsnmp_watcher_info structure.
+		watcher = self._agentlib.netsnmp_create_watcher_info6(
+			snmpobj.cref(),     # *data
+			snmpobj._data_size, # data_size
+			snmpobj._asntype,   # asn_type
+			snmpobj._flags,     # flags
+			snmpobj._max_size,  # max_size
+			None                # *size_p
+		)
+
+		# Register handler and watcher with net-snmp.
+		result = self._agentlib.netsnmp_register_watched_instance(
+			handler_reginfo,
+			watcher
+		)
+		if result != 0:
+			raise netsnmpAgentException("Error registering variable with net-snmp!")
 
 	def VarTypeClass(property_func):
-		""" Decorator that transforms a simple property_func into a SNMP
-		    variable type class generator. property_func returns a dictionary
-		    with variable type properties:
-		    
-		    - "asntype" : A constant defining the SNMP variable type from an
-		                  ASN.1 view, eg. ASN_INTEGER
-		    - "ctype"   : A reference to the ctypes construction method yielding
-		                  the appropriate C representation of the SNMP variable,
-		                  eg. ctypes.c_long or ctypes.create_string_buffer
-		    - "flags"   : The net-snmp constant describing the C data type's
-		                  storage property, currently either WATCHER_FIXED_SIZE
-		                  or WATCHER_SIZE_STRLEN
-		    - "max_size": The maximum allowed string size if flags has been set
-		                  to WATCHER_SIZE_STRLEN.
-		    - "initval" : The value to initialize the C data type with, eg. 0
-		    - "writable": Whether SNMP write requests should be allowed. For
-		                  most variable types, this field will be set to an
-		                  propery_func argument "writable", leaving it up to
-		                  the module's user to decide.
-		    
-		    VarTypeClass will add code to generate a suitable class, create an
-		    instance of it based on the args originally given to property_func
-		    and register it with net-snmp. """
+		""" Decorator that transforms a simple property_func into a class
+		    factory returning instances of a class for the particular SNMP
+		    variable type. property_func is supposed to return a dictionary with
+		    the following elements:
+		    - "ctype"           : A reference to the ctypes constructor method
+		                          yielding the appropriate C representation of
+		                          the SNMP variable, eg. ctypes.c_long or
+		                          ctypes.create_string_buffer.
+		    - "flags"           : A net-snmp constant describing the C data
+		                          type's storage behavior, currently either
+		                          WATCHER_FIXED_SIZE or WATCHER_SIZE_STRLEN.
+		    - "max_size"        : The maximum allowed string size if "flags"
+		                          has been set to WATCHER_SIZE_STRLEN.
+		    - "initval"         : The value to initialize the C data type with,
+		                          eg. 0 or "".
+		    - "register_func"   : The callback function to use by Register()
+		                          when an instance of this variable type class
+		                          is passed to the Register() method.
+		    - "asntype"         : A constant defining the SNMP variable type
+		                          from an ASN.1 perspective, eg. ASN_INTEGER.
+		
+		    The class instance returned will have no association with net-snmp
+		    yet. Use the Register() method to associate it with an OID. """
 
-		# This is the function that replaces the original function definition
-		def register_and_define_class(self, oidstr, *args):
-			# Make sure the agent has not been start()ed yet
-			if self._may_addvars == False:
-				raise netsnmpAgentException("Attempt to add variable after " \
-				                            "agent has been started!")
+		# This is the replacement function, the "decoration"
+		def create_vartype_class(self, initval = None):
+			# Call the original property_func to retrieve this variable type's
+			# properties. Passing "initval" to property_func may seem pretty
+			# useless as it won't have any effect and we use it ourselves below.
+			# However we must supply it nevertheless since it's part of
+			# property_func's function signature which THIS function shares.
+			# That's how Python's decorators work.
+			props = property_func(self, initval)
 
-			# property_func is by convention named after the SNMP variable type
-			snmpvartype = property_func.__name__
+			# Use variable type's default initval if we weren't given one
+			if initval == None:
+				initval = props["initval"]
 
-			# As a preparation, call the original property_func to retrieve
-			# this variable type's properties such as "asntype".
+			# Create a class to wrap ctypes' access semantics and enable
+			# Register() to do class-specific registration work.
 			#
-			# Passing "oidstr" to property_func won't have any effect and we
-			# use it ourselves directly. However we must supply it nevertheless
-			# since it's part of property_func's function signature which
-			# THIS function shares. That's how Python's decorators work.
-			props = property_func(self, oidstr, *args)
-
-			# First, we create the netsnmp_handler_registration structure,
-			# which sort of gives us an "anchor" in the MIB tree to build on
-			# by declaring support for the given OID.
-			
-			# The (textual) OID string must be converted to net-snmp's internal
-			# representation.
-			(oid, oid_len) = self.oidstr2oid(oidstr)
-
-			# Do we allow SNMP setting of the variable?
-			handler_modes = HANDLER_CAN_RWRITE if props["writable"] \
-			                                   else HANDLER_CAN_RONLY
-
-			# Now create the structure.
-			registration = self._agentlib.netsnmp_create_handler_registration(
-				oidstr,         # *oidstr
-				None,           # (*handler_access_method)()
-				oid,            # *oid
-				oid_len,        # oid_len
-				handler_modes   # handler_modes
-			)
-
-			# Next, we create the actual ctypes instance representing the C
-			# variable to be handled by net-snmp. If this variable type has no
-			# fixed size, pass on the maximum size to the constructor.
-			ctype_args = [ props["initval"] ]
-			if props["flags"] != WATCHER_FIXED_SIZE:
-				ctype_args += [ props["max_size"] ]
-			cvar = props["ctype"](*ctype_args)
-
-			# We prepared the declaration "Hey, we support that OID" above,
-			# but we also need a means to tell net-snmp "Hey, we'll handle
-			# requests for and below that OID this way". This is realized by
-			# using a helper handler, namely a "watcher". It takes care of all
-			# the nasty SNMP details surrounding GET, GETNEXT etc.
-
-			# Fixed size variable types (ie. integers) are passed by-reference
-			# and, well, have fixed sizes (how surprising...)
-			if props["flags"] == WATCHER_FIXED_SIZE:
-				data      = ctypes.byref(cvar)
-				data_size = ctypes.sizeof(props["ctype"])
-				max_size  = data_size
-			else:
-				data      = cvar
-				data_size = 0 # net-snmp will strlen() itself
-				max_size  = props["max_size"]
-
-			# Now create the netsnmp_watcher_info structure.
-			watcher = self._agentlib.netsnmp_create_watcher_info6(
-				data,               # *data
-				data_size,          # data_size
-				props["asntype"],   # asn_type
-				props["flags"],     # flags
-				max_size,           # max_size
-				None                # *size_p
-			)
-
-			# And register both handler and watcher with net-snmp.
-			result = self._agentlib.netsnmp_register_watched_instance(
-				registration,
-				watcher
-			)
-			if result != 0:
-				raise netsnmpAgentException("Error registering SNMP variable!")
-
-			# Both getting and setting the variable has been taken care of as
-			# far as net-snmp was concerned. What is left to do is to provide a
-			# means for the Python agent to retrieve the current value (it
-			# might have been changed via "snmpset") and update it. These
-			# operations will be wrapped inside a class which will be returned
-			# to the user and named after "vartype". Since the part behind the
-			# "class" keyword can't be a variable, we use the proxy name "cls"
-			# and overwrite its __name__ property after class creation.
+			# Since the part behind the "class" keyword can't be a variable, we
+			# use the proxy name "cls" and overwrite its __name__ property
+			# after class creation.
 			class cls(object):
-				def __init__(self, cvar):
-					self._cvar = cvar
+				def __init__(self):
+					# The class instance inherits most of props' members as
+					# properties
+					for prop in ["ctype", "flags", "register_func", "asntype"]:
+						setattr(self, "_{0}".format(prop), props[prop])
+
+					# Create the ctypes class instance representing the variable
+					# to be handled by the net-snmp C API. If this variable type
+					# has no fixed size, pass the maximum size as second
+					# argument to the constructor.
+					if props["flags"] == WATCHER_FIXED_SIZE:
+						self._cvar      = props["ctype"](initval)
+						self._data_size = ctypes.sizeof(self._cvar)
+						self._max_size  = self._data_size
+					else:
+						self._cvar      = props["ctype"](initval, props["max_size"])
+						self._data_size = len(self._cvar.value)
+						self._max_size  = max(props["max_size"], len(initval))
 
 				def value(self):
 					return self._cvar.value
 
+				def cref(self):
+					if self._flags == WATCHER_FIXED_SIZE:
+						return ctypes.byref(self._cvar)
+					else:
+						return self._cvar
+
 				def update(self, val):
 					self._cvar.value = val
-			cls.__name__ = snmpvartype
+					if props["flags"] == WATCHER_SIZE_STRLEN:
+						if len(val) > self._max_size:
+							raise netsnmpAgentException(
+								"Value passed to update() truncated: {0} > {1} "
+								"bytes!".format(len(val), self._max_size))
+						self._cvar.value = val
+						self._data_size  = len(val)
 
-			# Define the class's instance. To use "vartype" here we would
-			# have to use "exec", which is superfluous since we still have
-			# the "cls" reference. The class will still have the right name.
-			snmpvarclass = cls(cvar)
+			cls.__name__ = property_func.__name__
 
-			# Finally, we keep track of all registered values for the getVars()
-			# method.
-			self._vars[oidstr] = snmpvarclass
+			# Return an instance of the just-defined class to the agent
+			return cls()
 
-			# Return the created class to the Python agent
-			return snmpvarclass
-
-		return register_and_define_class
+		return create_vartype_class
 
 	@VarTypeClass
-	def Integer32(self, oidstr, writable = True):
+	def Integer32(self, initval = None):
 		return {
-			"asntype"   : ASN_INTEGER,
-			"ctype"     : ctypes.c_long,
-			"flags"     : WATCHER_FIXED_SIZE,
-			"initval"   : 0,
-			"writable"  : writable
+			"ctype"         : ctypes.c_long,
+			"flags"         : WATCHER_FIXED_SIZE,
+			"initval"       : 0,
+			"register_func" : self._registerWatcher,
+			"asntype"       : ASN_INTEGER
 		}
 
 	@VarTypeClass
-	def Unsigned32(self, oidstr, writable = True):
+	def Unsigned32(self, initval = None):
 		return {
-			"asntype"   : ASN_UNSIGNED,
-			"ctype"     : ctypes.c_ulong,
-			"flags"     : WATCHER_FIXED_SIZE,
-			"initval"   : 0,
-			"writable"  : writable
+			"ctype"         : ctypes.c_ulong,
+			"flags"         : WATCHER_FIXED_SIZE,
+			"initval"       : 0,
+			"register_func" : self._registerWatcher,
+			"asntype"       : ASN_UNSIGNED
 		}
 
 	@VarTypeClass
-	def Counter32(self, oidstr):
+	def Counter32(self, initval = None):
 		return {
-			"asntype"   : ASN_COUNTER,
-			"ctype"     : ctypes.c_ulong,
-			"flags"     : WATCHER_FIXED_SIZE,
-			"initval"   : 0,
-			"writable"  : False
+			"ctype"         : ctypes.c_ulong,
+			"flags"         : WATCHER_FIXED_SIZE,
+			"initval"       : 0,
+			"register_func" : self._registerWatcher,
+			"asntype"       : ASN_COUNTER
 		}
 
 	@VarTypeClass
-	def TimeTicks(self, oidstr, writable = True):
+	def TimeTicks(self, initval = None):
 		return {
-			"asntype"   : ASN_TIMETICKS,
-			"ctype"     : ctypes.c_ulong,
-			"flags"     : WATCHER_FIXED_SIZE,
-			"initval"   : 0,
-			"writable"  : writable
+			"ctype"         : ctypes.c_ulong,
+			"flags"         : WATCHER_FIXED_SIZE,
+			"initval"       : 0,
+			"register_func" : self._registerWatcher,
+			"asntype"       : ASN_TIMETICKS
 		}
 
 	@VarTypeClass
-	def IpAddress(self, oidstr, writable = True):
+	def IpAddress(self, initval = None):
 		return {
-			"asntype"   : ASN_IPADDRESS,
-			"ctype"     : ctypes.c_uint,
-			"flags"     : WATCHER_FIXED_SIZE,
-			"initval"   : 0,
-			"writable"  : writable
+			"ctype"         : ctypes.c_uint,
+			"flags"         : WATCHER_FIXED_SIZE,
+			"initval"       : 0,
+			"register_func" : self._registerWatcher,
+			"asntype"       : ASN_IPADDRESS
 		}
 
 	# Note we can't use ctypes.c_char_p here since that creates an immutable
 	# type and net-snmp _can_ modify the buffer (unless writable is False).
 	@VarTypeClass
-	def OctetString(self, oidstr, writable = True):
+	def OctetString(self, initval = None):
 		return {
-			"asntype"   : ASN_OCTET_STR,
-			"ctype"     : ctypes.create_string_buffer,
-			"flags"     : WATCHER_SIZE_STRLEN,
-			"max_size"  : MAX_STRING_SIZE,
-			"initval"   : "",
-			"writable"  : writable
+			"ctype"         : ctypes.create_string_buffer,
+			"flags"         : WATCHER_SIZE_STRLEN,
+			"max_size"      : MAX_STRING_SIZE,
+			"initval"       : "",
+			"register_func" : self._registerWatcher,
+			"asntype"       : ASN_OCTET_STR
 		}
 
 	# From our point of view, DisplayString can be treated absolutely
 	# identical to OctetString, but should have its own class nevertheless
 	@VarTypeClass
-	def DisplayString(self, oidstr, writable = True):
+	def DisplayString(self, initval = None):
 		return {
-			"asntype"   : ASN_OCTET_STR,
-			"ctype"     : ctypes.create_string_buffer,
-			"flags"     : WATCHER_SIZE_STRLEN,
-			"max_size"  : MAX_STRING_SIZE,
-			"initval"   : "",
-			"writable"  : writable
+			"ctype"         : ctypes.create_string_buffer,
+			"flags"         : WATCHER_SIZE_STRLEN,
+			"max_size"      : MAX_STRING_SIZE,
+			"initval"       : "",
+			"register_func" : self._registerWatcher,
+			"asntype"       : ASN_OCTET_STR
 		}
 
-	def getVars(self):
-		""" Returns a dictionary with the currently registered SNMP
-		    variables. """
-		myvars = {}
-		for (oidstr,varclass) in self._vars.iteritems():
-			myvars[oidstr] = {
-				"type": type(varclass).__name__,
-				"value": varclass.value()
+	def getRegistered(self):
+		""" Returns a dictionary with the currently registered SNMP objects. """
+		myobjs = {}
+		for (oidstr,snmpobj) in self._objs.iteritems():
+			myobjs[oidstr] = {
+				"type": type(snmpobj).__name__,
+				"value": snmpobj.value()
 			}
-		return myvars
+		return myobjs
 
 	def start(self):
 		""" Starts the agent. Among other things, this means connecting
 		    to the master agent, if configured that way. """
-		self._may_addvars = False
+		self._started = True
 		self._agentlib.init_snmp(self.AgentName)
 
 	def poll(self):

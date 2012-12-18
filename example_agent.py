@@ -68,27 +68,34 @@ agent = netsnmpagent.netsnmpAgent(
 	                  "/EXAMPLE-MIB.txt" ]
 )
 
-# Then we create all SNMP variables we're willing to serve.
-exampleInteger       = agent.Integer32("EXAMPLE-MIB::exampleInteger")
-exampleIntegerRO     = agent.Integer32("EXAMPLE-MIB::exampleIntegerRO", False)
-exampleUnsigned      = agent.Unsigned32("EXAMPLE-MIB::exampleUnsigned")
-exampleUnsignedRO    = agent.Unsigned32("EXAMPLE-MIB::exampleUnsignedRO", False)
-exampleCounter       = agent.Counter32("EXAMPLE-MIB::exampleCounter")
-exampleTimeTicks     = agent.TimeTicks("EXAMPLE-MIB::exampleTimeTicks")
-exampleIpAddress     = agent.IpAddress("EXAMPLE-MIB::exampleIpAddress")
-exampleOctetString   = agent.OctetString("EXAMPLE-MIB::exampleOctetString")
-exampleDisplayString = agent.DisplayString("EXAMPLE-MIB::exampleDisplayString")
-
-# Empty strings look strange, so we give them a nicer default value
-exampleOctetString.update("Hello world!")
-exampleDisplayString.update("Nice to meet you!")
+# Then we create all SNMP scalar variables we're willing to serve.
+exampleInteger       = agent.Integer32()
+exampleIntegerRO     = agent.Integer32()
+exampleUnsigned      = agent.Unsigned32()
+exampleUnsignedRO    = agent.Unsigned32()
+exampleCounter       = agent.Counter32()
+exampleTimeTicks     = agent.TimeTicks()
+exampleIpAddress     = agent.IpAddress()
+exampleOctetString   = agent.OctetString("Hello World")
+exampleDisplayString = agent.DisplayString("Nice to meet you")
+agent.register(exampleInteger,       "EXAMPLE-MIB::exampleInteger")
+agent.register(exampleIntegerRO,     "EXAMPLE-MIB::exampleIntegerRO",
+               allow_set = False)
+agent.register(exampleUnsigned,      "EXAMPLE-MIB::exampleUnsigned")
+agent.register(exampleUnsignedRO,    "EXAMPLE-MIB::exampleUnsignedRO",
+               allow_set = False)
+agent.register(exampleCounter,       "EXAMPLE-MIB::exampleCounter")
+agent.register(exampleTimeTicks,     "EXAMPLE-MIB::exampleTimeTicks")
+agent.register(exampleIpAddress,     "EXAMPLE-MIB::exampleIpAddress")
+agent.register(exampleOctetString,   "EXAMPLE-MIB::exampleOctetString")
+agent.register(exampleDisplayString, "EXAMPLE-MIB::exampleDisplayString")
 
 # Helper function that dumps the state of all registered SNMP variables
-def DumpVars():
-	print "{0}: Registered SNMP variables: ".format(prgname)
-	vars = agent.getVars().__str__()
+def DumpRegistered():
+	print "{0}: Registered SNMP objects: ".format(prgname)
+	vars = agent.getRegistered().__str__()
 	print vars.replace("},", "}\n")
-DumpVars()
+DumpRegistered()
 
 # Finally, we tell the agent to "start". This actually connects the
 # agent to the master agent.
@@ -105,7 +112,7 @@ signal.signal(signal.SIGTERM, TermHandler)
 # Install a signal handler that dumps the state of all registered values
 # when SIGHUP is received
 def HupHandler(signum, frame):
-	DumpVars()
+	DumpRegistered()
 signal.signal(signal.SIGHUP, HupHandler)
 
 # The example agent's main loop. We loop endlessly until our signal

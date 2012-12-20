@@ -190,7 +190,7 @@ exampleTableEntryValue OBJECT-TYPE
     STATUS      current
     DESCRIPTION
         "An exampleTableEntry's value."
-    ::= { exampleTableEntry 4 }
+    ::= { exampleTableEntry 3 }
 
 ------------------------------------------------------------------------
 -- Notifications

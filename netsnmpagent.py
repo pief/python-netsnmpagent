@@ -395,8 +395,8 @@ class netsnmpAgent(object):
 			"asntype"       : ASN_OCTET_STR
 		}
 
-	# From our point of view, DisplayString can be treated absolutely
-	# identical to OctetString, but should have its own class nevertheless
+	# Whereas an OctetString can contain UTF-8 encoded characters, a
+	# DisplayString is restricted to ASCII characters only.
 	@VarTypeClass
 	def DisplayString(self, initval = None):
 		return {

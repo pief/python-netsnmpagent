@@ -254,7 +254,7 @@ class netsnmpAgent(object):
 					else:
 						self._cvar      = props["ctype"](initval, props["max_size"])
 						self._data_size = len(self._cvar.value)
-						self._max_size  = max(props["max_size"], len(initval))
+						self._max_size  = max(self._data_size, props["max_size"])
 
 					if oidstr:
 						# Prepare the netsnmp_handler_registration structure.

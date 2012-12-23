@@ -115,12 +115,19 @@ exampleIpAddress OBJECT-TYPE
         "A 32-bits IPv4 address."
     ::= { exampleScalars 7 }
 
+ExampleOctetString ::= TEXTUAL-CONVENTION
+    DISPLAY-HINT    "1024t"
+    STATUS          current
+    DESCRIPTION
+        "An octet string containing characters in UTF-8 encoding."
+    SYNTAX          OCTET STRING (SIZE (1..1024))
+
 exampleOctetString OBJECT-TYPE
-    SYNTAX      OCTET STRING
+    SYNTAX      ExampleOctetString
     MAX-ACCESS  read-only
     STATUS      current
     DESCRIPTION
-        "A string value."
+        "An UTF-8 encoded string value."
     ::= { exampleScalars 8 }
 
 exampleDisplayString OBJECT-TYPE
@@ -128,7 +135,7 @@ exampleDisplayString OBJECT-TYPE
     MAX-ACCESS  read-only
     STATUS      current
     DESCRIPTION
-        "A string value supposed to contain printable characters only."
+        "An ASCII string value."
     ::= { exampleScalars 9 }
 
 ------------------------------------------------------------------------

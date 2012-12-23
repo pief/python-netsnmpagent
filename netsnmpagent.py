@@ -286,10 +286,8 @@ class netsnmpAgent(object):
 					return self._cvar.value
 
 				def cref(self):
-					if self._flags == WATCHER_FIXED_SIZE:
-						return ctypes.byref(self._cvar)
-					else:
-						return self._cvar
+					return ctypes.byref(self._cvar) if self._flags == WATCHER_FIXED_SIZE \
+					                                else self._cvar
 
 				def update(self, val):
 					self._cvar.value = val

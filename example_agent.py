@@ -70,26 +70,37 @@ agent = netsnmpagent.netsnmpAgent(
 )
 
 # Then we create all SNMP scalar variables we're willing to serve.
-exampleInteger       = agent.Integer32()
-exampleIntegerRO     = agent.Integer32()
-exampleUnsigned      = agent.Unsigned32()
-exampleUnsignedRO    = agent.Unsigned32()
-exampleCounter       = agent.Counter32()
-exampleTimeTicks     = agent.TimeTicks()
-exampleIpAddress     = agent.IpAddress()
-exampleOctetString   = agent.OctetString("Hello World")
-exampleDisplayString = agent.DisplayString("Nice to meet you")
-agent.register(exampleInteger,       "EXAMPLE-MIB::exampleInteger")
-agent.register(exampleIntegerRO,     "EXAMPLE-MIB::exampleIntegerRO",
-               allow_set = False)
-agent.register(exampleUnsigned,      "EXAMPLE-MIB::exampleUnsigned")
-agent.register(exampleUnsignedRO,    "EXAMPLE-MIB::exampleUnsignedRO",
-               allow_set = False)
-agent.register(exampleCounter,       "EXAMPLE-MIB::exampleCounter")
-agent.register(exampleTimeTicks,     "EXAMPLE-MIB::exampleTimeTicks")
-agent.register(exampleIpAddress,     "EXAMPLE-MIB::exampleIpAddress")
-agent.register(exampleOctetString,   "EXAMPLE-MIB::exampleOctetString")
-agent.register(exampleDisplayString, "EXAMPLE-MIB::exampleDisplayString")
+exampleInteger = agent.Integer32(
+	oidstr = "EXAMPLE-MIB::exampleInteger"
+)
+exampleIntegerRO = agent.Integer32(
+	oidstr   = "EXAMPLE-MIB::exampleIntegerRO",
+	writable = False
+)
+exampleUnsigned = agent.Unsigned32(
+	oidstr = "EXAMPLE-MIB::exampleUnsigned"
+)
+exampleUnsignedRO = agent.Unsigned32(
+	oidstr   = "EXAMPLE-MIB::exampleUnsignedRO",
+	writable = False
+)
+exampleCounter = agent.Counter32(
+	oidstr = "EXAMPLE-MIB::exampleCounter"
+)
+exampleTimeTicks = agent.TimeTicks(
+	oidstr = "EXAMPLE-MIB::exampleTimeTicks"
+)
+exampleIpAddress = agent.IpAddress(
+	oidstr = "EXAMPLE-MIB::exampleIpAddress"
+)
+exampleOctetString = agent.OctetString(
+	oidstr  = "EXAMPLE-MIB::exampleOctetString",
+	initval = "Hello World"
+)
+exampleDisplayString = agent.DisplayString(
+	oidstr  = "EXAMPLE-MIB::exampleDisplayString",
+	initval = "Nice to meet you"
+)
 
 # Finally, we tell the agent to "start". This actually connects the
 # agent to the master agent.

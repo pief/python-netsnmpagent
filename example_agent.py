@@ -91,16 +91,16 @@ agent.register(exampleIpAddress,     "EXAMPLE-MIB::exampleIpAddress")
 agent.register(exampleOctetString,   "EXAMPLE-MIB::exampleOctetString")
 agent.register(exampleDisplayString, "EXAMPLE-MIB::exampleDisplayString")
 
+# Finally, we tell the agent to "start". This actually connects the
+# agent to the master agent.
+agent.start()
+
 # Helper function that dumps the state of all registered SNMP variables
 def DumpRegistered():
 	print "{0}: Registered SNMP objects: ".format(prgname)
 	vars = agent.getRegistered().__str__()
 	print vars.replace("},", "}\n")
 DumpRegistered()
-
-# Finally, we tell the agent to "start". This actually connects the
-# agent to the master agent.
-agent.start()
 
 # Install a signal handler that terminates our example agent when
 # CTRL-C is pressed or a KILL signal is received

@@ -20,43 +20,7 @@ for SNMP subagents in an easy manner. It is still under heavy
 development and some features are yet missing."""
 
 import sys, os
-import ctypes, ctypes.util
-
-# include/net-snmp/library/default_store.h
-NETSNMP_DS_LIBRARY_ID           = 0
-NETSNMP_DS_APPLICATION_ID       = 1
-NETSNMP_DS_LIB_PERSISTENT_DIR   = 8
-
-# include/net-snmp/agent/ds_agent.h
-NETSNMP_DS_AGENT_ROLE           = 1
-NETSNMP_DS_AGENT_X_SOCKET       = 1
-
-# include/net-snmp/library/oid.h
-c_oid                           = ctypes.c_ulong
-
-# include/net-snmp/types.h
-MAX_OID_LEN                     = 128
-
-# include/net-snmp/agent/agent_handler.h
-HANDLER_CAN_GETANDGETNEXT       = 0x01
-HANDLER_CAN_SET                 = 0x02
-HANDLER_CAN_RONLY               = HANDLER_CAN_GETANDGETNEXT
-HANDLER_CAN_RWRITE              = (HANDLER_CAN_GETANDGETNEXT | HANDLER_CAN_SET)
-
-# include/net-snmp/library/asn1.h
-ASN_INTEGER                     = 0x02
-ASN_OCTET_STR                   = 0x04
-ASN_APPLICATION                 = 0x40
-
-# include/net-snmp/library/snmp_impl.h
-ASN_IPADDRESS                   = ASN_APPLICATION | 0
-ASN_COUNTER                     = ASN_APPLICATION | 1
-ASN_UNSIGNED                    = ASN_APPLICATION | 2
-ASN_TIMETICKS                   = ASN_APPLICATION | 3
-
-# include/net-snmp/agent/watcher.h
-WATCHER_FIXED_SIZE              = 0x01
-WATCHER_SIZE_STRLEN             = 0x08
+from netsnmpapi import *
 
 # Maximum string size supported by python-netsnmpagent
 MAX_STRING_SIZE                 = 1024
@@ -96,18 +60,11 @@ class netsnmpAgent(object):
 		if self.MIBFiles != None and not type(self.MIBFiles) in (list, tuple):
 			self.MIBFiles = (self.MIBFiles,)
 
-		# Get access to libnetsnmpagent
-		try:
-			libname = ctypes.util.find_library("netsnmpagent")
-			self._agentlib = ctypes.cdll.LoadLibrary(libname)
-		except:
-			raise netsnmpAgentException("Could not load libnetsnmpagent!")
-
 		# FIXME: log errors to stdout for now
-		self._agentlib.snmp_enable_stderrlog()
+		libnsa.snmp_enable_stderrlog()
 
 		# Make us an AgentX client
-		self._agentlib.netsnmp_ds_set_boolean(
+		libnsa.netsnmp_ds_set_boolean(
 			NETSNMP_DS_APPLICATION_ID,
 			NETSNMP_DS_AGENT_ROLE,
 			1
@@ -115,7 +72,7 @@ class netsnmpAgent(object):
 
 		# Use an alternative Unix domain socket to connect to the master?
 		if self.MasterSocket:
-			self._agentlib.netsnmp_ds_set_string(
+			libnsa.netsnmp_ds_set_string(
 				NETSNMP_DS_APPLICATION_ID,
 				NETSNMP_DS_AGENT_X_SOCKET,
 				self.MasterSocket
@@ -123,18 +80,18 @@ class netsnmpAgent(object):
 
 		# Use an alternative persistence directory?
 		if self.PersistentDir:
-			self._agentlib.netsnmp_ds_set_string(
+			libnsa.netsnmp_ds_set_string(
 				NETSNMP_DS_LIBRARY_ID,
 				NETSNMP_DS_LIB_PERSISTENT_DIR,
 				ctypes.c_char_p(self.PersistentDir)
 			)
 
 		# Initialize net-snmp library (see netsnmp_agent_api(3))
-		if self._agentlib.init_agent(self.AgentName) != 0:
+		if libnsa.init_agent(self.AgentName) != 0:
 			raise netsnmpAgentException("init_agent() failed!")
 
 		# Initialize MIB parser
-		self._agentlib.netsnmp_init_mib()
+		libnsa.netsnmp_init_mib()
 
 		# If MIBFiles were specified (ie. MIBs that can not be found in
 		# net-snmp's default MIB directory /usr/share/snmp/mibs), read
@@ -142,7 +99,7 @@ class netsnmpAgent(object):
 		# format.
 		if self.MIBFiles:
 			for mib in self.MIBFiles:
-				if self._agentlib.read_mib(mib) == 0:
+				if libnsa.read_mib(mib) == 0:
 					raise netsnmpAgentException("netsnmp_read_module({0}) " +
 					                            "failed!".format(mib))
 
@@ -168,12 +125,11 @@ class netsnmpAgent(object):
 		oid_len = ctypes.c_size_t(MAX_OID_LEN)
 
 		# Let libsnmpagent parse the OID
-		result = self._agentlib.read_objid(
+		if libnsa.read_objid(
 			oidstr,
-			ctypes.byref(oid),
+			ctypes.cast(ctypes.byref(oid), ctypes.POINTER(ctypes.c_ulong)),
 			ctypes.byref(oid_len)
-		)
-		if result == 0:
+		) == 0:
 			raise netsnmpAgentException("read_objid({0}) failed!".format(oidstr))
 
 		# Do we allow SNMP SETting to this OID?
@@ -184,12 +140,12 @@ class netsnmpAgent(object):
 		# net-snmp that we will be responsible for anything below the given
 		# OID. We use this for leaf nodes only, processing of subtress will be
 		# left to net-snmp.
-		handler_reginfo = self._agentlib.netsnmp_create_handler_registration(
-			oidstr,         # *oidstr
-			None,           # (*handler_access_method)()
-			oid,            # *oid
-			oid_len,        # oid_len
-			handler_modes   # handler_modes
+		handler_reginfo = libnsa.netsnmp_create_handler_registration(
+			oidstr,
+			None,
+			oid,
+			oid_len,
+			handler_modes
 		)
 
 		return handler_reginfo
@@ -261,17 +217,17 @@ class netsnmpAgent(object):
 						handler_reginfo = agent._prepareRegistration(oidstr, writable)
 
 						# Create the netsnmp_watcher_info structure.
-						watcher = agent._agentlib.netsnmp_create_watcher_info6(
-							self.cref(),     # *data
-							self._data_size, # data_size
-							self._asntype,   # asn_type
-							self._flags,     # flags
-							self._max_size,  # max_size
-							None             # *size_p
+						watcher = libnsa.netsnmp_create_watcher_info6(
+							self.cref(),
+							self._data_size,
+							self._asntype,
+							self._flags,
+							self._max_size,
+							None
 						)
 
 						# Register handler and watcher with net-snmp.
-						result = agent._agentlib.netsnmp_register_watched_instance(
+						result = libnsa.netsnmp_register_watched_instance(
 							handler_reginfo,
 							watcher
 						)
@@ -389,16 +345,14 @@ class netsnmpAgent(object):
 		""" Starts the agent. Among other things, this means connecting
 		    to the master agent, if configured that way. """
 		self._started = True
-		self._agentlib.init_snmp(self.AgentName)
+		libnsa.init_snmp(self.AgentName)
 
 	def poll(self):
 		""" Blocks and processes incoming SNMP requests. """
-		return self._agentlib.agent_check_and_process(1)
+		return libnsa.agent_check_and_process(1)
 
 	def __del__(self):
-		if (self._agentlib):
-			self._agentlib.snmp_shutdown(self.AgentName)
-			self._agentlib = None
+		libnsa.snmp_shutdown(self.AgentName)
 
 class netsnmpAgentException(Exception):
 	pass

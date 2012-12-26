@@ -27,18 +27,15 @@ net-snmp C agent API accessible from Python. Though I will try not to just
 pass through every library call 1:1 but wrap them in a useful manner.
 
 net-snmp itself also comes with a Python module (see the "python" subdirectory
-in the source distribution), however those seem to be bindings that implement
-the client side only, not the agent side only.
+in the source distribution), however it seems to offer bindings that implement
+the client side only, not the agent side.
 
 
 REQUIREMENTS
 
 python-netsnmpagent requires the net-snmp libraries to be installed,
-libnetsnmpagent to be precisely. Development files are not necessary.
-
-In addition, the locally running snmpd instance must have been configured to
-allow access by subagents through the AgentX protocol (see "EXAMPLE USAGE"
-below).
+libnetsnmpagent to be precisely. The runtime library is enough, development
+files are not necessary.
 
 
 DOWNLOAD
@@ -52,9 +49,10 @@ flavor yet. For now, you'll have to clone the repository on GitHub:
 INSTALLATION
 
 There is no installation mechanism yet. Currently you would copy netsnmpagent.py
-to /usr/local/lib/python2.7/site-packages/ or a similar path based on your
-local Python installation. However, if you just want to try out the module
-you don't need to copy anything anywhere, just see "EXAMPLE USAGE" below.
+and netsnmpapi.py to /usr/local/lib/python2.7/site-packages/ or a similar path
+based on your local Python installation. However, if you just want to try out
+the module you don't need to copy anything anywhere, just see "EXAMPLE USAGE"
+below.
 
 
 EXAMPLE USAGE
@@ -65,95 +63,67 @@ instructions:
 
 1. Make sure net-snmp is installed, snmpd in particular.
 
-2. Make sure snmpd has been configured. Your /etc/snmp/snmpd.conf (path may
-   vary) should contain lines similar to the following:
-   
-     # Required to allow subagents to connect to snmpd via AgentX protocol
-     master agentx
-   
-     # Required for read-only access from localhost
-     rocommunity public 127.0.0.1
-   
-     # Required for read-write access from localhost
-     rwcommunity <yoursecret> 127.0.0.1
-     
-   For SNMP versions 1 and 2c (which are basically those I care about for now),
-   replace "<yoursecret>" with a secret not too obvious, since it is the only
-   protection against unauthorized write access, safe for the localhost access
-   restriction.
+2. Run the included "run_example_agent.sh" script. This scripts runs snmpd with
+   a special configuration file on TCP port 5555 and starts the included
+   example agent.
 
-3. Start snmpd with "/etc/init.d/snmpd start" or whatever your Linux/BSD/Unix
-   dialect uses to start services.
+3. From a separate console, run the example SNMP client utilities as written
+   to the screen, eg.:
 
-4. Open two consoles/terminal sessions. Within both cd to the
-   python-netsnmpagent directory. 
-
-5. In the first console window we run the example subagent. Because connecting
-   to snmpd's AgentX socket requires root rights, we use sudo:
-   
-     $ sudo python example.py 
-     username's password:
-     NET-SNMP version 5.7.1 AgentX subagent connected
-     Serving SNMP requests, press ^C to terminate...
-
-6. In the second console window we run the net-snmp command line utilities to
-   examine the result:
-   
-     $ snmpwalk -v 2c -c public -M+. localhost EXAMPLE-MIB::exampleMIB
-     EXAMPLE-MIB::exampleUnsigned = Gauge32: 0
-     EXAMPLE-MIB::exampleUnsignedRO = Gauge32: 0
-     EXAMPLE-MIB::exampleInteger = INTEGER: 0
-     EXAMPLE-MIB::exampleIntegerRO = INTEGER: 0
-     EXAMPLE-MIB::exampleCounter = Counter32: 240
-     EXAMPLE-MIB::exampleTimeTicks = Timeticks: (79) 0:00:00.7
-     EXAMPLE-MIB::exampleIPAddress = IpAddress: 127.0.0.1
-     EXAMPLE-MIB::exampleString = STRING: Test string
+   $ snmpwalk -v 2c -c public -M+. localhost EXAMPLE-MIB::exampleMIB
+   EXAMPLE-MIB::exampleUnsigned = Gauge32: 0
+   EXAMPLE-MIB::exampleUnsignedRO = Gauge32: 0
+   EXAMPLE-MIB::exampleInteger = INTEGER: 0
+   EXAMPLE-MIB::exampleIntegerRO = INTEGER: 0
+   [...]
 
    The "-v" option selects version 2c of the SNMP protocol, "-c" specifies the
-   community to use (remember that we configured a read-only "public" community
-   in the snmpd configuration in step 2).
-   
-   The "-M" option allows to modify the search path for referenced MIBs. Since
-   we reference EXAMPLE-MIB in the last argument and we have not copied
-   EXAMPLE-MIB.txt to the system's MIBs directory /usr/share/snmp/mibs, we
-   extend (the plus sign "+") the search path with the current directory (the
-   dot character ".").
+   community to use. The special configuration used here uses a read-only
+   community string "public" and a read-write community string "example" (for
+   use with eg. snmpset).
+
+   The "-M" option modifies the search path for referenced MIBs. Since
+   we reference EXAMPLE-MIB in the specification of the root OID to walk and
+   we have not copied EXAMPLE-MIB.txt to the system's MIBs directory
+   /usr/share/snmp/mibs, we extend (the plus sign "+") the search path with the
+   current directory (which should be the python-netsnmpagent directory).
 
    EXAMPLE-MIB::exampleMIB references the root node in the EXAMPLE-MIB. If you
    haven't looked at the MIB yet, you should probably do so now.
+
+If you wish to run the example agent against your system-wide snmpd instance,
+your /etc/snmp/snmpd.conf (path may vary) should contain lines similar to the
+following:
    
-7. Let's try modifying the values via SNMP:
+  # Required to allow subagents to connect to snmpd via AgentX protocol
+  master agentx
+   
+  # Required for read-only access from localhost
+  rocommunity public 127.0.0.1
+   
+  # Required for read-write access from localhost
+  rwcommunity <yoursecret> 127.0.0.1
+     
+For SNMP versions 1 and 2c (which are basically those I care about for now),
+replace "<yoursecret>" with a secret not too obvious, since it is the only
+protection against unauthorized write access, safe for the localhost access
+restriction.
 
-     $ snmpset -v 2c -c <yoursecret> -M+. localhost \
-       EXAMPLE-MIB::exampleInteger i -1
-     EXAMPLE-MIB::exampleInteger = INTEGER: -1
-     $ snmpset -v 2c -c <yoursecret> -M+. localhost \
-       EXAMPLE-MIB::exampleUnsigned u -1
-     EXAMPLE-MIB::exampleUnsigned = Gauge32: 4294967295
-     $ snmpset -v 2c -c <yoursecret> -M+. localhost \
-       EXAMPLE-MIB::exampleString s "Hello"
-     EXAMPLE-MIB::exampleString = STRING: Hello
-     $ snmpwalk -v 2c -c public -M+. localhost EXAMPLE-MIB::exampleMIB
-     EXAMPLE-MIB::exampleUnsigned = Gauge32: 4294967295
-     EXAMPLE-MIB::exampleUnsignedRO = Gauge32: 0
-     EXAMPLE-MIB::exampleInteger = INTEGER: -1
-     EXAMPLE-MIB::exampleIntegerRO = INTEGER: 0
-     EXAMPLE-MIB::exampleCounter = Counter32: 319
-     EXAMPLE-MIB::exampleTimeTicks = Timeticks: (324) 0:00:03.24
-     EXAMPLE-MIB::exampleIPAddress = IpAddress: 127.0.0.1
-     EXAMPLE-MIB::exampleString = STRING: Hello
-
-   Note that we used the read/write community string here we configured in step
-   2. Also note the difference between SNMP's Integer32 and Unsigned32 datatypes
-   illustrated when setting a value of "-1" (Gauge32 is the same as Unsigned32).
+Because connecting to the system-wide snmpd's AgentX socket requires root
+rights, start the example agent using sudo:
+   
+  $ sudo python example.py 
+  username's password:
+  NET-SNMP version 5.7.1 AgentX subagent connected
+  Serving SNMP requests, press ^C to terminate...
 
 
 API
 
 Admittedly the API for writing your own subagents in Python is nowhere next to
-stable yet. For now, please see the example.py source code for info on how to
-use the python-netsnmpagent module, but notice that this may change at any
-time. You might want to follow development on the GitHub repo:
+stable yet. For now, please see the example_agent.py source code for info on
+how to use the python-netsnmpagent module, but notice that this may change at
+any time. You might want to follow development on the GitHub repo:
 
   https://github.com/pief/python-netsnmpagent.git
 

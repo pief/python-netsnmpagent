@@ -11,7 +11,7 @@ subagents in Python. Subagents connect to a locally running Master agent
 (snmpd) over a Unix domain socket (eg. "/var/run/agentx/master") and using the
 AgentX protocol (RFC2747). They implement custom Management Information Base
 (MIB) modules that extend the local node's MIB tree. Usually, this requires
-writing of a MIB as well, ie. a text file that specifies the structure, names
+writing a MIB as well, ie. a text file that specifies the structure, names
 and data types of the information within the MIB module.
 
 python-netsnmpagent was written after a lot of frustration trying to fix the
@@ -43,7 +43,7 @@ below).
 
 DOWNLOAD
 
-There is neither a homepage nor packacges for your favorite Linux/BSD/Unix
+There is neither a homepage nor packages for your favorite Linux/BSD/Unix
 flavor yet. For now, you'll have to clone the repository on GitHub:
 
   git clone https://github.com/pief/python-netsnmpagent.git

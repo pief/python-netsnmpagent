@@ -331,6 +331,124 @@ class netsnmpAgent(object):
 			"asntype"       : ASN_OCTET_STR
 		}
 
+	def Table(self, oidstr, indexes, columns, extendable = False):
+		agent = self
+
+		# Define a Python class to provide access to the table.
+		class Table(object):
+			def __init__(self, oidstr, idxobjs, coldefs, extendable):
+				# Create a netsnmp_table_data_set structure, representing both
+				# the table definition and the data stored inside it. We use the
+				# oidstr as table name.
+				self._dataset = libnsa.netsnmp_create_table_data_set(
+					ctypes.c_char_p(oidstr)
+				)
+
+				# Define the table row's indexes
+				for idxobj in idxobjs:
+					libnsa.netsnmp_table_dataset_add_index(
+						self._dataset,
+						idxobj._asntype
+					)
+
+				# Define the table's columns and their default values
+				for coldef in coldefs:
+					colno    = coldef[0]
+					defobj   = coldef[1]
+					writable = coldef[2] if len(coldef) > 2 \
+					                     else 0
+
+					# netsnmp_table_set_add_default_row() ignores the ASN type,
+					# so it doesn't implement any special handling for the
+					# trailing zero byte in C strings
+					size = defobj._data_size + 1 if defobj._asntype == ASN_OCTET_STR \
+												 else defobj._data_size
+					result = libnsa.netsnmp_table_set_add_default_row(
+						self._dataset,
+						colno,
+						defobj._asntype,
+						writable,
+						defobj.cref(),
+						size
+					)
+					if result != SNMPERR_SUCCESS:
+						raise netsnmpAgentException(
+							"netsnmp_table_set_add_default_row() failed with "
+							"error code {0}!".format(result)
+						)
+
+				# Register handler and table_data_set with net-snmp.
+				handler_reginfo = agent._prepareRegistration(oidstr, extendable)
+				result = libnsa.netsnmp_register_table_data_set(
+					handler_reginfo,
+					self._dataset,
+					None
+				)
+				if result != SNMP_ERR_NOERROR:
+					raise netsnmpAgentException(
+						"Error code {0} while registering table with "
+						"net-snmp!".format(result)
+					)
+
+				# Finally, we keep track of all registered SNMP objects for the
+				# getRegistered() method.
+				agent._objs[oidstr] = self
+
+			def addRow(self, idxobjs):
+				dataset = self._dataset
+
+				# Define a Python class to provide access to the table row.
+				class TableRow(object):
+					def __init__(self, idxobjs):
+						# Create the netsnmp_table_set_storage structure for
+						# this row.
+						self._table_row = libnsa.netsnmp_table_data_set_create_row_from_defaults(
+							dataset.contents.default_row
+						)
+
+						# Add the indexes
+						for idxobj in idxobjs:
+							result = libnsa.snmp_varlist_add_variable(
+								ctypes.pointer(self._table_row.contents.indexes),
+								None,
+								0,
+								idxobj._asntype,
+								idxobj.cref(),
+								idxobj._data_size
+							)
+							if result == None:
+								raise netsnmpAgentException("snmp_varlist_add_variable() failed!")
+
+					def setRowCell(self, column, snmpobj):
+						# netsnmp_set_row_column() ignores the ASN type, so it doesn't
+						# do special handling for the trailing zero byte in C strings
+						size = snmpobj._data_size + 1 if snmpobj._asntype == ASN_OCTET_STR \
+													  else snmpobj._data_size
+						result = libnsa.netsnmp_set_row_column(
+							self._table_row,
+							column,
+							snmpobj._asntype,
+							snmpobj.cref(),
+							size
+						)
+						if result != SNMPERR_SUCCESS:
+							raise netsnmpAgentException("netsnmp_set_row_column() failed with error code {0}!".format(result))
+
+				row = TableRow(idxobjs)
+
+				libnsa.netsnmp_table_dataset_add_row(
+					dataset,        # *table
+					row._table_row  # row
+				)
+
+				return row
+
+			def value(self):
+				return "FIXME: Table value"
+
+		# Return an instance of the just-defined class to the agent
+		return Table(oidstr, indexes, columns, extendable)
+
 	def getRegistered(self):
 		""" Returns a dictionary with the currently registered SNMP objects. """
 		myobjs = {}

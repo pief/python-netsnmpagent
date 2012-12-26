@@ -76,6 +76,7 @@ echo "  From a second console, use snmpwalk, snmpget etc. like this:"
 echo ""
 echo "    cd `pwd`"
 echo "    snmpwalk -v 2c -c public -M+. localhost:5555 EXAMPLE-MIB::exampleMIB"
+echo "    snmptable -v 2c -c public -M+. -Ci localhost:5555 EXAMPLE-MIB::exampleTable"
 echo "    snmpset -v 2c -c example -M+. localhost:5555 EXAMPLE-MIB::exampleInteger i 123"
 echo ""
 

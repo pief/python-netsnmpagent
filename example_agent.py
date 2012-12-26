@@ -102,6 +102,32 @@ exampleDisplayString = agent.DisplayString(
 	initval = "Nice to meet you"
 )
 
+# Create a table
+exampleTable = agent.Table(
+	oidstr = "EXAMPLE-MIB::exampleTable",
+	indexes = [
+		agent.DisplayString()
+	],
+	columns = [
+		(2, agent.DisplayString(initval="Unknown place")),
+		(3, agent.Integer32(initval=0))
+	]
+)
+
+# First table row
+exampleRow1 = exampleTable.addRow([agent.DisplayString(initval="aa")])
+exampleRow1.setRowCell(2, agent.DisplayString(initval="Prague"))
+exampleRow1.setRowCell(3, agent.Integer32(initval=20))
+
+# Second table row
+exampleRow2 = exampleTable.addRow([agent.DisplayString(initval="ab")])
+exampleRow2.setRowCell(2, agent.DisplayString(initval="Barcelona"))
+exampleRow2.setRowCell(3, agent.Integer32(initval=28))
+
+# Third table row
+exampleRow3 = exampleTable.addRow([agent.DisplayString(initval="bb")])
+exampleRow3.setRowCell(3, agent.Integer32(initval=18))
+
 # Finally, we tell the agent to "start". This actually connects the
 # agent to the master agent.
 agent.start()

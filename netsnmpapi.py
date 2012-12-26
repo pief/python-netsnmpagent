@@ -47,7 +47,12 @@ for f in [ libnsa.netsnmp_ds_set_string ]:
 NETSNMP_DS_AGENT_ROLE                   = 1
 NETSNMP_DS_AGENT_X_SOCKET               = 1
 
+# include/net-snmp/library/snmp.h
+SNMP_ERR_NOERROR                        = 0
+
 # include/net-snmp/library/snmp_api.h
+SNMPERR_SUCCESS                         = 0
+
 for f in [ libnsa.init_snmp ]:
 	f.argtypes = [
 		ctypes.c_char_p                 # const char *type
@@ -147,6 +152,106 @@ for f in [ libnsa.netsnmp_register_watched_instance ]:
 		netsnmp_watcher_info_p          # netsnmp_watcher_info *winfo
 	]
 	f.restype = ctypes.c_int
+
+# include/net-snmp/types.h
+class netsnmp_variable_list(ctypes.Structure): pass
+netsnmp_variable_list_p = ctypes.POINTER(netsnmp_variable_list)
+netsnmp_variable_list_p_p = ctypes.POINTER(netsnmp_variable_list_p)
+
+# include/net-snmp/varbind_api.h
+for f in [ libnsa.snmp_varlist_add_variable ]:
+	f.argtypes = [
+		netsnmp_variable_list_p_p,       # netsnmp_variable_list **varlist
+		c_oid_p,                         # const oid *name
+		ctypes.c_size_t,                 # size_t name_length
+		ctypes.c_ubyte,                  # u_char type
+		ctypes.c_void_p,                 # const void *value
+		ctypes.c_size_t                  # size_t len
+	]
+	f.restype = netsnmp_variable_list_p
+
+# include/net-snmp/agent/table_data.h
+class netsnmp_table_row(ctypes.Structure): pass
+netsnmp_table_row_p = ctypes.POINTER(netsnmp_table_row)
+netsnmp_table_row._fields_ = [
+	("indexes",             netsnmp_variable_list_p),
+	("index_oid",           c_oid_p),
+	("index_oid_len",       ctypes.c_size_t),
+	("data",                ctypes.c_void_p),
+	("next",                netsnmp_table_row_p),
+	("prev",                netsnmp_table_row_p)
+]
+
+class netsnmp_table_data(ctypes.Structure): pass
+netsnmp_table_data_p = ctypes.POINTER(netsnmp_table_data)
+
+# include/net-snmp/agent/table_dataset.h
+class netsnmp_table_data_set_storage(ctypes.Structure): pass
+netsnmp_table_data_set_storage_p = ctypes.POINTER(netsnmp_table_data_set_storage)
+
+class netsnmp_table_data_set(ctypes.Structure): pass
+netsnmp_table_data_set_p = ctypes.POINTER(netsnmp_table_data_set)
+netsnmp_table_data_set._fields_ = [
+	("table",               netsnmp_table_data_p),
+	("default_row",         netsnmp_table_data_set_storage_p),
+	("allow_creation",      ctypes.c_int),
+	("rowstatus_column",    ctypes.c_uint)
+]
+
+for f in [ libnsa.netsnmp_create_table_data_set ]:
+	f.argtypes = [
+		ctypes.c_char_p                 # const char *table_name
+	]
+	f.restype = netsnmp_table_data_set_p
+
+for f in [ libnsa.netsnmp_table_dataset_add_row ]:
+	f.argtypes = [
+		netsnmp_table_data_set_p,       # netsnmp_table_data_set *table
+		netsnmp_table_row_p,            # netsnmp_table_row *row
+	]
+	f.restype = None
+
+for f in [ libnsa.netsnmp_table_data_set_create_row_from_defaults ]:
+	f.argtypes = [
+		netsnmp_table_data_set_storage_p # netsnmp_table_data_set_storage *defrow
+	]
+	f.restype = netsnmp_table_row_p
+
+for f in [ libnsa.netsnmp_table_set_add_default_row ]:
+	f.argtypes = [
+		netsnmp_table_data_set_p,       # netsnmp_table_data_set *table_set
+		ctypes.c_uint,                  # unsigned int column
+		ctypes.c_int,                   # int type
+		ctypes.c_int,                   # int writable
+		ctypes.c_void_p,                # void *default_value
+		ctypes.c_size_t                 # size_t default_value_len
+	]
+	f.restype = ctypes.c_int
+
+for f in [ libnsa.netsnmp_register_table_data_set ]:
+	f.argtypes = [
+		netsnmp_handler_registration_p, # netsnmp_handler_registration *reginfo
+		netsnmp_table_data_set_p,       # netsnmp_table_data_set *data_set
+		ctypes.c_void_p                 # netsnmp_table_registration_info *table_info
+	]
+	f.restype = ctypes.c_int
+
+for f in [ libnsa.netsnmp_set_row_column ]:
+	f.argtypes = [
+		netsnmp_table_row_p,            # netsnmp_table_row *row
+		ctypes.c_uint,                  # unsigned int column
+		ctypes.c_int,                   # int type
+		ctypes.c_void_p,                # const void *value
+		ctypes.c_size_t                 # size_t value_len
+	]
+	f.restype = ctypes.c_int
+
+for f in [ libnsa.netsnmp_table_dataset_add_index ]:
+	f.argtypes = [
+		netsnmp_table_data_set_p,       # netsnmp_table_data_set *table
+		ctypes.c_ubyte                  # u_char type
+	]
+	f.restype = None
 
 # include/net-snmp/agent/snmp_agent.h
 for f in [ libnsa.agent_check_and_process ]:

@@ -160,7 +160,7 @@ exampleTable OBJECT-TYPE
 
 ExampleTableEntry ::=
     SEQUENCE {
-        exampleTableEntryIndex  Unsigned32,
+        exampleTableEntryIndex  DisplayString,
         exampleTableEntryDesc   DisplayString,
         exampleTableEntryValue  Integer32
     }
@@ -175,7 +175,7 @@ exampleTableEntry OBJECT-TYPE
     ::= { exampleTable 1 }
 
 exampleTableEntryIndex OBJECT-TYPE
-    SYNTAX      Unsigned32
+    SYNTAX      DisplayString
     MAX-ACCESS  not-accessible
     STATUS      current
     DESCRIPTION

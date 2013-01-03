@@ -10,6 +10,9 @@ import ctypes, ctypes.util
 
 c_sizet_p = ctypes.POINTER(ctypes.c_size_t)
 
+# <limits.h>
+UINT_MAX = 4294967295
+
 # Make libnetsnmpagent available via Python's ctypes module. We do this globally
 # so we can define C function prototypes
 try:
@@ -122,11 +125,33 @@ ASN_INTEGER                             = 0x02
 ASN_OCTET_STR                           = 0x04
 ASN_APPLICATION                         = 0x40
 
+# counter64 requires some extra work because it can't be reliably represented
+# by a single C data type
+class counter64(ctypes.Structure):
+	@property
+	def value(self):
+		return self.high * UINT_MAX + self.low
+
+	@value.setter
+	def value(self, val):
+		self.high = val / UINT_MAX
+		self.low  = val - self.high * UINT_MAX
+
+	def __init__(self, initval=0):
+		ctypes.Structure.__init__(self, 0, 0)
+		self.value = initval
+counter64_p = ctypes.POINTER(counter64)
+counter64._fields_ = [
+	("high",                ctypes.c_ulong),
+	("low",                 ctypes.c_ulong)
+]
+
 # include/net-snmp/library/snmp_impl.h
 ASN_IPADDRESS                           = ASN_APPLICATION | 0
 ASN_COUNTER                             = ASN_APPLICATION | 1
 ASN_UNSIGNED                            = ASN_APPLICATION | 2
 ASN_TIMETICKS                           = ASN_APPLICATION | 3
+ASN_COUNTER64                           = ASN_APPLICATION | 6
 
 # include/net-snmp/agent/watcher.h
 WATCHER_FIXED_SIZE                      = 0x01

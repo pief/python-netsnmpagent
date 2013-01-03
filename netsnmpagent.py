@@ -290,6 +290,15 @@ class netsnmpAgent(object):
 		}
 
 	@VarTypeClass
+	def Counter64(self, oidstr = None, initval = None, writable = True):
+		return {
+			"ctype"         : counter64,
+			"flags"         : WATCHER_FIXED_SIZE,
+			"initval"       : 0,
+			"asntype"       : ASN_COUNTER64
+		}
+
+	@VarTypeClass
 	def TimeTicks(self, oidstr = None, initval = None, writable = True):
 		return {
 			"ctype"         : ctypes.c_ulong,

@@ -84,8 +84,11 @@ exampleUnsignedRO = agent.Unsigned32(
 	oidstr   = "EXAMPLE-MIB::exampleUnsignedRO",
 	writable = False
 )
-exampleCounter = agent.Counter32(
-	oidstr = "EXAMPLE-MIB::exampleCounter"
+exampleCounter32 = agent.Counter32(
+	oidstr = "EXAMPLE-MIB::exampleCounter32"
+)
+exampleCounter64 = agent.Counter64(
+	oidstr = "EXAMPLE-MIB::exampleCounter64"
 )
 exampleTimeTicks = agent.TimeTicks(
 	oidstr = "EXAMPLE-MIB::exampleTimeTicks"
@@ -162,10 +165,11 @@ while (loop):
 	# Block until something happens
 	agent.poll()
 
-	# Since we didn't give exampleCounter and exampleTimeTicks a real
-	# meaning in the EXAMPLE-MIB, we can basically do with them whatever
-	# we want. Here, we just increase both, although in different manners.
-	exampleCounter.update(exampleCounter.value() + 2)
+	# Since we didn't give exampleCounter, exampleCounter64 and exampleTimeTicks
+	# a real meaning in the EXAMPLE-MIB, we can basically do with them whatever
+	# we want. Here, we just increase them, although in different manners.
+	exampleCounter32.update(exampleCounter32.value() + 2)
+	exampleCounter64.update(exampleCounter64.value() + 4294967294)
 	exampleTimeTicks.update(exampleTimeTicks.value() + 1)
 
 print "{0}: Terminating.".format(prgname)

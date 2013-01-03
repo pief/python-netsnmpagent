@@ -9,7 +9,8 @@ EXAMPLE-MIB DEFINITIONS ::= BEGIN
 -- Imports
 IMPORTS
     MODULE-IDENTITY, OBJECT-TYPE, NOTIFICATION-TYPE,
-    Integer32, Unsigned32, Counter32, TimeTicks, IpAddress, enterprises
+    Integer32, Unsigned32, Counter32, Counter64, TimeTicks, IpAddress,
+    enterprises
         FROM SNMPv2-SMI
     TEXTUAL-CONVENTION, DisplayString
         FROM SNMPv2-TC
@@ -91,7 +92,7 @@ exampleIntegerRO OBJECT-TYPE
         "A read-only, signed, 32-bits integer value."
     ::= { exampleScalars 4 }
 
-exampleCounter OBJECT-TYPE
+exampleCounter32 OBJECT-TYPE
     SYNTAX      Counter32
     MAX-ACCESS  read-only
     STATUS      current
@@ -99,13 +100,21 @@ exampleCounter OBJECT-TYPE
         "A read-only, unsigned, 32-bits counter value."
     ::= { exampleScalars 5 }
 
+exampleCounter64 OBJECT-TYPE
+    SYNTAX      Counter64
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "A read-only, unsigned, 64-bits counter value."
+    ::= { exampleScalars 6 }
+
 exampleTimeTicks OBJECT-TYPE
     SYNTAX      TimeTicks
     MAX-ACCESS  read-write
     STATUS      current
     DESCRIPTION
         "A read-only, unsigned, 32-bits TimeTicks value."
-    ::= { exampleScalars 6 }
+    ::= { exampleScalars 7 }
 
 exampleIpAddress OBJECT-TYPE
     SYNTAX      IpAddress
@@ -113,7 +122,7 @@ exampleIpAddress OBJECT-TYPE
     STATUS      current
     DESCRIPTION
         "A 32-bits IPv4 address."
-    ::= { exampleScalars 7 }
+    ::= { exampleScalars 8 }
 
 ExampleOctetString ::= TEXTUAL-CONVENTION
     DISPLAY-HINT    "1024t"
@@ -128,7 +137,7 @@ exampleOctetString OBJECT-TYPE
     STATUS      current
     DESCRIPTION
         "An UTF-8 encoded string value."
-    ::= { exampleScalars 8 }
+    ::= { exampleScalars 9 }
 
 exampleDisplayString OBJECT-TYPE
     SYNTAX      DisplayString
@@ -136,7 +145,7 @@ exampleDisplayString OBJECT-TYPE
     STATUS      current
     DESCRIPTION
         "An ASCII string value."
-    ::= { exampleScalars 9 }
+    ::= { exampleScalars 10 }
 
 ------------------------------------------------------------------------
 -- Table
@@ -255,7 +264,7 @@ exampleMIBScalarsGroup OBJECT-GROUP
     OBJECTS {
         exampleInteger, exampleIntegerRO,
         exampleUnsigned, exampleUnsignedRO,
-        exampleCounter,
+        exampleCounter32, exampleCounter64,
         exampleTimeTicks,
         exampleIpAddress,
         exampleOctetString, exampleDisplayString,

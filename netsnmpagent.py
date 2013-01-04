@@ -64,27 +64,36 @@ class netsnmpAgent(object):
 		libnsa.snmp_enable_stderrlog()
 
 		# Make us an AgentX client
-		libnsa.netsnmp_ds_set_boolean(
+		if libnsa.netsnmp_ds_set_boolean(
 			NETSNMP_DS_APPLICATION_ID,
 			NETSNMP_DS_AGENT_ROLE,
 			1
-		)
+		) != SNMPERR_SUCCESS:
+			raise netsnmpAgentException(
+				"netsnmp_ds_set_boolean() failed for NETSNMP_DS_AGENT_ROLE!"
+			)
 
 		# Use an alternative Unix domain socket to connect to the master?
 		if self.MasterSocket:
-			libnsa.netsnmp_ds_set_string(
+			if libnsa.netsnmp_ds_set_string(
 				NETSNMP_DS_APPLICATION_ID,
 				NETSNMP_DS_AGENT_X_SOCKET,
 				self.MasterSocket
-			)
+			) != SNMPERR_SUCCESS:
+				raise netsnmpAgentException(
+					"netsnmp_ds_set_string() failed for NETSNMP_DS_AGENT_X_SOCKET!"
+				)
 
 		# Use an alternative persistence directory?
 		if self.PersistentDir:
-			libnsa.netsnmp_ds_set_string(
+			if libnsa.netsnmp_ds_set_string(
 				NETSNMP_DS_LIBRARY_ID,
 				NETSNMP_DS_LIB_PERSISTENT_DIR,
 				ctypes.c_char_p(self.PersistentDir)
-			)
+			) != SNMPERR_SUCCESS:
+				raise netsnmpAgentException(
+					"netsnmp_ds_set_string() failed for NETSNMP_DS_LIB_PERSISTENT_DIR!"
+				)
 
 		# Initialize net-snmp library (see netsnmp_agent_api(3))
 		if libnsa.init_agent(self.AgentName) != 0:

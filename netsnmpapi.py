@@ -25,6 +25,9 @@ for f in [ libnsa.snmp_enable_stderrlog ]:
 	f.argtypes = None
 	f.restype  = None
 
+# include/net-snmp/library/snmp_api.h
+SNMPERR_SUCCESS                         = 0
+
 # include/net-snmp/library/default_store.h
 NETSNMP_DS_LIBRARY_ID                   = 0
 NETSNMP_DS_APPLICATION_ID               = 1
@@ -52,9 +55,6 @@ NETSNMP_DS_AGENT_X_SOCKET               = 1
 
 # include/net-snmp/library/snmp.h
 SNMP_ERR_NOERROR                        = 0
-
-# include/net-snmp/library/snmp_api.h
-SNMPERR_SUCCESS                         = 0
 
 for f in [ libnsa.init_snmp ]:
 	f.argtypes = [

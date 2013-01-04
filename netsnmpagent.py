@@ -462,7 +462,64 @@ class netsnmpAgent(object):
 				return row
 
 			def value(self):
-				return "FIXME: Table value"
+				# Because tables are more complex than scalar variables, we
+				# return a dictionary representing the table's structure and
+				# contents instead of a simple string.
+				res = {}
+
+				# The first entry contains the defined columns, their types
+				# and their defaults, if set. We use array index 0 since it's
+				# impossible for SNMP tables to have a row with that index.
+				res[0] = []
+				col = self._dataset.contents.default_row
+				while bool(col):
+					asntypes = {
+						ASN_INTEGER:    "Integer",
+						ASN_OCTET_STR:  "OctetString",
+						ASN_IPADDRESS:  "IPAddress",
+						ASN_COUNTER:    "Counter32",
+						ASN_COUNTER64:  "Counter64",
+						ASN_UNSIGNED:   "Unsigned32",
+						ASN_TIMETICKS:  "TimeTicks"
+					}
+
+					colstr = asntypes[col.contents.type] + "("
+					if bool(col.contents.data):
+						if col.contents.type == ASN_OCTET_STR:
+							colstr += '"' + col.contents.data.string + '"'
+						else:
+							colstr += repr(col.contents.data.integer.contents.value)
+					colstr += ")"
+					res[0] += [ colstr ]
+					col = col.contents.next
+
+				# Then an entry for each table row, table index = list index
+				row = self._dataset.contents.table.contents.first_row
+				while bool(row):
+					oidstr = ctypes.create_string_buffer(MAX_OID_LEN)
+					libnsa.snprint_objid(
+						oidstr,
+						MAX_OID_LEN,
+						row.contents.index_oid,
+						row.contents.index_oid_len
+					)
+					indexstr = oidstr.value
+					res[indexstr] = []
+
+					data = ctypes.cast(row.contents.data, ctypes.POINTER(netsnmp_table_data_set_storage))
+					while bool(data):
+						if bool(data.contents.data):
+							if data.contents.type == ASN_OCTET_STR:
+								res[indexstr] += [ data.contents.data.string ]
+							else:
+								res[indexstr] += [ repr(data.contents.data.integer.contents.value) ]
+						else:
+							res[indexstr] += []
+						data = data.contents.next
+
+					row = row.contents.next
+
+				return res
 
 		# Return an instance of the just-defined class to the agent
 		return Table(oidstr, indexes, columns, extendable)

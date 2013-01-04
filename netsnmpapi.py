@@ -209,10 +209,40 @@ netsnmp_table_row._fields_ = [
 
 class netsnmp_table_data(ctypes.Structure): pass
 netsnmp_table_data_p = ctypes.POINTER(netsnmp_table_data)
+netsnmp_table_data._fields_ = [
+	("indexes_template",	netsnmp_variable_list_p),
+	("name",				ctypes.c_char_p),
+	("flags",				ctypes.c_int),
+	("store_indexes",		ctypes.c_int),
+	("first_row",			netsnmp_table_row_p),
+	("last_row",			netsnmp_table_row_p)
+]
 
 # include/net-snmp/agent/table_dataset.h
+class netsnmp_table_data_set_storage_udata(ctypes.Union): pass
+netsnmp_table_data_set_storage_udata._fields_ = [
+	("voidp",				ctypes.c_void_p),
+	("integer",				ctypes.POINTER(ctypes.c_long)),
+	("string",				ctypes.c_char_p),
+	("objid",				c_oid_p),
+	("bitstring",			ctypes.POINTER(ctypes.c_ubyte)),
+	("counter64",			ctypes.POINTER(counter64)),
+	("floatVal",			ctypes.POINTER(ctypes.c_float)),
+	("doubleVal",			ctypes.POINTER(ctypes.c_double))
+]
+
 class netsnmp_table_data_set_storage(ctypes.Structure): pass
 netsnmp_table_data_set_storage_p = ctypes.POINTER(netsnmp_table_data_set_storage)
+netsnmp_table_data_set_storage._fields_ = [
+	("column",              ctypes.c_uint),
+	("writable",            ctypes.c_byte),
+	("change_ok_fn",        ctypes.c_void_p),
+	("my_change_data",      ctypes.c_void_p),
+	("type",                ctypes.c_ubyte),
+	("data",                netsnmp_table_data_set_storage_udata),
+	("data_len",            ctypes.c_ulong),
+	("next",                netsnmp_table_data_set_storage_p)
+]
 
 class netsnmp_table_data_set(ctypes.Structure): pass
 netsnmp_table_data_set_p = ctypes.POINTER(netsnmp_table_data_set)

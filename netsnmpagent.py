@@ -504,8 +504,8 @@ class netsnmpAgent(object):
 						row.contents.index_oid_len
 					)
 					indexstr = oidstr.value
-					res[indexstr] = []
 
+					res[indexstr] = []
 					data = ctypes.cast(row.contents.data, ctypes.POINTER(netsnmp_table_data_set_storage))
 					while bool(data):
 						if bool(data.contents.data):

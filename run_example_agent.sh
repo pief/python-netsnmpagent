@@ -15,9 +15,16 @@ set -u
 set -e
 set -o errexit
 
-# snmpd must be startable
-if [ ! -x /usr/sbin/snmpd ] ; then
-	echo "/usr/sbin/snmpd not executable -- net-snmp RPM not installed?"
+# Find path to snmpd executable
+for DIR in /usr/local/sbin /usr/sbin
+do
+	if [ -x $DIR/snmpd ] ; then
+		SNMPD_BIN=$DIR/snmpd
+		break
+	fi
+done
+if [ -z "$SNMPD_BIN" ] ; then
+	echo "snmpd executable not found -- net-snmp not installed?"
 	exit 1
 fi
 
@@ -68,7 +75,7 @@ touch $TMPDIR/mib_indexes
 
 # Start a snmpd instance for testing purposes, run as the current user and
 # and independent from any other running snmpd instance
-/usr/sbin/snmpd -r -LE warning -C -c$SNMPD_CONFFILE -p$SNMPD_PIDFILE || exit 1
+$SNMPD_BIN -r -LE warning -C -c$SNMPD_CONFFILE -p$SNMPD_PIDFILE || exit 1
 
 # Give the user guidance
 echo "* Our snmpd instance is now listening on localhost, port 5555."

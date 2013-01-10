@@ -492,7 +492,7 @@ class netsnmpAgent(object):
 						if col.contents.type == ASN_OCTET_STR:
 							retdict[0][int(col.contents.column)]["value"] = col.contents.data.string
 						else:
-							retdict[0][int(col.contents.column)]["value"] = repr(col.contents.data.integer.contents.value)
+							retdict[0][int(col.contents.column)]["value"] = col.contents.data.integer.contents.value
 					col = col.contents.next
 
 				# Next we iterate over the table's rows, creating a dictionary
@@ -566,7 +566,7 @@ class netsnmpAgent(object):
 							if data.contents.type == ASN_OCTET_STR:
 								retdict[indices][int(data.contents.column)] = data.contents.data.string
 							else:
-								retdict[indices][int(data.contents.column)] = repr(data.contents.data.integer.contents.value)
+								retdict[indices][int(data.contents.column)] = data.contents.data.integer.contents.value
 						else:
 							retdict[indices] += {}
 						data = data.contents.next

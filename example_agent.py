@@ -139,7 +139,7 @@ agent.start()
 def DumpRegistered():
 	print "{0}: Registered SNMP objects: ".format(prgname)
 	vars = agent.getRegistered().__str__()
-	print vars.replace("},", "}\n")
+	print vars.replace("},", "},\n")
 DumpRegistered()
 
 # Install a signal handler that terminates our example agent when

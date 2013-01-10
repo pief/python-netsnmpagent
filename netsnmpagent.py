@@ -19,7 +19,7 @@ This module, by contrast, concentrates on wrapping the net-snmp C API
 for SNMP subagents in an easy manner. It is still under heavy
 development and some features are yet missing."""
 
-import sys, os
+import sys, os, socket, struct
 from netsnmpapi import *
 
 # Maximum string size supported by python-netsnmpagent
@@ -316,15 +316,6 @@ class netsnmpAgent(object):
 			"asntype"       : ASN_TIMETICKS
 		}
 
-	@VarTypeClass
-	def IpAddress(self, oidstr = None, initval = None, writable = True):
-		return {
-			"ctype"         : ctypes.c_uint,
-			"flags"         : WATCHER_FIXED_SIZE,
-			"initval"       : 0,
-			"asntype"       : ASN_IPADDRESS
-		}
-
 	# Note we can't use ctypes.c_char_p here since that creates an immutable
 	# type and net-snmp _can_ modify the buffer (unless writable is False).
 	@VarTypeClass
@@ -348,6 +339,59 @@ class netsnmpAgent(object):
 			"initval"       : "",
 			"asntype"       : ASN_OCTET_STR
 		}
+
+	# IP addresses are stored as unsigned integers, but the Python interface
+	# should use strings. So we need a special class.
+	def IpAddress(self, oidstr = None, initval = "0.0.0.0", writable = True):
+		agent = self
+
+		class IpAddress(object):
+			def __init__(self):
+				self._cvar = ctypes.c_uint(0)
+				self.update(initval)
+				
+				if oidstr:
+					# Prepare the netsnmp_handler_registration structure.
+					handler_reginfo = agent._prepareRegistration(oidstr, writable)
+
+					# Create the netsnmp_watcher_info structure.
+					watcher = libnsa.netsnmp_create_watcher_info6(
+						self.cref(),
+						ctypes.sizeof(self._cvar),
+						ASN_IPADDRESS,
+						WATCHER_FIXED_SIZE,
+						ctypes.sizeof(self._cvar),
+						None
+					)
+
+					# Register handler and watcher with net-snmp.
+					result = libnsa.netsnmp_register_watched_instance(
+						handler_reginfo,
+						watcher
+					)
+					if result != 0:
+						raise netsnmpAgentException("Error registering variable with net-snmp!")
+
+					# Finally, we keep track of all registered SNMP objects for the
+					# getRegistered() method.
+					agent._objs[oidstr] = self
+
+			def value(self):
+				return socket.inet_ntoa(
+					struct.pack("I", self._cvar.value)
+				)
+
+			def cref(self):
+				return ctypes.byref(self._cvar)
+
+			def update(self, val):
+				self._cvar.value = struct.unpack(
+					"I",
+					socket.inet_aton(val)
+				)[0]
+
+		# Return an instance of the just-defined class to the agent
+		return IpAddress()
 
 	def Table(self, oidstr, indexes, columns, extendable = False):
 		agent = self

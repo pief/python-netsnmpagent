@@ -98,7 +98,8 @@ exampleTimeTicks = agent.TimeTicks(
 	oidstr = "EXAMPLE-MIB::exampleTimeTicks"
 )
 exampleIpAddress = agent.IpAddress(
-	oidstr = "EXAMPLE-MIB::exampleIpAddress"
+	oidstr = "EXAMPLE-MIB::exampleIpAddress",
+	initval="127.0.0.1"
 )
 exampleOctetString = agent.OctetString(
 	oidstr  = "EXAMPLE-MIB::exampleOctetString",

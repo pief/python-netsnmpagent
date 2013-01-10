@@ -136,7 +136,7 @@ class netsnmpAgent(object):
 		# Let libsnmpagent parse the OID
 		if libnsa.read_objid(
 			oidstr,
-			ctypes.cast(ctypes.byref(oid), ctypes.POINTER(ctypes.c_ulong)),
+			ctypes.cast(ctypes.byref(oid), c_oid_p),
 			ctypes.byref(oid_len)
 		) == 0:
 			raise netsnmpAgentException("read_objid({0}) failed!".format(oidstr))

@@ -148,65 +148,122 @@ exampleDisplayString OBJECT-TYPE
     ::= { exampleScalars 10 }
 
 ------------------------------------------------------------------------
--- Table
+-- Tables
 ------------------------------------------------------------------------
 
-exampleTableNumber OBJECT-TYPE
+firstTableNumber OBJECT-TYPE
     SYNTAX      Unsigned32
     MAX-ACCESS  read-only
     STATUS      current
     DESCRIPTION
-        "The number of entries in the exampleTable."
+        "The number of entries in firstTable."
     ::= { exampleTables 1 }
 
-exampleTable OBJECT-TYPE
-    SYNTAX      SEQUENCE OF ExampleTableEntry
+firstTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF FirstTableEntry
     MAX-ACCESS  not-accessible
     STATUS      current
     DESCRIPTION
-        "An example table"
+        "The first example table"
     ::= { exampleTables 2 }
 
-ExampleTableEntry ::=
+FirstTableEntry ::=
     SEQUENCE {
-        exampleTableEntryIndex  DisplayString,
-        exampleTableEntryDesc   DisplayString,
-        exampleTableEntryValue  Integer32
+        firstTableEntryIndex  DisplayString,
+        firstTableEntryDesc   DisplayString,
+        firstTableEntryValue  Integer32
     }
 
-exampleTableEntry OBJECT-TYPE
-    SYNTAX      ExampleTableEntry
+firstTableEntry OBJECT-TYPE
+    SYNTAX      FirstTableEntry
     MAX-ACCESS  not-accessible
     STATUS      current
     DESCRIPTION
-        "A particular exampleTable row."
-    INDEX { exampleTableEntryIndex }
-    ::= { exampleTable 1 }
+        "A particular firstTable row."
+    INDEX { firstTableEntryIndex }
+    ::= { firstTable 1 }
 
-exampleTableEntryIndex OBJECT-TYPE
+firstTableEntryIndex OBJECT-TYPE
     SYNTAX      DisplayString
     MAX-ACCESS  not-accessible
     STATUS      current
     DESCRIPTION
-        "The index column used to generate numerical indices into
-        exampleTable."
-    ::= { exampleTableEntry 1 }
+        "The index column used to generate string indices into
+        firstTable."
+    ::= { firstTableEntry 1 }
 
-exampleTableEntryDesc OBJECT-TYPE
+firstTableEntryDesc OBJECT-TYPE
     SYNTAX      DisplayString
     MAX-ACCESS  read-only
     STATUS      current
     DESCRIPTION
-        "An exampleTableEntry's description."
-    ::= { exampleTableEntry 2 }
+        "A firstTableEntry's description."
+    ::= { firstTableEntry 2 }
 
-exampleTableEntryValue OBJECT-TYPE
+firstTableEntryValue OBJECT-TYPE
     SYNTAX      Integer32
     MAX-ACCESS  read-only
     STATUS      current
     DESCRIPTION
-        "An exampleTableEntry's value."
-    ::= { exampleTableEntry 3 }
+        "A firstTableEntry's value."
+    ::= { firstTableEntry 3 }
+
+secondTableNumber OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "The number of entries in secondTable."
+    ::= { exampleTables 3 }
+
+secondTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF SecondTableEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "The first example table"
+    ::= { exampleTables 4 }
+
+SecondTableEntry ::=
+    SEQUENCE {
+        secondTableEntryIndex  Integer32,
+        secondTableEntryDesc   DisplayString,
+        secondTableEntryValue  Unsigned32
+    }
+
+secondTableEntry OBJECT-TYPE
+    SYNTAX      SecondTableEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "A particular secondTable row."
+    INDEX { secondTableEntryIndex }
+    ::= { secondTable 1 }
+
+secondTableEntryIndex OBJECT-TYPE
+    SYNTAX      Integer32 (0..2147483647)
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "The index column used to generate numerical indices into
+        secondTable."
+    ::= { secondTableEntry 1 }
+
+secondTableEntryDesc OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "An secondTableEntry's description."
+    ::= { secondTableEntry 2 }
+
+secondTableEntryValue OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "An secondTableEntry's value."
+    ::= { secondTableEntry 3 }
 
 ------------------------------------------------------------------------
 -- Notifications
@@ -225,14 +282,14 @@ exampleUnsignedROChange NOTIFICATION-TYPE
         been a change to the value of exampleUnsignedRO."
     ::= { events 1 }
 
-exampleTableChange NOTIFICATION-TYPE
+firstTableChange NOTIFICATION-TYPE
     OBJECTS {
-        exampleTableEntryDesc, exampleTableEntryValue
+        firstTableEntryDesc, firstTableEntryValue
     }
     STATUS  current
     DESCRIPTION
-        "An exampleTableChange notification signifies that there has
-        been a change to an exampleTableEntry."
+        "An firstTableChange notification signifies that there has
+        been a change to an firstTableEntry."
     ::= { events 2 }
 
 exampleUnsignedROChangeNotificationsEnabled OBJECT-TYPE
@@ -244,12 +301,12 @@ exampleUnsignedROChangeNotificationsEnabled OBJECT-TYPE
         enabled or disabled."
     ::= { operation 1 }
 
-exampleTableChangeNotificationsEnabled OBJECT-TYPE
+firstTableChangeNotificationsEnabled OBJECT-TYPE
     SYNTAX      ExampleNotificationStatus
     MAX-ACCESS  read-write
     STATUS      current
     DESCRIPTION
-        "Controls whether exampleTableChange notifications are
+        "Controls whether firstTableChange notifications are
         enabled or disabled."
     ::= { operation 2 }
 
@@ -277,9 +334,11 @@ exampleMIBScalarsGroup OBJECT-GROUP
 
 exampleMIBTablesGroup OBJECT-GROUP
     OBJECTS {
-        exampleTableNumber,
-        exampleTableEntryDesc, exampleTableEntryValue,
-        exampleTableChangeNotificationsEnabled
+        firstTableNumber,
+        firstTableEntryDesc, firstTableEntryValue,
+        firstTableChangeNotificationsEnabled,
+        secondTableNumber,
+        secondTableEntryDesc, secondTableEntryValue
     }
     STATUS  current
     DESCRIPTION
@@ -298,7 +357,7 @@ exampleMIBScalarsNotificationsGroup NOTIFICATION-GROUP
 
 exampleMIBTablesNotificationsGroup NOTIFICATION-GROUP
     NOTIFICATIONS {
-        exampleTableChange
+        firstTableChange
     }
     STATUS  current
     DESCRIPTION

@@ -396,9 +396,12 @@ class netsnmpAgent(object):
 						)
 
 				# Register handler and table_data_set with net-snmp.
-				handler_reginfo = agent._prepareRegistration(oidstr, extendable)
+				self._handler_reginfo = agent._prepareRegistration(
+					oidstr,
+					extendable
+				)
 				result = libnsa.netsnmp_register_table_data_set(
-					handler_reginfo,
+					self._handler_reginfo,
 					self._dataset,
 					None
 				)
@@ -465,14 +468,16 @@ class netsnmpAgent(object):
 				# Because tables are more complex than scalar variables, we
 				# return a dictionary representing the table's structure and
 				# contents instead of a simple string.
-				res = {}
+				retdict = {}
 
-				# The first entry contains the defined columns, their types
+				# The first entry will contain the defined columns, their types
 				# and their defaults, if set. We use array index 0 since it's
 				# impossible for SNMP tables to have a row with that index.
-				res[0] = []
+				retdict[0] = {}
 				col = self._dataset.contents.default_row
 				while bool(col):
+					retdict[0][int(col.contents.column)] = {}
+
 					asntypes = {
 						ASN_INTEGER:    "Integer",
 						ASN_OCTET_STR:  "OctetString",
@@ -482,44 +487,93 @@ class netsnmpAgent(object):
 						ASN_UNSIGNED:   "Unsigned32",
 						ASN_TIMETICKS:  "TimeTicks"
 					}
-
-					colstr = asntypes[col.contents.type] + "("
+					retdict[0][int(col.contents.column)]["type"] = asntypes[col.contents.type]
 					if bool(col.contents.data):
 						if col.contents.type == ASN_OCTET_STR:
-							colstr += '"' + col.contents.data.string + '"'
+							retdict[0][int(col.contents.column)]["value"] = col.contents.data.string
 						else:
-							colstr += repr(col.contents.data.integer.contents.value)
-					colstr += ")"
-					res[0] += [ colstr ]
+							retdict[0][int(col.contents.column)]["value"] = repr(col.contents.data.integer.contents.value)
 					col = col.contents.next
 
-				# Then an entry for each table row, table index = list index
+				# Next we iterate over the table's rows, creating a dictionary
+				# entry for each row after that row's index.
 				row = self._dataset.contents.table.contents.first_row
 				while bool(row):
-					oidstr = ctypes.create_string_buffer(MAX_OID_LEN)
-					libnsa.snprint_objid(
-						oidstr,
-						MAX_OID_LEN,
-						row.contents.index_oid,
-						row.contents.index_oid_len
+					# We want to return the row index in the same way it is
+					# shown when using "snmptable", eg. "aa" instead of 2.97.97.
+					# This conversion is actually quite complicated (see
+					# net-snmp's sprint_realloc_objid() in snmplib/mib.c and
+					# get*_table_entries() in apps/snmptable.c for details).
+					# All code below assumes eg. that the OID output format was
+					# not changed.
+					
+					# snprint_objid() below requires a _full_ OID whereas the
+					# table row contains only the current row's identifer.
+					# Unfortunately, net-snmp does not have a ready function to
+					# get the full OID. The following code was modelled after
+					# similar code in netsnmp_table_data_build_result().
+					fulloid = ctypes.cast(
+						ctypes.create_string_buffer(
+							MAX_OID_LEN * ctypes.sizeof(c_oid)
+						),
+						c_oid_p
 					)
-					indexstr = oidstr.value
 
-					res[indexstr] = []
+					# Registered OID
+					rootoidlen = self._handler_reginfo.contents.rootoid_len
+					for i in range(0,rootoidlen):
+						fulloid[i] = self._handler_reginfo.contents.rootoid[i]
+
+					# Entry
+					fulloid[rootoidlen] = 1
+
+					# Fake the column number. Unlike the table_data and
+					# table_data_set handlers, we do not have one here. No
+					# biggie, using a fixed value will do for our purposes as
+					# we'll do away with anything left of the last dot below.
+					fulloid[rootoidlen+1] = 2
+
+					# Index data
+					indexoidlen = row.contents.index_oid_len
+					for i in range(0,indexoidlen):
+						fulloid[rootoidlen+2+i] = row.contents.index_oid[i]
+
+					# Convert the full oid to its string representation
+					oidcstr = ctypes.create_string_buffer(MAX_OID_LEN)
+					libnsa.snprint_objid(
+						oidcstr,
+						MAX_OID_LEN,
+						fulloid,
+						rootoidlen + 2 + indexoidlen
+					)
+
+					# And finally do away with anything left of the last dot
+					indices = oidcstr.value.split(".")[-1].replace('"', '')
+
+					# If it's a string, remove the double quotes. If it's a
+					# string containing an integer, make it one
+					try:
+						indices = int(indices)
+					except ValueError:
+						indices = indices.replace('"', '')
+
+					# Finally, iterate over all columns for this row and add
+					# stored data, if present
+					retdict[indices] = {}
 					data = ctypes.cast(row.contents.data, ctypes.POINTER(netsnmp_table_data_set_storage))
 					while bool(data):
 						if bool(data.contents.data):
 							if data.contents.type == ASN_OCTET_STR:
-								res[indexstr] += [ data.contents.data.string ]
+								retdict[indices][int(data.contents.column)] = data.contents.data.string
 							else:
-								res[indexstr] += [ repr(data.contents.data.integer.contents.value) ]
+								retdict[indices][int(data.contents.column)] = repr(data.contents.data.integer.contents.value)
 						else:
-							res[indexstr] += []
+							retdict[indices] += {}
 						data = data.contents.next
 
 					row = row.contents.next
 
-				return res
+				return retdict
 
 		# Return an instance of the just-defined class to the agent
 		return Table(oidstr, indexes, columns, extendable)

@@ -107,8 +107,25 @@ HANDLER_CAN_RONLY                       = HANDLER_CAN_GETANDGETNEXT
 HANDLER_CAN_RWRITE                      = (HANDLER_CAN_GETANDGETNEXT | \
                                            HANDLER_CAN_SET)
 
+class netsnmp_mib_handler(ctypes.Structure): pass
+netsnmp_mib_handler_p = ctypes.POINTER(netsnmp_mib_handler)
+
 class netsnmp_handler_registration(ctypes.Structure): pass
 netsnmp_handler_registration_p = ctypes.POINTER(netsnmp_handler_registration)
+netsnmp_handler_registration._fields_ = [
+	("handlerName",         ctypes.c_char_p),
+	("contextName",         ctypes.c_char_p),
+	("rootoid",             c_oid_p),
+	("rootoid_len",         ctypes.c_size_t),
+	("handler",             netsnmp_mib_handler_p),
+	("modes",               ctypes.c_int),
+	("priority",            ctypes.c_int),
+	("range_subid",         ctypes.c_int),
+	("range_ubound",        c_oid),
+	("timeout",             ctypes.c_int),
+	("global_cacheid",      ctypes.c_int),
+	("my_reg_void",         ctypes.c_void_p)
+]
 
 for f in [ libnsa.netsnmp_create_handler_registration ]:
 	f.argtypes = [

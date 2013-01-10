@@ -48,11 +48,12 @@ flavor yet. For now, you'll have to clone the repository on GitHub:
 
 INSTALLATION
 
-There is no installation mechanism yet. Currently you would copy netsnmpagent.py
-and netsnmpapi.py to /usr/local/lib/python2.7/site-packages/ or a similar path
-based on your local Python installation. However, if you just want to try out
-the module you don't need to copy anything anywhere, just see "EXAMPLE USAGE"
-below.
+If you do not use a ready package for your Linux distribution, you can install
+directly from source using
+
+  python setup.py install
+
+This will most probably require appropriate rights (eg. being "root").
 
 
 EXAMPLE USAGE
@@ -130,8 +131,8 @@ any time. You might want to follow development on the GitHub repo:
 
 TODO
 
-- complete table support
-- stabilize API?
+- stabilize API
+- unit tests
 
 
 CREDITS

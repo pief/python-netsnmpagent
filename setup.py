@@ -15,12 +15,12 @@ from distutils.core import setup
 try:
 	import ctypes
 except:
-	print("python-netsnmpagent requires the ctypes Python module!")
+	print("netsnmpagent requires the ctypes Python module!")
 	import sys
 	sys.exit(1)
 
 setup(
-	name				= "python-netsnmpagent",
+	name				= "netsnmpagent",
 	version				= "0.1",
 	description			= "Facilitates writing Net-SNMP (AgentX) subagents in Python",
 	long_description	= """

@@ -21,7 +21,7 @@ except:
 
 setup(
 	name				= "netsnmpagent",
-	version				= "0.1",
+	version				= "0.1.1",
 	description			= "Facilitates writing Net-SNMP (AgentX) subagents in Python",
 	long_description	= """
 python-netsnmpagent is a Python module that facilitates writing Net-SNMP

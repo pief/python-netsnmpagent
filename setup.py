@@ -34,5 +34,5 @@ and data types of the information within the MIB module.""",
 	author				= "Pieter Hollants",
 	author_email		= "pieter@hollants.com",
 	py_modules			= [ "netsnmpagent", "netsnmpapi" ],
-	license				= 'GPL 3',
+	license				= "GPL-3.0",
 )

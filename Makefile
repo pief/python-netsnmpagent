@@ -31,3 +31,4 @@ dist:
 clean:
 	python setup.py clean
 	@[ -e build ] && rm -rf build || true
+	@[ -e dist ] && rm -rf dist || true

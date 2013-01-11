@@ -40,10 +40,18 @@ files are not necessary.
 
 DOWNLOAD
 
-There is neither a homepage nor packages for your favorite Linux/BSD/Unix
-flavor yet. For now, you'll have to clone the repository on GitHub:
+The PyPI page with distribution archives is available at
 
-  git clone https://github.com/pief/python-netsnmpagent.git
+  http://pypi.python.org/pypi/netsnmpagent
+
+Binary RPMs for SuSE distributions are available via search.opensuse.org and
+the Open Build Service Project page at
+
+  https://build.opensuse.org/package/show?package=python-netsnmpagent&project=home%3Apfhllnts
+
+If you wish to follow development more closely clone the GitHub:
+
+  https://github.com/pief/python-netsnmpagent.git
 
 
 INSTALLATION

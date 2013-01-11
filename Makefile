@@ -34,5 +34,6 @@ upload:
 
 clean:
 	python setup.py clean
+	@[ -e *.pyc ] && rm *.pyc || true
 	@[ -e build ] && rm -rf build || true
 	@[ -e dist ] && rm -rf dist || true

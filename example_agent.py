@@ -119,7 +119,10 @@ firstTable = agent.Table(
 	columns = [
 		(2, agent.DisplayString(initval="Unknown place")),
 		(3, agent.Integer32(initval=0))
-	]
+	],
+	counterobj = agent.Unsigned32(
+		oidstr = "EXAMPLE-MIB::firstTableNumber"
+	)
 )
 
 # Add the first table row
@@ -145,7 +148,10 @@ secondTable = agent.Table(
 	columns = [
 		(2, agent.DisplayString(initval="Unknown interface")),
 		(3, agent.Unsigned32(initval=0))
-	]
+	],
+	counterobj = agent.Unsigned32(
+		oidstr = "EXAMPLE-MIB::secondTableNumber"
+	)
 )
 
 # Add the first table row

@@ -395,12 +395,12 @@ class netsnmpAgent(object):
 		# Return an instance of the just-defined class to the agent
 		return IpAddress()
 
-	def Table(self, oidstr, indexes, columns, extendable = False):
+	def Table(self, oidstr, indexes, columns, counterobj = None, extendable = False):
 		agent = self
 
 		# Define a Python class to provide access to the table.
 		class Table(object):
-			def __init__(self, oidstr, idxobjs, coldefs, extendable):
+			def __init__(self, oidstr, idxobjs, coldefs, counterobj, extendable):
 				# Create a netsnmp_table_data_set structure, representing both
 				# the table definition and the data stored inside it. We use the
 				# oidstr as table name.
@@ -461,6 +461,12 @@ class netsnmpAgent(object):
 				# getRegistered() method.
 				agent._objs[oidstr] = self
 
+				# If "counterobj" was specified, use it to track the number
+				# of table rows
+				if counterobj:
+					counterobj.update(0)
+				self._counterobj = counterobj
+
 			def addRow(self, idxobjs):
 				dataset = self._dataset
 
@@ -507,6 +513,9 @@ class netsnmpAgent(object):
 					dataset,        # *table
 					row._table_row  # row
 				)
+
+				if self._counterobj:
+					self._counterobj.update(self._counterobj.value() + 1)
 
 				return row
 
@@ -622,7 +631,7 @@ class netsnmpAgent(object):
 				return retdict
 
 		# Return an instance of the just-defined class to the agent
-		return Table(oidstr, indexes, columns, extendable)
+		return Table(oidstr, indexes, columns, counterobj, extendable)
 
 	def getRegistered(self):
 		""" Returns a dictionary with the currently registered SNMP objects. """

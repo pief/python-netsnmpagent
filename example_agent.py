@@ -189,8 +189,8 @@ print "{0}: Serving SNMP requests, press ^C to terminate...".format(prgname)
 
 loop = True
 while (loop):
-	# Block until something happens
-	agent.poll()
+	# Block and process SNMP requests, if available
+	agent.check_and_process()
 
 	# Since we didn't give exampleCounter, exampleCounter64 and exampleTimeTicks
 	# a real meaning in the EXAMPLE-MIB, we can basically do with them whatever

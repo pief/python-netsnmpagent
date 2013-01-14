@@ -247,7 +247,10 @@ class netsnmpAgent(object):
 						agent._objs[oidstr] = self
 
 				def value(self):
-					return self._cvar.value
+					val = self._cvar.value
+					if val <= sys.maxint:
+						val = int(val)
+					return val
 
 				def cref(self):
 					return ctypes.byref(self._cvar) if self._flags == WATCHER_FIXED_SIZE \

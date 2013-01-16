@@ -630,6 +630,16 @@ class netsnmpAgent(object):
 
 				return retdict
 
+			def clear(self):
+				row = self._dataset.contents.table.contents.first_row
+				while bool(row):
+					nextrow = row.contents.next
+					libnsa.netsnmp_table_dataset_remove_and_delete_row(
+						self._dataset,
+						row
+					)
+					row = nextrow
+
 		# Return an instance of the just-defined class to the agent
 		return Table(oidstr, indexes, columns, counterobj, extendable)
 

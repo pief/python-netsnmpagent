@@ -187,7 +187,7 @@ for f in [ libnsa.netsnmp_create_watcher_info6 ]:
 	]
 	f.restype = netsnmp_watcher_info_p
 
-for f in [ libnsa.netsnmp_register_watched_instance ]:
+for f in [ libnsa.netsnmp_register_watched_scalar ]:
 	f.argtypes = [
 		netsnmp_handler_registration_p, # netsnmp_handler_registration *reginfo
 		netsnmp_watcher_info_p          # netsnmp_watcher_info *winfo

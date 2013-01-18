@@ -80,10 +80,10 @@ instructions:
    to the screen, eg.:
 
    $ snmpwalk -v 2c -c public -M+. localhost EXAMPLE-MIB::exampleMIB
-   EXAMPLE-MIB::exampleUnsigned = Gauge32: 0
-   EXAMPLE-MIB::exampleUnsignedRO = Gauge32: 0
-   EXAMPLE-MIB::exampleInteger = INTEGER: 0
-   EXAMPLE-MIB::exampleIntegerRO = INTEGER: 0
+   EXAMPLE-MIB::exampleUnsigned.0 = Gauge32: 0
+   EXAMPLE-MIB::exampleUnsignedRO.0 = Gauge32: 0
+   EXAMPLE-MIB::exampleInteger.0 = INTEGER: 0
+   EXAMPLE-MIB::exampleIntegerRO.0 = INTEGER: 0
    [...]
 
    The "-v" option selects version 2c of the SNMP protocol, "-c" specifies the

@@ -84,7 +84,7 @@ echo ""
 echo "    cd `pwd`"
 echo "    snmpwalk -v 2c -c public -M+. localhost:5555 EXAMPLE-MIB::exampleMIB"
 echo "    snmptable -v 2c -c public -M+. -Ci localhost:5555 EXAMPLE-MIB::firstTable"
-echo "    snmpset -v 2c -c example -M+. localhost:5555 EXAMPLE-MIB::exampleInteger i 123"
+echo "    snmpset -v 2c -c example -M+. localhost:5555 EXAMPLE-MIB::exampleInteger.0 i 123"
 echo ""
 
 # Workaround to have CTRL-C not generate any visual feedback (we don't do any

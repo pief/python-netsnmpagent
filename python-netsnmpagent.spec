@@ -1,7 +1,7 @@
 #
 # spec file for package python-netsnmpagent
 #
-# Copyright (c) 2012 Pieter Hollants <pieter@hollants.com>
+# Copyright (c) 2013 Pieter Hollants <pieter@hollants.com>
 #
 
 Name:           python-netsnmpagent

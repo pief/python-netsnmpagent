@@ -26,13 +26,13 @@ help:
 install:
 	python setup.py install
 
-dist:
+srcdist:
 	python setup.py sdist
 
 upload:
 	python setup.py sdist upload
 
-rpms: sdist
+rpms: srcdist
 	@mkdir -p dist/RPMBUILD/{BUILDROOT,RPMS,SOURCES,SPECS,SRPMS} || exit 1
 	@cp -a python-netsnmpagent.spec dist/RPMBUILD/SPECS/ || exit 1
 	@cp -a dist/netsnmpagent-$(VERSION).tar.gz dist/RPMBUILD/SOURCES/ || exit 1
@@ -40,7 +40,7 @@ rpms: sdist
 	rpmbuild \
 		--define "%_topdir $$(pwd)" \
 		--define "netsnmpagent_version $(VERSION)" \
-		ba SPECS/python-netsnmpagent.spec
+		-ba SPECS/python-netsnmpagent.spec
 
 clean:
 	python setup.py clean

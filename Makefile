@@ -1,10 +1,7 @@
 #
 # python-netsnmpagent module
-#
 # Copyright (c) 2012 Pieter Hollants <pieter@hollants.com>
 # Licensed under the GNU Public License (GPL) version 3
-#
-
 #
 # Convenience Makefile
 #

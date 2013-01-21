@@ -13,7 +13,6 @@
 
 set -u
 set -e
-set -o errexit
 
 # Find path to snmpd executable
 for DIR in /usr/local/sbin /usr/sbin
@@ -75,7 +74,7 @@ touch $TMPDIR/mib_indexes
 
 # Start a snmpd instance for testing purposes, run as the current user and
 # and independent from any other running snmpd instance
-$SNMPD_BIN -r -LE warning -C -c$SNMPD_CONFFILE -p$SNMPD_PIDFILE || exit 1
+$SNMPD_BIN -r -LE warning -C -c$SNMPD_CONFFILE -p$SNMPD_PIDFILE
 
 # Give the user guidance
 echo "* Our snmpd instance is now listening on localhost, port 5555."
@@ -93,4 +92,4 @@ stty -echo
 
 # Now start the example agent
 echo "* Starting the example agent..."
-python example_agent.py -m $TMPDIR/snmpd-agentx.sock -p $TMPDIR/ || exit 1
+python example_agent.py -m $TMPDIR/snmpd-agentx.sock -p $TMPDIR/

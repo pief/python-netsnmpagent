@@ -6,6 +6,8 @@
 # Convenience Makefile
 #
 
+VERSION := $(shell sed -n '/version.*=/ {s/^.*= *"//;s/",//;p}' setup.py)
+
 all: help
 
 help:
@@ -17,6 +19,7 @@ help:
 	@echo " install    - Install locally"
 	@echo " srcdist    - Create source distribution archive in .tar.gz format"
 	@echo " upload     - Upload source distribution archive to PyPI"
+	@echo " rpms       - Build RPMs for the current distribution"
 	@echo " clean      - Clean up"
 	@echo
 
@@ -28,6 +31,16 @@ dist:
 
 upload:
 	python setup.py sdist upload
+
+rpms: sdist
+	@mkdir -p dist/RPMBUILD/{BUILDROOT,RPMS,SOURCES,SPECS,SRPMS} || exit 1
+	@cp -a python-netsnmpagent.spec dist/RPMBUILD/SPECS/ || exit 1
+	@cp -a dist/netsnmpagent-$(VERSION).tar.gz dist/RPMBUILD/SOURCES/ || exit 1
+	@cd dist/RPMBUILD && \
+	rpmbuild \
+		--define "%_topdir $$(pwd)" \
+		--define "netsnmpagent_version $(VERSION)" \
+		ba SPECS/python-netsnmpagent.spec
 
 clean:
 	python setup.py clean

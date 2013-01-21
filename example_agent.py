@@ -45,16 +45,16 @@ prgname = sys.argv[0]
 parser = optparse.OptionParser()
 parser.add_option(
 	"-m",
-	"--master-socket",
+	"--mastersocket",
 	dest="mastersocket",
 	help="Sets the path to the master agent's AgentX unix domain socket",
 	default="/var/run/agentx/master"
 )
 parser.add_option(
 	"-p",
-	"--persistent-dir",
-	dest="persistentdir",
-	help="Sets the path to the persistance directory",
+	"--persistencedir",
+	dest="persistencedir",
+	help="Sets the path to the persistence directory",
 	default="/var/lib/net-snmp"
 )
 (options, args) = parser.parse_args()
@@ -66,11 +66,11 @@ rows,columns = os.popen("stty size", "r").read().split()
 # fully-qualified path to EXAMPLE-MIB.txt ourselves here, so that you
 # don't have to copy the MIB to /usr/share/snmp/mibs.
 agent = netsnmpagent.netsnmpAgent(
-	AgentName     = "ExampleAgent",
-	MasterSocket  = options.mastersocket,
-	PersistentDir = options.persistentdir,
-	MIBFiles      = [ os.path.abspath(os.path.dirname(sys.argv[0])) +
-	                  "/EXAMPLE-MIB.txt" ]
+	AgentName      = "ExampleAgent",
+	MasterSocket   = options.mastersocket,
+	PersistenceDir = options.persistencedir,
+	MIBFiles       = [ os.path.abspath(os.path.dirname(sys.argv[0])) +
+	                   "/EXAMPLE-MIB.txt" ]
 )
 
 # Then we create all SNMP scalar variables we're willing to serve.

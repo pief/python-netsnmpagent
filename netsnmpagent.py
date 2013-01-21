@@ -34,26 +34,26 @@ class netsnmpAgent(object):
 		"args" is a dictionary that can contain the following
 		optional parameters:
 		
-		- AgentName    : The agent's name used for registration with net-snmp.
-		- MasterSocket : The Unix domain socket of the running snmpd instance to
-		                 connect to. Change this if you want to use a custom
-		                 snmpd instance, eg. in example.sh or for automatic
-		                 testing.
-		- PersistentDir: The directory to use to store persistance information.
-		                 Change this if you want to use a custom snmpd instance,
-		                 eg. in example.sh or for automatic testing.
-		- MIBFiles     : A list of filenames of MIBs to be loaded. Required if
-		                 the OIDs, for which variables will be registered, do
-		                 not belong to standard MIBs and the custom MIBs are not
-		                 located in net-snmp's default MIB path
-		                 (/usr/share/snmp/mibs). """
+		- AgentName     : The agent's name used for registration with net-snmp.
+		- MasterSocket  : The Unix domain socket of the running snmpd instance
+		                  to connect to. Change this if you want to use a custom
+		                  snmpd instance, eg. in example.sh or for automatic
+		                  testing.
+		- PersistenceDir: The directory to use to store persistence information.
+		                  Change this if you want to use a custom snmpd
+		                  instance, eg. for automatic testing.
+		- MIBFiles      : A list of filenames of MIBs to be loaded. Required if
+		                  the OIDs, for which variables will be registered, do
+		                  not belong to standard MIBs and the custom MIBs are not
+		                  located in net-snmp's default MIB path
+		                  (/usr/share/snmp/mibs). """
 
 		# Default settings
 		defaults = {
-			"AgentName"    : os.path.splitext(os.path.basename(sys.argv[0]))[0],
-			"MasterSocket" : None,
-			"PersistentDir": None,
-			"MIBFiles"     : None
+			"AgentName"     : os.path.splitext(os.path.basename(sys.argv[0]))[0],
+			"MasterSocket"  : None,
+			"PersistenceDir": None,
+			"MIBFiles"      : None
 		}
 		for key in defaults:
 			setattr(self, key, args.get(key, defaults[key]))
@@ -85,11 +85,11 @@ class netsnmpAgent(object):
 				)
 
 		# Use an alternative persistence directory?
-		if self.PersistentDir:
+		if self.PersistenceDir:
 			if libnsa.netsnmp_ds_set_string(
 				NETSNMP_DS_LIBRARY_ID,
 				NETSNMP_DS_LIB_PERSISTENT_DIR,
-				ctypes.c_char_p(self.PersistentDir)
+				ctypes.c_char_p(self.PersistenceDir)
 			) != SNMPERR_SUCCESS:
 				raise netsnmpAgentException(
 					"netsnmp_ds_set_string() failed for NETSNMP_DS_LIB_PERSISTENT_DIR!"

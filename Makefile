@@ -15,8 +15,8 @@ help:
 	@echo
 	@echo "Targets:"
 	@echo " install    - Install locally"
-	@echo " dist       - Generate distribution archives"
-	@echo " upload     - Generate distribution archives and upload to PyPI"
+	@echo " srcdist    - Create source distribution archive in .tar.gz format"
+	@echo " upload     - Upload source distribution archive to PyPI"
 	@echo " clean      - Clean up"
 	@echo
 
@@ -24,10 +24,10 @@ install:
 	python setup.py install
 
 dist:
-	python setup.py sdist bdist
+	python setup.py sdist
 
 upload:
-	python setup.py sdist bdist upload
+	python setup.py sdist upload
 
 clean:
 	python setup.py clean

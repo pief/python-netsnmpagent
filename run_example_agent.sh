@@ -15,6 +15,7 @@ set -u
 set -e
 
 # Find path to snmpd executable
+SNMPD_BIN=""
 for DIR in /usr/local/sbin /usr/sbin
 do
 	if [ -x $DIR/snmpd ] ; then

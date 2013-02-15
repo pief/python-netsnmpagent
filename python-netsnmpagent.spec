@@ -14,12 +14,7 @@ Group:          Development/Languages/Python
 Source:         http://pypi.python.org/packages/source/n/netsnmpagent/netsnmpagent-%{version}.tar.gz
 BuildRequires:  python-devel
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
-%if 0%{?suse_version} && 0%{?suse_version} <= 1110
-%{!?python_sitelib: %global python_sitelib %(python -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")}
-%{!?python_sitearch: %global python_sitearch %(python -c "from distutils.sysconfig import get_python_lib; print get_python_lib(1)")}
-%else
 BuildArch:      noarch
-%endif
 
 %description
 python-netsnmpagent is a Python module that facilitates writing Net-SNMP

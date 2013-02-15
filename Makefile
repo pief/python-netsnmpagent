@@ -33,7 +33,7 @@ upload:
 	python setup.py sdist upload
 
 rpms: srcdist
-	@mkdir -p dist/RPMBUILD/{BUILDROOT,RPMS,SOURCES,SPECS,SRPMS} || exit 1
+	@mkdir -p dist/RPMBUILD/{BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS} || exit 1
 	@cp -a python-netsnmpagent.spec dist/RPMBUILD/SPECS/ || exit 1
 	@cp -a dist/netsnmpagent-$(VERSION).tar.gz dist/RPMBUILD/SOURCES/ || exit 1
 	@cd dist/RPMBUILD && \

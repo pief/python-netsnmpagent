@@ -650,15 +650,19 @@ class netsnmpAgent(object):
 		# Return an instance of the just-defined class to the agent
 		return Table(oidstr, indexes, columns, counterobj, extendable, context)
 
-	def getRegistered(self):
-		""" Returns a dictionary with the currently registered SNMP objects. """
-		myobjs = defaultdict(dict)
-		for context, objs in self._objs.iteritems():
-			for oidstr, snmpobj in objs.iteritems():
-				myobjs[context][oidstr] = {
-					"type": type(snmpobj).__name__,
-					"value": snmpobj.value()
-				}
+	def getContexts(self):
+		return self._objs.keys()
+
+	def getRegistered(self, context = ""):
+		"""Returns a dictionary with the currently registered SNMP objects.
+		Returned is a dictionary objects for the specified `context`, which
+		defaults to the default context ""."""
+		myobjs = {}
+		for oidstr, snmpobj in self._objs[context].iteritems():
+			myobjs[oidstr] = {
+				"type": type(snmpobj).__name__,
+				"value": snmpobj.value()
+			}
 		return dict(myobjs)
 
 	def start(self):

@@ -181,8 +181,10 @@ agent.start()
 # Helper function that dumps the state of all registered SNMP variables
 def DumpRegistered():
 	print "{0}: Registered SNMP objects: ".format(prgname)
-	vars = agent.getRegistered()
-	pprint.pprint(vars, width=columns)
+	for context in agent.getContexts():
+		vars = agent.getRegistered(context)
+		print "{0}: Context '{1}': ".format(prgname, context)
+		pprint.pprint(vars, width=columns)
 DumpRegistered()
 
 # Install a signal handler that terminates our example agent when

@@ -77,6 +77,16 @@ agent = netsnmpagent.netsnmpAgent(
 exampleInteger = agent.Integer32(
 	oidstr = "EXAMPLE-MIB::exampleInteger"
 )
+exampleIntegerContext1 = agent.Integer32(
+	oidstr = "EXAMPLE-MIB::exampleInteger",
+	context = "context1",
+	initval = 100,
+)
+exampleIntegerContext2 = agent.Integer32(
+	oidstr = "EXAMPLE-MIB::exampleInteger",
+	context = "context2",
+	initval = 200,
+)
 exampleIntegerRO = agent.Integer32(
 	oidstr   = "EXAMPLE-MIB::exampleIntegerRO",
 	writable = False
@@ -171,8 +181,10 @@ agent.start()
 # Helper function that dumps the state of all registered SNMP variables
 def DumpRegistered():
 	print "{0}: Registered SNMP objects: ".format(prgname)
-	vars = agent.getRegistered()
-	pprint.pprint(vars, width=columns)
+	for context in agent.getContexts():
+		vars = agent.getRegistered(context)
+		print "{0}: Context '{1}': ".format(prgname, context)
+		pprint.pprint(vars, width=columns)
 DumpRegistered()
 
 # Install a signal handler that terminates our example agent when
@@ -204,5 +216,6 @@ while (loop):
 	exampleCounter32.update(exampleCounter32.value() + 2)
 	exampleCounter64.update(exampleCounter64.value() + 4294967294)
 	exampleTimeTicks.update(exampleTimeTicks.value() + 1)
+	exampleCounter32Context1.update(exampleCounter32Context1.value() + 1)
 
 print "{0}: Terminating.".format(prgname)

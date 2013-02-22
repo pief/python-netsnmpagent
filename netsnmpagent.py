@@ -261,6 +261,10 @@ class netsnmpAgent(object):
 					                                else self._cvar
 
 				def update(self, val):
+					if self._asntype == ASN_COUNTER and val >> 32:
+						val = val & 0xFFFFFFFF
+					if self._asntype == ASN_COUNTER64 and val >> 64:
+						val = val & 0xFFFFFFFFFFFFFFFF
 					self._cvar.value = val
 					if props["flags"] == WATCHER_SIZE_STRLEN:
 						if len(val) > self._max_size:

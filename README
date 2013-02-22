@@ -148,3 +148,5 @@ CREDITS
 python-netsnmpagent was inspired by python-agentx, courtesy of Bozhin Zafirov
 <bozhin@abv.bg>. I blatantly ripped some ideas and some lines of code, shame
 on me.
+
+SNMP contents support was added by Steven Hiscocks <steven@hiscocks.me.uk>.

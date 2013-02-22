@@ -10,9 +10,6 @@ import ctypes, ctypes.util
 
 c_sizet_p = ctypes.POINTER(ctypes.c_size_t)
 
-# <limits.h>
-UINT_MAX = 4294967295
-
 # Make libnetsnmpagent available via Python's ctypes module. We do this globally
 # so we can define C function prototypes
 
@@ -165,12 +162,12 @@ ASN_APPLICATION                         = 0x40
 class counter64(ctypes.Structure):
 	@property
 	def value(self):
-		return self.high * UINT_MAX + self.low
+		return self.high << 32 | self.low
 
 	@value.setter
 	def value(self, val):
-		self.high = val / UINT_MAX
-		self.low  = val - self.high * UINT_MAX
+		self.high = val >> 32
+		self.low  = val & 0xFFFFFFFF
 
 	def __init__(self, initval=0):
 		ctypes.Structure.__init__(self, 0, 0)

@@ -97,9 +97,9 @@ exampleCounter32 = agent.Counter32(
 	oidstr = "EXAMPLE-MIB::exampleCounter32"
 )
 exampleCounter32Context2 = agent.Counter32(
-	oidstr = "EXAMPLE-MIB::exampleInteger",
+	oidstr = "EXAMPLE-MIB::exampleCounter32",
 	context = "context2",
-	initval = 100,
+	initval = pow(2,32) - 10,
 )
 exampleCounter64 = agent.Counter64(
 	oidstr = "EXAMPLE-MIB::exampleCounter64"

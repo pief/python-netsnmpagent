@@ -226,17 +226,16 @@ class netsnmpAgent(object):
 						handler_reginfo = agent._prepareRegistration(oidstr, writable)
 
 						# Create the netsnmp_watcher_info structure.
-						watcher = libnsa.netsnmp_create_watcher_info6(
+						watcher = libnsX.netsnmp_create_watcher_info(
 							self.cref(),
 							self._data_size,
 							self._asntype,
-							self._flags,
-							self._max_size,
-							None
+							self._flags
 						)
+						watcher.max_size = self._max_size
 
 						# Register handler and watcher with net-snmp.
-						result = libnsa.netsnmp_register_watched_scalar(
+						result = libnsX.netsnmp_register_watched_scalar(
 							handler_reginfo,
 							watcher
 						)
@@ -358,17 +357,16 @@ class netsnmpAgent(object):
 					handler_reginfo = agent._prepareRegistration(oidstr, writable)
 
 					# Create the netsnmp_watcher_info structure.
-					watcher = libnsa.netsnmp_create_watcher_info6(
+					watcher = libnsX.netsnmp_create_watcher_info(
 						self.cref(),
 						ctypes.sizeof(self._cvar),
 						ASN_IPADDRESS,
-						WATCHER_FIXED_SIZE,
-						ctypes.sizeof(self._cvar),
-						None
+						WATCHER_FIXED_SIZE
 					)
+					watcher._maxsize = ctypes.sizeof(self._cvar)
 
 					# Register handler and watcher with net-snmp.
-					result = libnsa.netsnmp_register_watched_instance(
+					result = libnsX.netsnmp_register_watched_instance(
 						handler_reginfo,
 						watcher
 					)
@@ -405,13 +403,13 @@ class netsnmpAgent(object):
 				# Create a netsnmp_table_data_set structure, representing both
 				# the table definition and the data stored inside it. We use the
 				# oidstr as table name.
-				self._dataset = libnsa.netsnmp_create_table_data_set(
+				self._dataset = libnsX.netsnmp_create_table_data_set(
 					ctypes.c_char_p(oidstr)
 				)
 
 				# Define the table row's indexes
 				for idxobj in idxobjs:
-					libnsa.netsnmp_table_dataset_add_index(
+					libnsX.netsnmp_table_dataset_add_index(
 						self._dataset,
 						idxobj._asntype
 					)
@@ -428,7 +426,7 @@ class netsnmpAgent(object):
 					# trailing zero byte in C strings
 					size = defobj._data_size + 1 if defobj._asntype == ASN_OCTET_STR \
 												 else defobj._data_size
-					result = libnsa.netsnmp_table_set_add_default_row(
+					result = libnsX.netsnmp_table_set_add_default_row(
 						self._dataset,
 						colno,
 						defobj._asntype,
@@ -447,7 +445,7 @@ class netsnmpAgent(object):
 					oidstr,
 					extendable
 				)
-				result = libnsa.netsnmp_register_table_data_set(
+				result = libnsX.netsnmp_register_table_data_set(
 					self._handler_reginfo,
 					self._dataset,
 					None
@@ -476,7 +474,7 @@ class netsnmpAgent(object):
 					def __init__(self, idxobjs):
 						# Create the netsnmp_table_set_storage structure for
 						# this row.
-						self._table_row = libnsa.netsnmp_table_data_set_create_row_from_defaults(
+						self._table_row = libnsX.netsnmp_table_data_set_create_row_from_defaults(
 							dataset.contents.default_row
 						)
 
@@ -498,7 +496,7 @@ class netsnmpAgent(object):
 						# do special handling for the trailing zero byte in C strings
 						size = snmpobj._data_size + 1 if snmpobj._asntype == ASN_OCTET_STR \
 													  else snmpobj._data_size
-						result = libnsa.netsnmp_set_row_column(
+						result = libnsX.netsnmp_set_row_column(
 							self._table_row,
 							column,
 							snmpobj._asntype,
@@ -510,7 +508,7 @@ class netsnmpAgent(object):
 
 				row = TableRow(idxobjs)
 
-				libnsa.netsnmp_table_dataset_add_row(
+				libnsX.netsnmp_table_dataset_add_row(
 					dataset,        # *table
 					row._table_row  # row
 				)

@@ -24,6 +24,16 @@ try:
 except:
 	raise Exception("Could not load libnetsnmpagent! Is net-snmp installed?")
 
+# net-snmp <5.6.x had various functions in libnetsnmphelpers.so that were moved
+# to libnetsnmpagent.so in later versions. Use netsnmp_create_watcher_info as
+# a test and define a libnsX handle to abstract from the actually used library
+# version.
+try:
+	libnsa.netsnmp_create_watcher_info
+	libnsX = libnsa
+except AttributeError:
+	libnsX = libnsh
+
 # include/net-snmp/library/snmp_logging.h
 for f in [ libnsa.snmp_enable_stderrlog ]:
 	f.argtypes = None
@@ -181,18 +191,16 @@ WATCHER_SIZE_STRLEN                     = 0x08
 class netsnmp_watcher_info(ctypes.Structure): pass
 netsnmp_watcher_info_p = ctypes.POINTER(netsnmp_watcher_info)
 
-for f in [ libnsa.netsnmp_create_watcher_info6 ]:
+for f in [ libnsX.netsnmp_create_watcher_info ]:
 	f.argtypes = [
 		ctypes.c_void_p,                # void *data
 		ctypes.c_size_t,                # size_t size
 		ctypes.c_ubyte,                 # u_char type
-		ctypes.c_int,                   # int flags
-		ctypes.c_size_t,                # size_t max_size
-		c_sizet_p                       # size_t *size_p
+		ctypes.c_int                    # int flags
 	]
 	f.restype = netsnmp_watcher_info_p
 
-for f in [ libnsa.netsnmp_register_watched_scalar ]:
+for f in [ libnsX.netsnmp_register_watched_scalar ]:
 	f.argtypes = [
 		netsnmp_handler_registration_p, # netsnmp_handler_registration *reginfo
 		netsnmp_watcher_info_p          # netsnmp_watcher_info *winfo
@@ -274,26 +282,26 @@ netsnmp_table_data_set._fields_ = [
 	("rowstatus_column",    ctypes.c_uint)
 ]
 
-for f in [ libnsa.netsnmp_create_table_data_set ]:
+for f in [ libnsX.netsnmp_create_table_data_set ]:
 	f.argtypes = [
 		ctypes.c_char_p                 # const char *table_name
 	]
 	f.restype = netsnmp_table_data_set_p
 
-for f in [ libnsa.netsnmp_table_dataset_add_row ]:
+for f in [ libnsX.netsnmp_table_dataset_add_row ]:
 	f.argtypes = [
 		netsnmp_table_data_set_p,       # netsnmp_table_data_set *table
 		netsnmp_table_row_p,            # netsnmp_table_row *row
 	]
 	f.restype = None
 
-for f in [ libnsa.netsnmp_table_data_set_create_row_from_defaults ]:
+for f in [ libnsX.netsnmp_table_data_set_create_row_from_defaults ]:
 	f.argtypes = [
 		netsnmp_table_data_set_storage_p # netsnmp_table_data_set_storage *defrow
 	]
 	f.restype = netsnmp_table_row_p
 
-for f in [ libnsa.netsnmp_table_set_add_default_row ]:
+for f in [ libnsX.netsnmp_table_set_add_default_row ]:
 	f.argtypes = [
 		netsnmp_table_data_set_p,       # netsnmp_table_data_set *table_set
 		ctypes.c_uint,                  # unsigned int column
@@ -304,7 +312,7 @@ for f in [ libnsa.netsnmp_table_set_add_default_row ]:
 	]
 	f.restype = ctypes.c_int
 
-for f in [ libnsa.netsnmp_register_table_data_set ]:
+for f in [ libnsX.netsnmp_register_table_data_set ]:
 	f.argtypes = [
 		netsnmp_handler_registration_p, # netsnmp_handler_registration *reginfo
 		netsnmp_table_data_set_p,       # netsnmp_table_data_set *data_set
@@ -312,7 +320,7 @@ for f in [ libnsa.netsnmp_register_table_data_set ]:
 	]
 	f.restype = ctypes.c_int
 
-for f in [ libnsa.netsnmp_set_row_column ]:
+for f in [ libnsX.netsnmp_set_row_column ]:
 	f.argtypes = [
 		netsnmp_table_row_p,            # netsnmp_table_row *row
 		ctypes.c_uint,                  # unsigned int column
@@ -322,7 +330,7 @@ for f in [ libnsa.netsnmp_set_row_column ]:
 	]
 	f.restype = ctypes.c_int
 
-for f in [ libnsa.netsnmp_table_dataset_add_index ]:
+for f in [ libnsX.netsnmp_table_dataset_add_index ]:
 	f.argtypes = [
 		netsnmp_table_data_set_p,       # netsnmp_table_data_set *table
 		ctypes.c_ubyte                  # u_char type

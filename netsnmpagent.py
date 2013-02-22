@@ -20,6 +20,7 @@ for SNMP subagents in an easy manner. It is still under heavy
 development and some features are yet missing."""
 
 import sys, os, socket, struct
+from collections import defaultdict
 from netsnmpapi import *
 
 # Maximum string size supported by python-netsnmpagent
@@ -113,7 +114,7 @@ class netsnmpAgent(object):
 					                            "failed!".format(mib))
 
 		# Initialize our SNMP object registry
-		self._objs    = {}
+		self._objs    = defaultdict(dict)
 		self._started = False
 
 	def _prepareRegistration(self, oidstr, writable = True):
@@ -177,12 +178,14 @@ class netsnmpAgent(object):
 		                          eg. 0 or "".
 		    - "asntype"         : A constant defining the SNMP variable type
 		                          from an ASN.1 perspective, eg. ASN_INTEGER.
+		    - "context"         : A string defining the context name for the
+		                          SNMP variable
 		
 		    The class instance returned will have no association with net-snmp
 		    yet. Use the Register() method to associate it with an OID. """
 
 		# This is the replacement function, the "decoration"
-		def create_vartype_class(self, oidstr = None, initval = None, writable = True):
+		def create_vartype_class(self, oidstr = None, initval = None, writable = True, context = ""):
 			agent = self
 
 			# Call the original property_func to retrieve this variable type's
@@ -224,6 +227,7 @@ class netsnmpAgent(object):
 					if oidstr:
 						# Prepare the netsnmp_handler_registration structure.
 						handler_reginfo = agent._prepareRegistration(oidstr, writable)
+						handler_reginfo.contents.contextName = context
 
 						# Create the netsnmp_watcher_info structure.
 						watcher = libnsX.netsnmp_create_watcher_info(
@@ -244,7 +248,7 @@ class netsnmpAgent(object):
 
 						# Finally, we keep track of all registered SNMP objects for the
 						# getRegistered() method.
-						agent._objs[oidstr] = self
+						agent._objs[context][oidstr] = self
 
 				def value(self):
 					val = self._cvar.value
@@ -274,7 +278,7 @@ class netsnmpAgent(object):
 		return create_vartype_class
 
 	@VarTypeClass
-	def Integer32(self, oidstr = None, initval = None, writable = True):
+	def Integer32(self, oidstr = None, initval = None, writable = True, context = ""):
 		return {
 			"ctype"         : ctypes.c_long,
 			"flags"         : WATCHER_FIXED_SIZE,
@@ -283,7 +287,7 @@ class netsnmpAgent(object):
 		}
 
 	@VarTypeClass
-	def Unsigned32(self, oidstr = None, initval = None, writable = True):
+	def Unsigned32(self, oidstr = None, initval = None, writable = True, context = ""):
 		return {
 			"ctype"         : ctypes.c_ulong,
 			"flags"         : WATCHER_FIXED_SIZE,
@@ -292,7 +296,7 @@ class netsnmpAgent(object):
 		}
 
 	@VarTypeClass
-	def Counter32(self, oidstr = None, initval = None, writable = True):
+	def Counter32(self, oidstr = None, initval = None, writable = True, context = ""):
 		return {
 			"ctype"         : ctypes.c_ulong,
 			"flags"         : WATCHER_FIXED_SIZE,
@@ -301,7 +305,7 @@ class netsnmpAgent(object):
 		}
 
 	@VarTypeClass
-	def Counter64(self, oidstr = None, initval = None, writable = True):
+	def Counter64(self, oidstr = None, initval = None, writable = True, context = ""):
 		return {
 			"ctype"         : counter64,
 			"flags"         : WATCHER_FIXED_SIZE,
@@ -310,7 +314,7 @@ class netsnmpAgent(object):
 		}
 
 	@VarTypeClass
-	def TimeTicks(self, oidstr = None, initval = None, writable = True):
+	def TimeTicks(self, oidstr = None, initval = None, writable = True, context = ""):
 		return {
 			"ctype"         : ctypes.c_ulong,
 			"flags"         : WATCHER_FIXED_SIZE,
@@ -321,7 +325,7 @@ class netsnmpAgent(object):
 	# Note we can't use ctypes.c_char_p here since that creates an immutable
 	# type and net-snmp _can_ modify the buffer (unless writable is False).
 	@VarTypeClass
-	def OctetString(self, oidstr = None, initval = None, writable = True):
+	def OctetString(self, oidstr = None, initval = None, writable = True, context = ""):
 		return {
 			"ctype"         : ctypes.create_string_buffer,
 			"flags"         : WATCHER_SIZE_STRLEN,
@@ -333,7 +337,7 @@ class netsnmpAgent(object):
 	# Whereas an OctetString can contain UTF-8 encoded characters, a
 	# DisplayString is restricted to ASCII characters only.
 	@VarTypeClass
-	def DisplayString(self, oidstr = None, initval = None, writable = True):
+	def DisplayString(self, oidstr = None, initval = None, writable = True, context = ""):
 		return {
 			"ctype"         : ctypes.create_string_buffer,
 			"flags"         : WATCHER_SIZE_STRLEN,
@@ -344,7 +348,7 @@ class netsnmpAgent(object):
 
 	# IP addresses are stored as unsigned integers, but the Python interface
 	# should use strings. So we need a special class.
-	def IpAddress(self, oidstr = None, initval = "0.0.0.0", writable = True):
+	def IpAddress(self, oidstr = None, initval = "0.0.0.0", writable = True, context = ""):
 		agent = self
 
 		class IpAddress(object):
@@ -355,6 +359,7 @@ class netsnmpAgent(object):
 				if oidstr:
 					# Prepare the netsnmp_handler_registration structure.
 					handler_reginfo = agent._prepareRegistration(oidstr, writable)
+					handler_reginfo.contents.contextName = context
 
 					# Create the netsnmp_watcher_info structure.
 					watcher = libnsX.netsnmp_create_watcher_info(
@@ -375,7 +380,7 @@ class netsnmpAgent(object):
 
 					# Finally, we keep track of all registered SNMP objects for the
 					# getRegistered() method.
-					agent._objs[oidstr] = self
+					agent._objs[context][oidstr] = self
 
 			def value(self):
 				return socket.inet_ntoa(
@@ -394,12 +399,12 @@ class netsnmpAgent(object):
 		# Return an instance of the just-defined class to the agent
 		return IpAddress()
 
-	def Table(self, oidstr, indexes, columns, counterobj = None, extendable = False):
+	def Table(self, oidstr, indexes, columns, counterobj = None, extendable = False, context = ""):
 		agent = self
 
 		# Define a Python class to provide access to the table.
 		class Table(object):
-			def __init__(self, oidstr, idxobjs, coldefs, counterobj, extendable):
+			def __init__(self, oidstr, idxobjs, coldefs, counterobj, extendable, context):
 				# Create a netsnmp_table_data_set structure, representing both
 				# the table definition and the data stored inside it. We use the
 				# oidstr as table name.
@@ -445,6 +450,7 @@ class netsnmpAgent(object):
 					oidstr,
 					extendable
 				)
+				self._handler_reginfo.contents.contextName = context
 				result = libnsX.netsnmp_register_table_data_set(
 					self._handler_reginfo,
 					self._dataset,
@@ -458,7 +464,7 @@ class netsnmpAgent(object):
 
 				# Finally, we keep track of all registered SNMP objects for the
 				# getRegistered() method.
-				agent._objs[oidstr] = self
+				agent._objs[context][oidstr] = self
 
 				# If "counterobj" was specified, use it to track the number
 				# of table rows
@@ -640,17 +646,22 @@ class netsnmpAgent(object):
 					row = nextrow
 
 		# Return an instance of the just-defined class to the agent
-		return Table(oidstr, indexes, columns, counterobj, extendable)
+		return Table(oidstr, indexes, columns, counterobj, extendable, context)
 
-	def getRegistered(self):
-		""" Returns a dictionary with the currently registered SNMP objects. """
+	def getContexts(self):
+		return self._objs.keys()
+
+	def getRegistered(self, context = ""):
+		"""Returns a dictionary with the currently registered SNMP objects.
+		Returned is a dictionary objects for the specified `context`, which
+		defaults to the default context ""."""
 		myobjs = {}
-		for (oidstr,snmpobj) in self._objs.iteritems():
+		for oidstr, snmpobj in self._objs[context].iteritems():
 			myobjs[oidstr] = {
 				"type": type(snmpobj).__name__,
 				"value": snmpobj.value()
 			}
-		return myobjs
+		return dict(myobjs)
 
 	def start(self):
 		""" Starts the agent. Among other things, this means connecting

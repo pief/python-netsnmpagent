@@ -101,6 +101,11 @@ exampleCounter32Context2 = agent.Counter32(
 	context = "context2",
 	initval = pow(2,32) - 10,
 )
+exampleCounter64Context2 = agent.Counter64(
+	oidstr = "EXAMPLE-MIB::exampleCounter64",
+	context = "context2",
+	initval = pow(2,64) - 10,
+)
 exampleCounter64 = agent.Counter64(
 	oidstr = "EXAMPLE-MIB::exampleCounter64"
 )
@@ -217,5 +222,6 @@ while (loop):
 	exampleCounter64.update(exampleCounter64.value() + 4294967294)
 	exampleTimeTicks.update(exampleTimeTicks.value() + 1)
 	exampleCounter32Context2.update(exampleCounter32Context2.value() + 1)
+	exampleCounter64Context2.update(exampleCounter64Context2.value() + 1)
 
 print "{0}: Terminating.".format(prgname)

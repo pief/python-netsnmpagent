@@ -16,6 +16,9 @@ UINT_MAX = 4294967295
 # Make libnetsnmpagent available via Python's ctypes module. We do this globally
 # so we can define C function prototypes
 try:
+	# Workaround for net-snmp 5.4.x that has a bug with unresolved dependencies
+	# in its libraries (http://sf.net/p/net-snmp/bugs/2107)
+	libnsh = ctypes.cdll.LoadLibrary(ctypes.util.find_library("netsnmphelpers"))
 	libnsa = ctypes.cdll.LoadLibrary(ctypes.util.find_library("netsnmpagent"))
 except:
 	raise Exception("Could not load libnetsnmpagent! Is net-snmp installed?")

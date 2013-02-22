@@ -17,7 +17,8 @@ UINT_MAX = 4294967295
 # so we can define C function prototypes
 try:
 	# Workaround for net-snmp 5.4.x that has a bug with unresolved dependencies
-	# in its libraries (http://sf.net/p/net-snmp/bugs/2107)
+	# in its libraries (http://sf.net/p/net-snmp/bugs/2107): load netsnmphelpers
+	# first
 	libnsh = ctypes.cdll.LoadLibrary(ctypes.util.find_library("netsnmphelpers"))
 	libnsa = ctypes.cdll.LoadLibrary(ctypes.util.find_library("netsnmpagent"))
 except:

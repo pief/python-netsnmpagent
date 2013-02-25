@@ -132,8 +132,8 @@ firstTable = agent.Table(
 		agent.DisplayString()
 	],
 	columns = [
-		(2, agent.DisplayString(initval="Unknown place")),
-		(3, agent.Integer32(initval=0))
+		(2, agent.DisplayString("Unknown place")),
+		(3, agent.Integer32(0))
 	],
 	counterobj = agent.Unsigned32(
 		oidstr = "EXAMPLE-MIB::firstTableNumber"
@@ -141,18 +141,18 @@ firstTable = agent.Table(
 )
 
 # Add the first table row
-firstTableRow1 = firstTable.addRow([agent.DisplayString(initval="aa")])
-firstTableRow1.setRowCell(2, agent.DisplayString(initval="Prague"))
-firstTableRow1.setRowCell(3, agent.Integer32(initval=20))
+firstTableRow1 = firstTable.addRow([agent.DisplayString("aa")])
+firstTableRow1.setRowCell(2, agent.DisplayString("Prague"))
+firstTableRow1.setRowCell(3, agent.Integer32(20))
 
 # Add the second table row
-firstTableRow2 = firstTable.addRow([agent.DisplayString(initval="ab")])
-firstTableRow2.setRowCell(2, agent.DisplayString(initval="Barcelona"))
-firstTableRow2.setRowCell(3, agent.Integer32(initval=28))
+firstTableRow2 = firstTable.addRow([agent.DisplayString("ab")])
+firstTableRow2.setRowCell(2, agent.DisplayString("Barcelona"))
+firstTableRow2.setRowCell(3, agent.Integer32(28))
 
 # Add the third table row
-firstTableRow3 = firstTable.addRow([agent.DisplayString(initval="bb")])
-firstTableRow3.setRowCell(3, agent.Integer32(initval=18))
+firstTableRow3 = firstTable.addRow([agent.DisplayString("bb")])
+firstTableRow3.setRowCell(3, agent.Integer32(18))
 
 # Create the second table
 secondTable = agent.Table(
@@ -161,8 +161,8 @@ secondTable = agent.Table(
 		agent.Integer32()
 	],
 	columns = [
-		(2, agent.DisplayString(initval="Unknown interface")),
-		(3, agent.Unsigned32(initval=0))
+		(2, agent.DisplayString("Unknown interface")),
+		(3, agent.Unsigned32())
 	],
 	counterobj = agent.Unsigned32(
 		oidstr = "EXAMPLE-MIB::secondTableNumber"
@@ -170,14 +170,14 @@ secondTable = agent.Table(
 )
 
 # Add the first table row
-secondTableRow1 = secondTable.addRow([agent.Integer32(initval=1)])
-secondTableRow1.setRowCell(2, agent.DisplayString(initval="foo0"))
-secondTableRow1.setRowCell(3, agent.Unsigned32(initval=5030))
+secondTableRow1 = secondTable.addRow([agent.Integer32(1)])
+secondTableRow1.setRowCell(2, agent.DisplayString("foo0"))
+secondTableRow1.setRowCell(3, agent.Unsigned32(5030))
 
 # Add the second table row
-secondTableRow2 = secondTable.addRow([agent.Integer32(initval=2)])
-secondTableRow2.setRowCell(2, agent.DisplayString(initval="foo1"))
-secondTableRow2.setRowCell(3, agent.Unsigned32(initval=12842))
+secondTableRow2 = secondTable.addRow([agent.Integer32(2)])
+secondTableRow2.setRowCell(2, agent.DisplayString("foo1"))
+secondTableRow2.setRowCell(3, agent.Unsigned32(12842))
 
 # Finally, we tell the agent to "start". This actually connects the
 # agent to the master agent.

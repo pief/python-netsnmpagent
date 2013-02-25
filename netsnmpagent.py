@@ -185,7 +185,7 @@ class netsnmpAgent(object):
 		    yet. Use the Register() method to associate it with an OID. """
 
 		# This is the replacement function, the "decoration"
-		def create_vartype_class(self, oidstr = None, initval = None, writable = True, context = ""):
+		def create_vartype_class(self, initval = None, oidstr = None, writable = True, context = ""):
 			agent = self
 
 			# Call the original property_func to retrieve this variable type's
@@ -282,7 +282,7 @@ class netsnmpAgent(object):
 		return create_vartype_class
 
 	@VarTypeClass
-	def Integer32(self, oidstr = None, initval = None, writable = True, context = ""):
+	def Integer32(self, initval = None, oidstr = None, writable = True, context = ""):
 		return {
 			"ctype"         : ctypes.c_long,
 			"flags"         : WATCHER_FIXED_SIZE,
@@ -291,7 +291,7 @@ class netsnmpAgent(object):
 		}
 
 	@VarTypeClass
-	def Unsigned32(self, oidstr = None, initval = None, writable = True, context = ""):
+	def Unsigned32(self, initval = None, oidstr = None, writable = True, context = ""):
 		return {
 			"ctype"         : ctypes.c_ulong,
 			"flags"         : WATCHER_FIXED_SIZE,
@@ -300,7 +300,7 @@ class netsnmpAgent(object):
 		}
 
 	@VarTypeClass
-	def Counter32(self, oidstr = None, initval = None, writable = True, context = ""):
+	def Counter32(self, initval = None, oidstr = None, writable = True, context = ""):
 		return {
 			"ctype"         : ctypes.c_ulong,
 			"flags"         : WATCHER_FIXED_SIZE,
@@ -309,7 +309,7 @@ class netsnmpAgent(object):
 		}
 
 	@VarTypeClass
-	def Counter64(self, oidstr = None, initval = None, writable = True, context = ""):
+	def Counter64(self, initval = None, oidstr = None, writable = True, context = ""):
 		return {
 			"ctype"         : counter64,
 			"flags"         : WATCHER_FIXED_SIZE,
@@ -318,7 +318,7 @@ class netsnmpAgent(object):
 		}
 
 	@VarTypeClass
-	def TimeTicks(self, oidstr = None, initval = None, writable = True, context = ""):
+	def TimeTicks(self, initval = None, oidstr = None, writable = True, context = ""):
 		return {
 			"ctype"         : ctypes.c_ulong,
 			"flags"         : WATCHER_FIXED_SIZE,
@@ -329,7 +329,7 @@ class netsnmpAgent(object):
 	# Note we can't use ctypes.c_char_p here since that creates an immutable
 	# type and net-snmp _can_ modify the buffer (unless writable is False).
 	@VarTypeClass
-	def OctetString(self, oidstr = None, initval = None, writable = True, context = ""):
+	def OctetString(self, initval = None, oidstr = None, writable = True, context = ""):
 		return {
 			"ctype"         : ctypes.create_string_buffer,
 			"flags"         : WATCHER_SIZE_STRLEN,
@@ -341,7 +341,7 @@ class netsnmpAgent(object):
 	# Whereas an OctetString can contain UTF-8 encoded characters, a
 	# DisplayString is restricted to ASCII characters only.
 	@VarTypeClass
-	def DisplayString(self, oidstr = None, initval = None, writable = True, context = ""):
+	def DisplayString(self, initval = None, oidstr = None, writable = True, context = ""):
 		return {
 			"ctype"         : ctypes.create_string_buffer,
 			"flags"         : WATCHER_SIZE_STRLEN,
@@ -352,7 +352,7 @@ class netsnmpAgent(object):
 
 	# IP addresses are stored as unsigned integers, but the Python interface
 	# should use strings. So we need a special class.
-	def IpAddress(self, oidstr = None, initval = "0.0.0.0", writable = True, context = ""):
+	def IpAddress(self, initval = "0.0.0.0", oidstr = None, writable = True, context = ""):
 		agent = self
 
 		class IpAddress(object):

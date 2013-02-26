@@ -44,6 +44,7 @@ ChangeLog:
 	@[ -e ChangeLog ] && rm ChangeLog || true
 	@CURRENT=`git describe`; \
 	set -- `git tag -l | egrep ^[[:digit:]]+.[[:digit:]]+\(.[[:digit:]]+\)?$ | sort -r`; \
+	if [ "$$CURRENT" == "$$1" ] ; then shift; fi; \
 	until [ -z "$$CURRENT" ] ; do \
 		if [ -n "$$1" ] ; then \
 			LINE="Changes from v$$1 to v$$CURRENT"; \

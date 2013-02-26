@@ -37,5 +37,7 @@ python setup.py install --prefix=%{_prefix} --root=%{buildroot}
 %files
 %defattr(-,root,root,-)
 %{python_sitelib}/*
+%doc README LICENSE ChangeLog
+%doc EXAMPLE-MIB.txt example_agent.py run_example_agent.sh
 
 %changelog

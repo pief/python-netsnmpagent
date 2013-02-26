@@ -39,10 +39,35 @@ setup.py: setup.py.in
 	sed 's/@NETSNMPAGENT_VERSION@/$(VERSION)/' setup.py.in >setup.py
 	chmod u+x setup.py
 
+.PHONY: ChangeLog
+ChangeLog:
+	@[ -e ChangeLog ] && rm ChangeLog || true
+	@CURRENT=`git describe`; \
+	set -- `git tag -l | egrep ^[[:digit:]]+.[[:digit:]]+\(.[[:digit:]]+\)?$ | sort -r`; \
+	until [ -z "$$CURRENT" ] ; do \
+		if [ -n "$$1" ] ; then \
+			LINE="Changes from v$$1 to v$$CURRENT"; \
+			PREV="$$1.."; \
+		else \
+			LINE="Initial version $$CURRENT"; \
+			PREV=""; \
+		fi; \
+		echo >>ChangeLog; \
+		echo $$LINE >>ChangeLog; \
+		printf "%*s\n" $${#LINE} | tr ' ' '=' >>ChangeLog; \
+		echo >>ChangeLog; \
+		git log \
+			--no-merges \
+			--format="* %ad - %aN <%ae>%n%n%+w(75,2,2)%s%n%+b%n(Git commit %H)%n" \
+			$$PREV$$CURRENT >>ChangeLog; \
+		CURRENT=$$1; \
+		shift || true; \
+	done
+
 install: setup.py
 	python setup.py install
 
-srcdist: setup.py
+srcdist: setup.py ChangeLog
 	python setup.py sdist
 
 upload: setup.py
@@ -64,6 +89,7 @@ rpms: srcdist
 
 clean:
 	@[ -e setup.py ] && (python setup.py clean; rm setup.py) || true
+	@[ -e ChangeLog ] && rm ChangeLog || true
 	@[ -e "*.pyc" ] && rm *.pyc || true
 	@[ -e build ] && rm -rf build || true
 	@[ -e dist ] && rm -rf dist || true

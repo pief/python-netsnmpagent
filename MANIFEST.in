@@ -1,3 +1,4 @@
+include ChangeLog
 include LICENSE
 include EXAMPLE-MIB.txt
 include example_agent.py

@@ -274,6 +274,10 @@ class netsnmpAgent(object):
 						self._cvar.value = val
 						self._data_size  = len(val)
 
+				if props['asntype'] in [ASN_COUNTER, ASN_COUNTER64]:
+					def increment(self, count=1):
+						self.update(self.value() + count)
+
 			cls.__name__ = property_func.__name__
 
 			# Return an instance of the just-defined class to the agent

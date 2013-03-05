@@ -149,4 +149,5 @@ python-netsnmpagent was inspired by python-agentx, courtesy of Bozhin Zafirov
 <bozhin@abv.bg>. I blatantly ripped some ideas and some lines of code, shame
 on me.
 
-SNMP contexts support was added by Steven Hiscocks <steven@hiscocks.me.uk>.
+SNMP contexts support and various other additions were implemented by Steven
+Hiscocks <steven@hiscocks.me.uk>.

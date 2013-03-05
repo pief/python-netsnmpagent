@@ -673,9 +673,11 @@ class netsnmpAgent(object):
 		self._started = True
 		libnsa.init_snmp(self.AgentName)
 
-	def check_and_process(self):
-		""" Blocks and processes incoming SNMP requests. """
-		return libnsa.agent_check_and_process(1)
+	def check_and_process(self, block=True):
+		""" Processes incoming SNMP requests.
+            If optional `block` argument is True (default) the function
+            will block until a SNMP packet is received. """
+		return libnsa.agent_check_and_process(int(bool(block)))
 
 	def __del__(self):
 		libnsa.snmp_shutdown(self.AgentName)

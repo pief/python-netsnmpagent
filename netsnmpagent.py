@@ -679,8 +679,8 @@ class netsnmpAgent(object):
 
 	def check_and_process(self, block=True):
 		""" Processes incoming SNMP requests.
-            If optional `block` argument is True (default) the function
-            will block until a SNMP packet is received. """
+		    If optional "block" argument is True (default), the function
+		    will block until a SNMP packet is received. """
 		return libnsa.agent_check_and_process(int(bool(block)))
 
 	def __del__(self):

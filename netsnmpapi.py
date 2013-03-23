@@ -101,6 +101,10 @@ for f in [ libnsa.init_agent ]:
 class tree(ctypes.Structure): pass
 
 # include/net-snmp/mib_api.h
+for f in [ libnsa.init_mib ]:
+	f.argtypes = None
+	f.restype = None
+
 for f in [ libnsa.read_mib ]:
 	f.argtypes = [
 		ctypes.c_char_p                 # const char *filename
@@ -200,6 +204,13 @@ for f in [ libnsX.netsnmp_create_watcher_info ]:
 		ctypes.c_int                    # int flags
 	]
 	f.restype = netsnmp_watcher_info_p
+
+for f in [ libnsX.netsnmp_register_watched_instance ]:
+	f.argtypes = [
+		netsnmp_handler_registration_p, # netsnmp_handler_registration *reginfo
+		netsnmp_watcher_info_p          # netsnmp_watcher_info *winfo
+	]
+	f.restype = ctypes.c_int
 
 for f in [ libnsX.netsnmp_register_watched_scalar ]:
 	f.argtypes = [

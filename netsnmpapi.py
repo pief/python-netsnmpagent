@@ -338,6 +338,12 @@ for f in [ libnsX.netsnmp_table_dataset_add_index ]:
 	]
 	f.restype = None
 
+for f in [ libnsX.netsnmp_table_dataset_remove_and_delete_row ]:
+	f.argtypes = [
+		netsnmp_table_data_set_p,       # netsnmp_table_data_set *table
+		netsnmp_table_row_p             # netsnmp_table_row *row
+	]
+
 # include/net-snmp/agent/snmp_agent.h
 for f in [ libnsa.agent_check_and_process ]:
 	f.argtypes = [

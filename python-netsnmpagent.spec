@@ -16,6 +16,8 @@ BuildRequires:  python-devel
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 %if %{?suse_version: %{suse_version} > 1110} %{!?suse_version:1}
 BuildArch:      noarch
+%else
+%{!?python_sitelib: %global python_sitelib %(python -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")}
 %endif
 
 %description

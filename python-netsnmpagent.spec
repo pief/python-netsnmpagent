@@ -14,7 +14,9 @@ Group:          Development/Languages/Python
 Source:         http://pypi.python.org/packages/source/n/netsnmpagent/netsnmpagent-%{version}.tar.gz
 BuildRequires:  python-devel
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
+%if %{?suse_version: %{suse_version} > 1110} %{!?suse_version:1}
 BuildArch:      noarch
+%endif
 
 %description
 python-netsnmpagent is a Python module that facilitates writing Net-SNMP
@@ -33,11 +35,15 @@ CFLAGS="%{optflags}" python setup.py build
 
 %install
 python setup.py install --prefix=%{_prefix} --root=%{buildroot}
+mkdir -p %{buildroot}%{_docdir}/%{name}/examples
+install -m 0644 EXAMPLE-MIB.txt example_agent.py run_example_agent.sh %{buildroot}%{_docdir}/%{name}/examples/
 
 %files
 %defattr(-,root,root,-)
 %{python_sitelib}/*
 %doc README LICENSE ChangeLog
-%doc EXAMPLE-MIB.txt example_agent.py run_example_agent.sh
+%if 0%{!?suse_version:1}
+%{_docdir}/%{name}/examples
+%endif
 
 %changelog

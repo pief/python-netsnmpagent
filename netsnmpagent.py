@@ -647,7 +647,7 @@ class netsnmpAgent(object):
 				row = self._dataset.contents.table.contents.first_row
 				while bool(row):
 					nextrow = row.contents.next
-					libnsa.netsnmp_table_dataset_remove_and_delete_row(
+					libnsX.netsnmp_table_dataset_remove_and_delete_row(
 						self._dataset,
 						row
 					)

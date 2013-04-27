@@ -65,11 +65,21 @@ ChangeLog:
 		shift || true; \
 	done
 
+dist:
+	@mkdir dist
+
+dist/python-netsnmpagent.spec: dist python-netsnmpagent.spec.in
+	@sed "s/%{netsnmpagent_version}/$(VERSION)/" \
+	  python-netsnmpagent.spec.in \
+	  >dist/python-netsnmpagent.spec
+
 install: setup.py
 	python setup.py install
 
-srcdist: setup.py ChangeLog
+srcdist: setup.py ChangeLog dist/python-netsnmpagent.spec
 	python setup.py sdist
+	@echo Created source distribution archive as dist/netsnmpagent-$(VERSION).tar.gz
+	@echo A suitable RPM .spec file can be found at dist/python-netsnmpagent.spec
 
 upload: setup.py
 ifeq ($(TAGGED),1)
@@ -80,12 +90,11 @@ endif
 
 rpms: srcdist
 	@mkdir -p dist/RPMBUILD/{BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS} || exit 1
-	@cp -a python-netsnmpagent.spec dist/RPMBUILD/SPECS/ || exit 1
+	@cp -a dist/python-netsnmpagent.spec dist/RPMBUILD/SPECS/ || exit 1
 	@cp -a dist/netsnmpagent-$(VERSION).tar.gz dist/RPMBUILD/SOURCES/ || exit 1
 	@cd dist/RPMBUILD && \
 	rpmbuild \
 		--define "%_topdir $$(pwd)" \
-		--define "netsnmpagent_version $(VERSION)" \
 		-ba SPECS/python-netsnmpagent.spec
 
 clean:

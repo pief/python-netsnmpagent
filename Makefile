@@ -71,7 +71,7 @@ dist:
 .PHONY: python-netsnmpagent.spec.changelog
 python-netsnmpagent.spec.changelog: dist
 	@[ -e python-netsnmpagent.spec.changelog ] && rm python-netsnmpagent.spec.changelog || true
-	@AUTHOR=`git config user.email`; \
+	@PKGREMAIL=`git config user.email`; \
 	CURRENT=`git describe`; \
 	set -- `git tag -l | egrep ^[[:digit:]]+.[[:digit:]]+\(.[[:digit:]]+\)?$ | sort -r`; \
 	if [ "$$CURRENT" == "$$1" ] ; then shift; fi; \
@@ -83,7 +83,7 @@ python-netsnmpagent.spec.changelog: dist
 		fi; \
 		GITDATE=`git log --format="%ad" --date=iso -n1 $$CURRENT`; \
 		OURDATE=`LANG=C date -d "$$GITDATE" +"%a %b %d %Y"`; \
-		echo >>python-netsnmpagent.spec.changelog "* $$OURDATE $$AUTHOR"; \
+		echo >>python-netsnmpagent.spec.changelog "* $$OURDATE $$PKGREMAIL"; \
 		echo >>python-netsnmpagent.spec.changelog "- $$LINE"; \
 		echo >>python-netsnmpagent.spec.changelog; \
 		CURRENT=$$1; \

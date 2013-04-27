@@ -82,7 +82,7 @@ python-netsnmpagent.spec.changelog: dist
 			LINE="Initial version $$CURRENT"; \
 		fi; \
 		GITDATE=`git log --format="%ad" --date=iso -n1 $$CURRENT`; \
-		OURDATE=`date -d "$$GITDATE" +"%a %b %d %Y"`; \
+		OURDATE=`LANG=C date -d "$$GITDATE" +"%a %b %d %Y"`; \
 		echo >>python-netsnmpagent.spec.changelog "* $$OURDATE $$AUTHOR"; \
 		echo >>python-netsnmpagent.spec.changelog "- $$LINE"; \
 		echo >>python-netsnmpagent.spec.changelog; \

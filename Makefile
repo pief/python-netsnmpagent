@@ -68,10 +68,33 @@ ChangeLog:
 dist:
 	@mkdir dist
 
-dist/python-netsnmpagent.spec: dist python-netsnmpagent.spec.in
+.PHONY: python-netsnmpagent.spec.changelog
+python-netsnmpagent.spec.changelog: dist
+	@[ -e python-netsnmpagent.spec.changelog ] && rm python-netsnmpagent.spec.changelog || true
+	@AUTHOR=`git config user.email`; \
+	CURRENT=`git describe`; \
+	set -- `git tag -l | egrep ^[[:digit:]]+.[[:digit:]]+\(.[[:digit:]]+\)?$ | sort -r`; \
+	if [ "$$CURRENT" == "$$1" ] ; then shift; fi; \
+	until [ -z "$$CURRENT" ] ; do \
+		if [ -n "$$1" ] ; then \
+			LINE="Update to v$$CURRENT"; \
+		else \
+			LINE="Initial version $$CURRENT"; \
+		fi; \
+		GITDATE=`git log --format="%ad" --date=iso -n1 $$CURRENT`; \
+		OURDATE=`date -d "$$GITDATE" +"%a %b %d %Y"`; \
+		echo >>python-netsnmpagent.spec.changelog "* $$OURDATE $$AUTHOR"; \
+		echo >>python-netsnmpagent.spec.changelog "- $$LINE"; \
+		echo >>python-netsnmpagent.spec.changelog; \
+		CURRENT=$$1; \
+		shift || true; \
+	done
+
+dist/python-netsnmpagent.spec: dist python-netsnmpagent.spec.changelog python-netsnmpagent.spec.in
 	@sed "s/%{netsnmpagent_version}/$(VERSION)/" \
 	  python-netsnmpagent.spec.in \
 	  >dist/python-netsnmpagent.spec
+	@cat >>dist/python-netsnmpagent.spec python-netsnmpagent.spec.changelog
 
 install: setup.py
 	python setup.py install

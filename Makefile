@@ -95,7 +95,9 @@ rpms: srcdist
 	@cd dist/RPMBUILD && \
 	rpmbuild \
 		--define "%_topdir $$(pwd)" \
-		-ba SPECS/python-netsnmpagent.spec
+		-ba SPECS/python-netsnmpagent.spec || exit 1
+	@find dist/RPMBUILD -name *.rpm -exec cp -a {} dist/ \; || exit 1
+	@rm -r dist/RPMBUILD || true
 
 clean:
 	@[ -e setup.py ] && (python setup.py clean; rm setup.py) || true

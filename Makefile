@@ -41,7 +41,7 @@ setup.py: setup.py.in
 
 .PHONY: ChangeLog
 ChangeLog:
-	@[ -e ChangeLog ] && rm ChangeLog || true
+	@[ -e $@ ] && rm $@ || true
 	@CURRENT=`git describe`; \
 	set -- `git tag -l | egrep ^[[:digit:]]+.[[:digit:]]+\(.[[:digit:]]+\)?$ | sort -r`; \
 	if [ "$$CURRENT" == "$$1" ] ; then shift; fi; \
@@ -53,14 +53,14 @@ ChangeLog:
 			LINE="Initial version $$CURRENT"; \
 			PREV=""; \
 		fi; \
-		echo >>ChangeLog; \
-		echo $$LINE >>ChangeLog; \
-		printf "%*s\n" $${#LINE} | tr ' ' '=' >>ChangeLog; \
-		echo >>ChangeLog; \
+		echo >>$@; \
+		echo $$LINE >>$@; \
+		printf "%*s\n" $${#LINE} | tr ' ' '=' >>$@; \
+		echo >>$@; \
 		git log \
 			--no-merges \
 			--format="* %ad - %aN <%ae>%n%n%+w(75,2,2)%s%n%+b%n(Git commit %H)%n" \
-			$$PREV$$CURRENT >>ChangeLog; \
+			$$PREV$$CURRENT >>$@; \
 		CURRENT=$$1; \
 		shift || true; \
 	done

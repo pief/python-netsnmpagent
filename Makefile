@@ -36,8 +36,11 @@ endif
 	@echo
 
 setup.py: setup.py.in
-	sed 's/@NETSNMPAGENT_VERSION@/$(VERSION)/' setup.py.in >setup.py
+	sed 's/@NETSNMPAGENT_VERSION@/$(VERSION)/' setup.py.in >$@
 	chmod u+x setup.py
+
+install: setup.py
+	python $@ install
 
 .PHONY: ChangeLog
 ChangeLog:
@@ -70,7 +73,7 @@ dist:
 
 .PHONY: python-netsnmpagent.spec.changelog
 python-netsnmpagent.spec.changelog: dist
-	@[ -e python-netsnmpagent.spec.changelog ] && rm python-netsnmpagent.spec.changelog || true
+	@[ -e $@ ] && rm $@ || true
 	@PKGREMAIL=`git config user.email`; \
 	CURRENT=`git describe`; \
 	set -- `git tag -l | egrep ^[[:digit:]]+.[[:digit:]]+\(.[[:digit:]]+\)?$ | sort -r`; \
@@ -83,21 +86,18 @@ python-netsnmpagent.spec.changelog: dist
 		fi; \
 		GITDATE=`git log --format="%ad" --date=iso -n1 $$CURRENT`; \
 		OURDATE=`LANG=C date -d "$$GITDATE" +"%a %b %d %Y"`; \
-		echo >>python-netsnmpagent.spec.changelog "* $$OURDATE $$PKGREMAIL"; \
-		echo >>python-netsnmpagent.spec.changelog "- $$LINE"; \
-		echo >>python-netsnmpagent.spec.changelog; \
+		echo >>$@ "* $$OURDATE $$PKGREMAIL"; \
+		echo >>$@ "- $$LINE"; \
+		echo >>$@; \
 		CURRENT=$$1; \
 		shift || true; \
 	done
 
 dist/python-netsnmpagent.spec: dist python-netsnmpagent.spec.changelog python-netsnmpagent.spec.in
-	@sed "s/%{netsnmpagent_version}/$(VERSION)/" \
+	@sed "s/@NETSNMPAGENT_VERSION@/$(VERSION)/" \
 	  python-netsnmpagent.spec.in \
-	  >dist/python-netsnmpagent.spec
-	@cat >>dist/python-netsnmpagent.spec python-netsnmpagent.spec.changelog
-
-install: setup.py
-	python setup.py install
+	  >$@
+	@cat >>$@ python-netsnmpagent.spec.changelog
 
 srcdist: setup.py ChangeLog dist/python-netsnmpagent.spec
 	python setup.py sdist
@@ -111,7 +111,7 @@ else
 	@echo "Upload not available for untagged versions!"
 endif
 
-rpms: srcdist
+rpms: dist srcdist
 	@mkdir -p dist/RPMBUILD/{BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS} || exit 1
 	@cp -a dist/python-netsnmpagent.spec dist/RPMBUILD/SPECS/ || exit 1
 	@cp -a dist/netsnmpagent-$(VERSION).tar.gz dist/RPMBUILD/SOURCES/ || exit 1
@@ -121,10 +121,11 @@ rpms: srcdist
 		-ba SPECS/python-netsnmpagent.spec || exit 1
 	@find dist/RPMBUILD -name *.rpm -exec cp -a {} dist/ \; || exit 1
 	@rm -r dist/RPMBUILD || true
+	@echo RPMs can be found in the dist/ directory
 
 clean:
+	@[ -e "*.pyc" ] && rm *.pyc || true
 	@[ -e setup.py ] && (python setup.py clean; rm setup.py) || true
 	@[ -e ChangeLog ] && rm ChangeLog || true
-	@[ -e "*.pyc" ] && rm *.pyc || true
 	@[ -e build ] && rm -rf build || true
 	@[ -e dist ] && rm -rf dist || true

@@ -652,6 +652,8 @@ class netsnmpAgent(object):
 						row
 					)
 					row = nextrow
+				if self._counterobj:
+					self._counterobj.update(0)
 
 		# Return an instance of the just-defined class to the agent
 		return Table(oidstr, indexes, columns, counterobj, extendable, context)

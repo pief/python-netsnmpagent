@@ -36,12 +36,15 @@ endif
 	@echo
 
 setup.py: setup.py.in
-	sed 's/@NETSNMPAGENT_VERSION@/$(VERSION)/' setup.py.in >setup.py
+	sed 's/@NETSNMPAGENT_VERSION@/$(VERSION)/' setup.py.in >$@
 	chmod u+x setup.py
+
+install: setup.py
+	python $@ install
 
 .PHONY: ChangeLog
 ChangeLog:
-	@[ -e ChangeLog ] && rm ChangeLog || true
+	@[ -e $@ ] && rm $@ || true
 	@CURRENT=`git describe`; \
 	set -- `git tag -l | egrep ^[[:digit:]]+.[[:digit:]]+\(.[[:digit:]]+\)?$ | sort -r`; \
 	if [ "$$CURRENT" == "$$1" ] ; then shift; fi; \
@@ -53,23 +56,53 @@ ChangeLog:
 			LINE="Initial version $$CURRENT"; \
 			PREV=""; \
 		fi; \
-		echo >>ChangeLog; \
-		echo $$LINE >>ChangeLog; \
-		printf "%*s\n" $${#LINE} | tr ' ' '=' >>ChangeLog; \
-		echo >>ChangeLog; \
+		echo >>$@; \
+		echo $$LINE >>$@; \
+		printf "%*s\n" $${#LINE} | tr ' ' '=' >>$@; \
+		echo >>$@; \
 		git log \
 			--no-merges \
 			--format="* %ad - %aN <%ae>%n%n%+w(75,2,2)%s%n%+b%n(Git commit %H)%n" \
-			$$PREV$$CURRENT >>ChangeLog; \
+			$$PREV$$CURRENT >>$@; \
 		CURRENT=$$1; \
 		shift || true; \
 	done
 
-install: setup.py
-	python setup.py install
+dist:
+	@mkdir dist
 
-srcdist: setup.py ChangeLog
+.PHONY: python-netsnmpagent.spec.changelog
+python-netsnmpagent.spec.changelog: dist
+	@[ -e $@ ] && rm $@ || true
+	@PKGREMAIL=`git config user.email`; \
+	CURRENT=`git describe`; \
+	set -- `git tag -l | egrep ^[[:digit:]]+.[[:digit:]]+\(.[[:digit:]]+\)?$ | sort -r`; \
+	if [ "$$CURRENT" == "$$1" ] ; then shift; fi; \
+	until [ -z "$$CURRENT" ] ; do \
+		if [ -n "$$1" ] ; then \
+			LINE="Update to v$$CURRENT"; \
+		else \
+			LINE="Initial version $$CURRENT"; \
+		fi; \
+		GITDATE=`git log --format="%ad" --date=iso -n1 $$CURRENT`; \
+		OURDATE=`LANG=C date -d "$$GITDATE" +"%a %b %d %Y"`; \
+		echo >>$@ "* $$OURDATE $$PKGREMAIL"; \
+		echo >>$@ "- $$LINE"; \
+		echo >>$@; \
+		CURRENT=$$1; \
+		shift || true; \
+	done
+
+dist/python-netsnmpagent.spec: dist python-netsnmpagent.spec.changelog python-netsnmpagent.spec.in
+	@sed "s/@NETSNMPAGENT_VERSION@/$(VERSION)/" \
+	  python-netsnmpagent.spec.in \
+	  >$@
+	@cat >>$@ python-netsnmpagent.spec.changelog
+
+srcdist: setup.py ChangeLog dist/python-netsnmpagent.spec
 	python setup.py sdist
+	@echo Created source distribution archive as dist/netsnmpagent-$(VERSION).tar.gz
+	@echo A suitable RPM .spec file can be found at dist/python-netsnmpagent.spec
 
 upload: setup.py
 ifeq ($(TAGGED),1)
@@ -78,19 +111,21 @@ else
 	@echo "Upload not available for untagged versions!"
 endif
 
-rpms: srcdist
+rpms: dist srcdist
 	@mkdir -p dist/RPMBUILD/{BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS} || exit 1
-	@cp -a python-netsnmpagent.spec dist/RPMBUILD/SPECS/ || exit 1
+	@cp -a dist/python-netsnmpagent.spec dist/RPMBUILD/SPECS/ || exit 1
 	@cp -a dist/netsnmpagent-$(VERSION).tar.gz dist/RPMBUILD/SOURCES/ || exit 1
 	@cd dist/RPMBUILD && \
 	rpmbuild \
 		--define "%_topdir $$(pwd)" \
-		--define "netsnmpagent_version $(VERSION)" \
-		-ba SPECS/python-netsnmpagent.spec
+		-ba SPECS/python-netsnmpagent.spec || exit 1
+	@find dist/RPMBUILD -name *.rpm -exec cp -a {} dist/ \; || exit 1
+	@rm -r dist/RPMBUILD || true
+	@echo RPMs can be found in the dist/ directory
 
 clean:
+	@[ -e "*.pyc" ] && rm *.pyc || true
 	@[ -e setup.py ] && (python setup.py clean; rm setup.py) || true
 	@[ -e ChangeLog ] && rm ChangeLog || true
-	@[ -e "*.pyc" ] && rm *.pyc || true
 	@[ -e build ] && rm -rf build || true
 	@[ -e dist ] && rm -rf dist || true

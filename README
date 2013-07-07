@@ -66,65 +66,29 @@ This will most probably require appropriate rights (eg. being "root").
 
 EXAMPLE USAGE
 
-There is a well-commented example subagent included, example.py, together with
-an example MIB, surprisingly named EXAMPLE-MIB.txt. Here's some step-by-step
-instructions:
+python-netsnmpagent includes two example agents together with associated MIBs:
+- examples/simple_agent.py is the first example you should look at. It
+  demonstrates registering the various supported SNMP object types including
+  tables. For those interested in SNMP v3 it also shows registering variables
+  in contexts.
+  The simple agent uses net-snmp's check_and_process() call to wait for SNMP
+  requests in a blocking manner. Data is only updated inbetween SNMP requests.
+  For a different, more real-life usable approach see the next example.
+- examples/threading_agent.py should be looked at next. It registers just a
+  single DisplayString SNMP variable but demonstrates how to use Python's
+  threading module to separate the data update process from the SNMP request
+  processing so that both can execute independently. 
 
-1. Make sure net-snmp is installed, snmpd in particular.
+For both examples, shell scripts are included that make it a waltz to play with
+the agents. The scripts take care of everything required to set up a custom,
+minimal snmpd instance that runs under your ordinary user account and separate
+from any system-wide running snmpd. So just cd to the "examples/" directory
+and try "run_simple_agent.sh" and "run_threading_agent.py".
 
-2. Run the included "run_example_agent.sh" script. This scripts runs snmpd with
-   a special configuration file on TCP port 5555 and starts the included
-   example agent.
-
-3. From a separate console, run the example SNMP client utilities as written
-   to the screen, eg.:
-
-   $ snmpwalk -v 2c -c public -M+. localhost EXAMPLE-MIB::exampleMIB
-   EXAMPLE-MIB::exampleUnsigned.0 = Gauge32: 0
-   EXAMPLE-MIB::exampleUnsignedRO.0 = Gauge32: 0
-   EXAMPLE-MIB::exampleInteger.0 = INTEGER: 0
-   EXAMPLE-MIB::exampleIntegerRO.0 = INTEGER: 0
-   [...]
-
-   The "-v" option selects version 2c of the SNMP protocol, "-c" specifies the
-   community to use. The special configuration used here uses a read-only
-   community string "public" and a read-write community string "example" (for
-   use with eg. snmpset).
-
-   The "-M" option modifies the search path for referenced MIBs. Since
-   we reference EXAMPLE-MIB in the specification of the root OID to walk and
-   we have not copied EXAMPLE-MIB.txt to the system's MIBs directory
-   /usr/share/snmp/mibs, we extend (the plus sign "+") the search path with the
-   current directory (which should be the python-netsnmpagent directory).
-
-   EXAMPLE-MIB::exampleMIB references the root node in the EXAMPLE-MIB. If you
-   haven't looked at the MIB yet, you should probably do so now.
-
-If you wish to run the example agent against your system-wide snmpd instance,
-your /etc/snmp/snmpd.conf (path may vary) should contain lines similar to the
-following:
-   
-  # Required to allow subagents to connect to snmpd via AgentX protocol
-  master agentx
-   
-  # Required for read-only access from localhost
-  rocommunity public 127.0.0.1
-   
-  # Required for read-write access from localhost
-  rwcommunity <yoursecret> 127.0.0.1
-     
-For SNMP versions 1 and 2c (which are basically those I care about for now),
-replace "<yoursecret>" with a secret not too obvious, since it is the only
-protection against unauthorized write access, safe for the localhost access
-restriction.
-
-Because connecting to the system-wide snmpd's AgentX socket requires root
-rights, start the example agent using sudo:
-   
-  $ sudo python example.py 
-  username's password:
-  NET-SNMP version 5.7.1 AgentX subagent connected
-  Serving SNMP requests, press ^C to terminate...
+If instead you want to run the example agents (or later on your own agents)
+against your system-wide snmpd instance, your /etc/snmp/snmpd.conf (the path
+may vary) must be configured appropriately. See the comments at the beginning
+of examples/simple_agent.py for more info.
 
 
 API

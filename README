@@ -93,8 +93,8 @@ of examples/simple_agent.py for more info.
 
 API
 
-Admittedly the API for writing your own subagents in Python is nowhere next to
-stable yet. For now, please see the example_agent.py source code for info on
+Admittedly the API for writing your own subagents in Python is not necessarily
+stable yet. For now, please see the example agents' source code for info on
 how to use the python-netsnmpagent module, but notice that this may change at
 any time. You might want to follow development on the GitHub repo:
 
@@ -103,6 +103,7 @@ any time. You might want to follow development on the GitHub repo:
 
 TODO
 
+- notifications/traps
 - stabilize API
 - unit tests
 

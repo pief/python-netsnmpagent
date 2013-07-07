@@ -1,7 +1,7 @@
-EXAMPLE-MIB DEFINITIONS ::= BEGIN
+SIMPLE-MIB DEFINITIONS ::= BEGIN
 
 ------------------------------------------------------------------------
--- Example MIB for python-netsnmpagent
+-- Simple example MIB for python-netsnmpagent
 -- Copyright (c) 2012 Pieter Hollants <pieter@hollants.com>
 -- Licensed under the GNU Public License (GPL) version 3
 ------------------------------------------------------------------------
@@ -20,24 +20,24 @@ IMPORTS
         FROM AGENTX-MIB;
 
 -- Description and update information                                                                                                            
-exampleMIB MODULE-IDENTITY
-    LAST-UPDATED "201211210000Z"
+simpleMIB MODULE-IDENTITY
+    LAST-UPDATED "201307070000Z"
     ORGANIZATION "N/A"
     CONTACT-INFO
         "Editor:
         Pieter Hollants
         EMail: <pieter@hollants.com>"
     DESCRIPTION
-        "Example MIB for python-netsnmpagent"
+        "Simple example MIB for python-netsnmpagent"
 
-    REVISION    "201211210000Z"
+    REVISION    "201307070000Z"
     DESCRIPTION
-        "An example MIB for python-netsnmpagent's example.py."
+        "A simple example MIB for python-netsnmpagent's simple.py."
 
     ::= { agentxObjects 30187 }
 
--- Definition of a generic ExampleNotificationStatus type
-ExampleNotificationStatus ::= TEXTUAL-CONVENTION
+-- Definition of a generic SimpleNotificationStatus type
+SimpleNotificationStatus ::= TEXTUAL-CONVENTION
     STATUS current
     DESCRIPTION
         "Indicates the enabling or disabling of a particular class of
@@ -49,103 +49,103 @@ ExampleNotificationStatus ::= TEXTUAL-CONVENTION
 
 -- Definition of MIB's root nodes
 
-exampleMIBObjects         OBJECT IDENTIFIER ::= { exampleMIB 1 }
-exampleMIBNotifications   OBJECT IDENTIFIER ::= { exampleMIB 2 }
-exampleMIBConformance     OBJECT IDENTIFIER ::= { exampleMIB 3 }
+simpleMIBObjects         OBJECT IDENTIFIER ::= { simpleMIB 1 }
+simpleMIBNotifications   OBJECT IDENTIFIER ::= { simpleMIB 2 }
+simpleMIBConformance     OBJECT IDENTIFIER ::= { simpleMIB 3 }
 
-exampleScalars            OBJECT IDENTIFIER ::= { exampleMIBObjects 1 }
-exampleTables             OBJECT IDENTIFIER ::= { exampleMIBObjects 2 }
+simpleScalars            OBJECT IDENTIFIER ::= { simpleMIBObjects 1 }
+simpleTables             OBJECT IDENTIFIER ::= { simpleMIBObjects 2 }
 
 ------------------------------------------------------------------------
 -- Scalars
 ------------------------------------------------------------------------
 
-exampleUnsigned OBJECT-TYPE
+simpleUnsigned OBJECT-TYPE
     SYNTAX      Unsigned32
     MAX-ACCESS  read-write
     STATUS      current
     DESCRIPTION
         "A read-write, unsigned, 32-bits integer value."
-    ::= { exampleScalars 1 }
+    ::= { simpleScalars 1 }
 
-exampleUnsignedRO OBJECT-TYPE
+simpleUnsignedRO OBJECT-TYPE
     SYNTAX      Unsigned32
     MAX-ACCESS  read-only
     STATUS      current
     DESCRIPTION
         "A read-only, unsigned, 32-bits integer value."
-    ::= { exampleScalars 2 }
+    ::= { simpleScalars 2 }
 
-exampleInteger OBJECT-TYPE
+simpleInteger OBJECT-TYPE
     SYNTAX      Integer32
     MAX-ACCESS  read-write
     STATUS      current
     DESCRIPTION
         "A read-write, signed, 32-bits integer value."
-    ::= { exampleScalars 3 }
+    ::= { simpleScalars 3 }
 
-exampleIntegerRO OBJECT-TYPE
+simpleIntegerRO OBJECT-TYPE
     SYNTAX      Integer32
     MAX-ACCESS  read-only
     STATUS      current
     DESCRIPTION
         "A read-only, signed, 32-bits integer value."
-    ::= { exampleScalars 4 }
+    ::= { simpleScalars 4 }
 
-exampleCounter32 OBJECT-TYPE
+simpleCounter32 OBJECT-TYPE
     SYNTAX      Counter32
     MAX-ACCESS  read-only
     STATUS      current
     DESCRIPTION
         "A read-only, unsigned, 32-bits counter value."
-    ::= { exampleScalars 5 }
+    ::= { simpleScalars 5 }
 
-exampleCounter64 OBJECT-TYPE
+simpleCounter64 OBJECT-TYPE
     SYNTAX      Counter64
     MAX-ACCESS  read-only
     STATUS      current
     DESCRIPTION
         "A read-only, unsigned, 64-bits counter value."
-    ::= { exampleScalars 6 }
+    ::= { simpleScalars 6 }
 
-exampleTimeTicks OBJECT-TYPE
+simpleTimeTicks OBJECT-TYPE
     SYNTAX      TimeTicks
     MAX-ACCESS  read-write
     STATUS      current
     DESCRIPTION
         "A read-only, unsigned, 32-bits TimeTicks value."
-    ::= { exampleScalars 7 }
+    ::= { simpleScalars 7 }
 
-exampleIpAddress OBJECT-TYPE
+simpleIpAddress OBJECT-TYPE
     SYNTAX      IpAddress
     MAX-ACCESS  read-write
     STATUS      current
     DESCRIPTION
         "A 32-bits IPv4 address."
-    ::= { exampleScalars 8 }
+    ::= { simpleScalars 8 }
 
-ExampleOctetString ::= TEXTUAL-CONVENTION
+SimpleOctetString ::= TEXTUAL-CONVENTION
     DISPLAY-HINT    "1024t"
     STATUS          current
     DESCRIPTION
         "An octet string containing characters in UTF-8 encoding."
     SYNTAX          OCTET STRING (SIZE (1..1024))
 
-exampleOctetString OBJECT-TYPE
-    SYNTAX      ExampleOctetString
+simpleOctetString OBJECT-TYPE
+    SYNTAX      SimpleOctetString
     MAX-ACCESS  read-only
     STATUS      current
     DESCRIPTION
         "An UTF-8 encoded string value."
-    ::= { exampleScalars 9 }
+    ::= { simpleScalars 9 }
 
-exampleDisplayString OBJECT-TYPE
+simpleDisplayString OBJECT-TYPE
     SYNTAX      DisplayString
     MAX-ACCESS  read-only
     STATUS      current
     DESCRIPTION
         "An ASCII string value."
-    ::= { exampleScalars 10 }
+    ::= { simpleScalars 10 }
 
 ------------------------------------------------------------------------
 -- Tables
@@ -157,15 +157,15 @@ firstTableNumber OBJECT-TYPE
     STATUS      current
     DESCRIPTION
         "The number of entries in firstTable."
-    ::= { exampleTables 1 }
+    ::= { simpleTables 1 }
 
 firstTable OBJECT-TYPE
     SYNTAX      SEQUENCE OF FirstTableEntry
     MAX-ACCESS  not-accessible
     STATUS      current
     DESCRIPTION
-        "The first example table"
-    ::= { exampleTables 2 }
+        "The first simple table"
+    ::= { simpleTables 2 }
 
 FirstTableEntry ::=
     SEQUENCE {
@@ -214,15 +214,15 @@ secondTableNumber OBJECT-TYPE
     STATUS      current
     DESCRIPTION
         "The number of entries in secondTable."
-    ::= { exampleTables 3 }
+    ::= { simpleTables 3 }
 
 secondTable OBJECT-TYPE
     SYNTAX      SEQUENCE OF SecondTableEntry
     MAX-ACCESS  not-accessible
     STATUS      current
     DESCRIPTION
-        "The first example table"
-    ::= { exampleTables 4 }
+        "The first simple table"
+    ::= { simpleTables 4 }
 
 SecondTableEntry ::=
     SEQUENCE {
@@ -269,17 +269,17 @@ secondTableEntryValue OBJECT-TYPE
 -- Notifications
 ------------------------------------------------------------------------
 
-events      OBJECT IDENTIFIER ::= { exampleMIBNotifications 0 }
-operation   OBJECT IDENTIFIER ::= { exampleMIBNotifications 1 }
+events      OBJECT IDENTIFIER ::= { simpleMIBNotifications 0 }
+operation   OBJECT IDENTIFIER ::= { simpleMIBNotifications 1 }
 
-exampleUnsignedROChange NOTIFICATION-TYPE
+simpleUnsignedROChange NOTIFICATION-TYPE
     OBJECTS {
-        exampleUnsignedRO
+        simpleUnsignedRO
     }
     STATUS  current
     DESCRIPTION
-        "An exampleScalarsChange notification signifies that there has
-        been a change to the value of exampleUnsignedRO."
+        "An simpleScalarsChange notification signifies that there has
+        been a change to the value of simpleUnsignedRO."
     ::= { events 1 }
 
 firstTableChange NOTIFICATION-TYPE
@@ -292,17 +292,17 @@ firstTableChange NOTIFICATION-TYPE
         been a change to an firstTableEntry."
     ::= { events 2 }
 
-exampleUnsignedROChangeNotificationsEnabled OBJECT-TYPE
-    SYNTAX      ExampleNotificationStatus
+simpleUnsignedROChangeNotificationsEnabled OBJECT-TYPE
+    SYNTAX      SimpleNotificationStatus
     MAX-ACCESS  read-write
     STATUS      current
     DESCRIPTION
-        "Controls whether exampleUnsignedROChange notifications are
+        "Controls whether simpleUnsignedROChange notifications are
         enabled or disabled."
     ::= { operation 1 }
 
 firstTableChangeNotificationsEnabled OBJECT-TYPE
-    SYNTAX      ExampleNotificationStatus
+    SYNTAX      SimpleNotificationStatus
     MAX-ACCESS  read-write
     STATUS      current
     DESCRIPTION
@@ -314,25 +314,25 @@ firstTableChangeNotificationsEnabled OBJECT-TYPE
 -- Conformance
 ------------------------------------------------------------------------
 
-exampleMIBGroups      OBJECT IDENTIFIER ::= { exampleMIBConformance 1 }
-exampleMIBCompliances OBJECT IDENTIFIER ::= { exampleMIBConformance 2 }
+simpleMIBGroups      OBJECT IDENTIFIER ::= { simpleMIBConformance 1 }
+simpleMIBCompliances OBJECT IDENTIFIER ::= { simpleMIBConformance 2 }
 
-exampleMIBScalarsGroup OBJECT-GROUP
+simpleMIBScalarsGroup OBJECT-GROUP
     OBJECTS {
-        exampleInteger, exampleIntegerRO,
-        exampleUnsigned, exampleUnsignedRO,
-        exampleCounter32, exampleCounter64,
-        exampleTimeTicks,
-        exampleIpAddress,
-        exampleOctetString, exampleDisplayString,
-        exampleUnsignedROChangeNotificationsEnabled
+        simpleInteger, simpleIntegerRO,
+        simpleUnsigned, simpleUnsignedRO,
+        simpleCounter32, simpleCounter64,
+        simpleTimeTicks,
+        simpleIpAddress,
+        simpleOctetString, simpleDisplayString,
+        simpleUnsignedROChangeNotificationsEnabled
     }
     STATUS  current
     DESCRIPTION
-        "A collection of objects related to exampleScalars."
-    ::= { exampleMIBGroups 1 }
+        "A collection of objects related to simpleScalars."
+    ::= { simpleMIBGroups 1 }
 
-exampleMIBTablesGroup OBJECT-GROUP
+simpleMIBTablesGroup OBJECT-GROUP
     OBJECTS {
         firstTableNumber,
         firstTableEntryDesc, firstTableEntryValue,
@@ -342,27 +342,27 @@ exampleMIBTablesGroup OBJECT-GROUP
     }
     STATUS  current
     DESCRIPTION
-        "A collection of objects related to exampleTables."
-    ::= { exampleMIBGroups 2 }
+        "A collection of objects related to simpleTables."
+    ::= { simpleMIBGroups 2 }
 
-exampleMIBScalarsNotificationsGroup NOTIFICATION-GROUP
+simpleMIBScalarsNotificationsGroup NOTIFICATION-GROUP
     NOTIFICATIONS {
-        exampleUnsignedROChange
+        simpleUnsignedROChange
     }
     STATUS  current
     DESCRIPTION
         "The notifications which indicate specific changes in
-        exampleMIBScalars."
-    ::= { exampleMIBGroups 3 }
+        simpleMIBScalars."
+    ::= { simpleMIBGroups 3 }
 
-exampleMIBTablesNotificationsGroup NOTIFICATION-GROUP
+simpleMIBTablesNotificationsGroup NOTIFICATION-GROUP
     NOTIFICATIONS {
         firstTableChange
     }
     STATUS  current
     DESCRIPTION
         "The notifications which indicate specific changes in
-        exampleTables."
-    ::= { exampleMIBGroups 4 }
+        simpleTables."
+    ::= { simpleMIBGroups 4 }
 
 END

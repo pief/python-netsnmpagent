@@ -1,13 +1,13 @@
 #
-# python-netsnmpagent example agent
+# python-netsnmpagent simple example agent
 #
 # Copyright (c) 2013 Pieter Hollants <pieter@hollants.com>
 # Licensed under the GNU Public License (GPL) version 3
 #
 
 #
-# This script makes running example_agent.py easier for you because it
-# takes care of setting everything up so that the example agent can be run
+# This script makes running simple_agent.py easier for you because it takes
+# care of setting everything up so that the example agent can be run
 # successfully.
 #
 
@@ -53,7 +53,7 @@ trap cleanup EXIT
 echo "* Preparing snmpd environment..."
 
 # Create a temporary directory
-TMPDIR="$(mktemp --directory --tmpdir example_agent.XXXXXXXXXX)"
+TMPDIR="$(mktemp --directory --tmpdir simple_agent.XXXXXXXXXX)"
 SNMPD_CONFFILE=$TMPDIR/snmpd.conf
 SNMPD_PIDFILE=$TMPDIR/snmpd.pid
 
@@ -61,7 +61,7 @@ SNMPD_PIDFILE=$TMPDIR/snmpd.pid
 cat <<EOF >>$SNMPD_CONFFILE
 [snmpd]
 rocommunity public 127.0.0.1
-rwcommunity example 127.0.0.1
+rwcommunity simple 127.0.0.1
 agentaddress localhost:5555
 informsink localhost:5556
 smuxsocket localhost:5557
@@ -91,6 +91,6 @@ echo ""
 # input anyway)
 stty -echo
 
-# Now start the example agent
-echo "* Starting the example agent..."
-python example_agent.py -m $TMPDIR/snmpd-agentx.sock -p $TMPDIR/
+# Now start the simple example agent
+echo "* Starting the simple example agent..."
+python simple_agent.py -m $TMPDIR/snmpd-agentx.sock -p $TMPDIR/

@@ -79,11 +79,12 @@ $SNMPD_BIN -r -LE warning -C -c$SNMPD_CONFFILE -p$SNMPD_PIDFILE
 
 # Give the user guidance
 echo "* Our snmpd instance is now listening on localhost, port 5555."
-echo "  From a second console, use snmpwalk, snmpget etc. like this:"
+echo "  From a second console, use the net-snmp command line utilities like this:"
 echo ""
 echo "    cd `pwd`"
 echo "    snmpwalk -v 2c -c public -M+. localhost:5555 EXAMPLE-MIB::exampleMIB"
 echo "    snmptable -v 2c -c public -M+. -Ci localhost:5555 EXAMPLE-MIB::firstTable"
+echo "    snmpget -v 2c -c public -M+. localhost:5555 EXAMPLE-MIB::exampleInteger.0"
 echo "    snmpset -v 2c -c example -M+. localhost:5555 EXAMPLE-MIB::exampleInteger.0 i 123"
 echo ""
 

@@ -11,7 +11,7 @@
 # to connect to a master agent (snmpd), extending its MIB with the
 # information from the included SIMPLE-MIB.txt.
 #
-# Use the included script run_simple_agent.sh to test this example.
+# Use the included script run_simple_agent.sh to test this example^.
 #
 # Alternatively, if you want to test with your system-wide snmpd instance,
 # it must have as minimal configuration:
@@ -25,7 +25,7 @@
 # Then, from a separate console and from inside the python-netsnmpagent
 # directory, you can run eg.:
 #
-#  snmpwalk -v 2c -c <rosecret> -M+. localhost EXAMPLE-MIB::exampleMIB
+#  snmpwalk -v 2c -c <rosecret> -M+. localhost SIMPLE-MIB::simpleMIB
 #
 # If you wish to test setting values as well, your snmpd.conf needs a
 # line like this:
@@ -35,7 +35,7 @@
 # Then you can try something like:
 #
 #   snmpset -v 2c -c <rwsecret> -M+. localhost \
-#     EXAMPLE-MIB::exampleInteger i 0
+#     SIMPLE-MIB::simpleInteger i 0
 #
 
 import sys, os, signal
@@ -105,8 +105,8 @@ simpleCounter32Context2 = agent.Counter32(
 	context = "context2",
 	initval = pow(2,32) - 10, # To rule out endianness bugs
 )
-exampleCounter64 = agent.Counter64(
-	oidstr = "EXAMPLE-MIB::exampleCounter64"
+simpleCounter64 = agent.Counter64(
+	oidstr = "SIMPLE-MIB::simpleCounter64"
 )
 simpleCounter64Context2 = agent.Counter64(
 	oidstr = "SIMPLE-MIB::simpleCounter64",
@@ -227,7 +227,7 @@ while (loop):
 	simpleTimeTicks.update(simpleTimeTicks.value() + 1)
 
 	# With counters, you can also call increment() on them
-	exampleCounter32Context2.increment() # By 1
-	exampleCounter64Context2.increment(5) # By 5
+	simpleCounter32Context2.increment() # By 1
+	simpleCounter64Context2.increment(5) # By 5
 
 print "{0}: Terminating.".format(prgname)

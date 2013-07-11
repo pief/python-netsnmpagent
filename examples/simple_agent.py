@@ -11,7 +11,7 @@
 # to connect to a master agent (snmpd), extending its MIB with the
 # information from the included SIMPLE-MIB.txt.
 #
-# Use the included script run_simple_agent.sh to test this example^.
+# Use the included script run_simple_agent.sh to test this example.
 #
 # Alternatively, if you want to test with your system-wide snmpd instance,
 # it must have as minimal configuration:

@@ -132,8 +132,6 @@ simpleDisplayString = agent.DisplayString(
 	initval = "Nice to meet you"
 )
 
-simpleDisplayString.update("A new much longer string just to test")
-
 # Create the first table
 firstTable = agent.Table(
 	oidstr = "SIMPLE-MIB::firstTable",

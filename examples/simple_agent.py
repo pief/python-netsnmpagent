@@ -41,6 +41,9 @@
 import sys, os, signal
 import optparse
 import pprint
+
+# Make sure we use the local copy, not a system-wide one
+sys.path.insert(0, os.path.dirname(os.getcwd()))
 import netsnmpagent
 
 prgname = sys.argv[0]
@@ -128,6 +131,8 @@ simpleDisplayString = agent.DisplayString(
 	oidstr  = "SIMPLE-MIB::simpleDisplayString",
 	initval = "Nice to meet you"
 )
+
+simpleDisplayString.update("A new much longer string just to test")
 
 # Create the first table
 firstTable = agent.Table(

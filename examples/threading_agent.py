@@ -34,6 +34,9 @@
 
 import sys, os, signal, time
 import optparse, threading, subprocess
+
+# Make sure we use the local copy, not a system-wide one
+sys.path.insert(0, os.path.dirname(os.getcwd()))
 import netsnmpagent
 
 prgname = sys.argv[0]

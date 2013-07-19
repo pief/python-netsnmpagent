@@ -1,5 +1,3 @@
 include ChangeLog
 include LICENSE
-include EXAMPLE-MIB.txt
-include example_agent.py
-include run_example_agent.sh
+include examples/*

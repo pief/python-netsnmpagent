@@ -38,7 +38,9 @@ CFLAGS="%{optflags}" python setup.py build
 %install
 python setup.py install --prefix=%{_prefix} --root=%{buildroot}
 mkdir -p %{buildroot}%{_docdir}/%{name}/examples
-install -m 0644 EXAMPLE-MIB.txt example_agent.py run_example_agent.sh %{buildroot}%{_docdir}/%{name}/examples/
+for FILE in examples/*; do
+	install -m 0644 $FILE %{buildroot}%{_docdir}/%{name}/examples/
+done
 
 %files
 %defattr(-,root,root,-)

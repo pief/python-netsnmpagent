@@ -230,18 +230,18 @@ class netsnmpAgent(object):
 						handler_reginfo.contents.contextName = context
 
 						# Create the netsnmp_watcher_info structure.
-						watcher = libnsX.netsnmp_create_watcher_info(
+						self.watcher = libnsX.netsnmp_create_watcher_info(
 							self.cref(),
 							self._data_size,
 							self._asntype,
 							self._flags
 						)
-						watcher.max_size = self._max_size
+						self.watcher.contents.max_size = self._max_size
 
 						# Register handler and watcher with net-snmp.
 						result = libnsX.netsnmp_register_watched_scalar(
 							handler_reginfo,
-							watcher
+							self.watcher
 						)
 						if result != 0:
 							raise netsnmpAgentException("Error registering variable with net-snmp!")
@@ -272,7 +272,7 @@ class netsnmpAgent(object):
 								"Value passed to update() truncated: {0} > {1} "
 								"bytes!".format(len(val), self._max_size))
 						self._cvar.value = val
-						self._data_size  = len(val)
+						self._data_size  = self.watcher.contents.data_size = len(val)
 
 				if props["asntype"] in [ASN_COUNTER, ASN_COUNTER64]:
 					def increment(self, count=1):

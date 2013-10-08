@@ -238,7 +238,7 @@ class netsnmpAgent(object):
 						)
 
 						# Explicitly set netsnmp_watcher_info structure's
-						# max_size parameter. netsnmp_create_watcher_info would
+						# max_size parameter. netsnmp_create_watcher_info6 would
 						# have done that for us but that function was not yet
 						# available in net-snmp 5.4.x.
 						watcher.contents.max_size = self._max_size

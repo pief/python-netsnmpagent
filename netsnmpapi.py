@@ -191,7 +191,7 @@ ASN_COUNTER64                           = ASN_APPLICATION | 6
 
 # include/net-snmp/agent/watcher.h
 WATCHER_FIXED_SIZE                      = 0x01
-WATCHER_SIZE_STRLEN                     = 0x08
+WATCHER_MAX_SIZE                        = 0x02
 
 class netsnmp_watcher_info(ctypes.Structure): pass
 netsnmp_watcher_info_p = ctypes.POINTER(netsnmp_watcher_info)

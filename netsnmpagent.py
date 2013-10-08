@@ -171,9 +171,9 @@ class netsnmpAgent(object):
 		                          ctypes.create_string_buffer.
 		    - "flags"           : A net-snmp constant describing the C data
 		                          type's storage behavior, currently either
-		                          WATCHER_FIXED_SIZE or WATCHER_SIZE_STRLEN.
+		                          WATCHER_FIXED_SIZE or WATCHER_MAX_SIZE.
 		    - "max_size"        : The maximum allowed string size if "flags"
-		                          has been set to WATCHER_SIZE_STRLEN.
+		                          has been set to WATCHER_MAX_SIZE.
 		    - "initval"         : The value to initialize the C data type with,
 		                          eg. 0 or "".
 		    - "asntype"         : A constant defining the SNMP variable type
@@ -230,7 +230,7 @@ class netsnmpAgent(object):
 						handler_reginfo.contents.contextName = context
 
 						# Create the netsnmp_watcher_info structure.
-						watcher = libnsX.netsnmp_create_watcher_info(
+						self._watcher = libnsX.netsnmp_create_watcher_info(
 							self.cref(),
 							self._data_size,
 							self._asntype,
@@ -241,12 +241,12 @@ class netsnmpAgent(object):
 						# max_size parameter. netsnmp_create_watcher_info6 would
 						# have done that for us but that function was not yet
 						# available in net-snmp 5.4.x.
-						watcher.contents.max_size = self._max_size
+						self._watcher.contents.max_size = self._max_size
 
 						# Register handler and watcher with net-snmp.
 						result = libnsX.netsnmp_register_watched_scalar(
 							handler_reginfo,
-							watcher
+							self._watcher
 						)
 						if result != 0:
 							raise netsnmpAgentException("Error registering variable with net-snmp!")
@@ -271,13 +271,13 @@ class netsnmpAgent(object):
 					if self._asntype == ASN_COUNTER64 and val >> 64:
 						val = val & 0xFFFFFFFFFFFFFFFF
 					self._cvar.value = val
-					if props["flags"] == WATCHER_SIZE_STRLEN:
+					if props["flags"] == WATCHER_MAX_SIZE:
 						if len(val) > self._max_size:
 							raise netsnmpAgentException(
 								"Value passed to update() truncated: {0} > {1} "
 								"bytes!".format(len(val), self._max_size))
 						self._cvar.value = val
-						self._data_size  = len(val)
+						self._data_size  = self._watcher.contents.data_size = len(val)
 
 				if props["asntype"] in [ASN_COUNTER, ASN_COUNTER64]:
 					def increment(self, count=1):
@@ -337,11 +337,14 @@ class netsnmpAgent(object):
 
 	# Note we can't use ctypes.c_char_p here since that creates an immutable
 	# type and net-snmp _can_ modify the buffer (unless writable is False).
+	# Also note that while net-snmp 5.5 introduced a WATCHER_SIZE_STRLEN flag,
+	# we have to stick to WATCHER_MAX_SIZE for now to support net-snmp 5.4.x
+	# (used eg. in SLES 11 SP2 and Ubuntu 12.04 LTS).
 	@VarTypeClass
 	def OctetString(self, initval = None, oidstr = None, writable = True, context = ""):
 		return {
 			"ctype"         : ctypes.create_string_buffer,
-			"flags"         : WATCHER_SIZE_STRLEN,
+			"flags"         : WATCHER_MAX_SIZE,
 			"max_size"      : MAX_STRING_SIZE,
 			"initval"       : "",
 			"asntype"       : ASN_OCTET_STR
@@ -353,7 +356,7 @@ class netsnmpAgent(object):
 	def DisplayString(self, initval = None, oidstr = None, writable = True, context = ""):
 		return {
 			"ctype"         : ctypes.create_string_buffer,
-			"flags"         : WATCHER_SIZE_STRLEN,
+			"flags"         : WATCHER_MAX_SIZE,
 			"max_size"      : MAX_STRING_SIZE,
 			"initval"       : "",
 			"asntype"       : ASN_OCTET_STR

@@ -33,9 +33,15 @@ the client side only, not the agent side.
 
 REQUIREMENTS
 
-python-netsnmpagent requires the net-snmp libraries to be installed,
-libnetsnmpagent to be precisely. The runtime library is enough, development
-files are not necessary.
+python-netsnmpagent requires the net-snmp libraries to be installed. The
+runtime libraries are enough, development files are not necessary.
+
+Tested versions include 5.4.2 (included with SUSE Linux Enterprise Server 11
+SP2), 5.4.3 (included with Ubuntu 12.04 LTS) and net-snmp 5.7.1 (included with
+openSUSE 12.1). While the intent is to support both net-snmp 5.4.x and 5.7.x
+versions at least for the near future, I want to avoid double code paths
+whereever possible. I therefore have to stick to the net-snmp 5.4.x way of
+things at certain places indicated by code comments.
 
 
 DOWNLOAD

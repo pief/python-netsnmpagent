@@ -195,6 +195,15 @@ WATCHER_SIZE_STRLEN                     = 0x08
 
 class netsnmp_watcher_info(ctypes.Structure): pass
 netsnmp_watcher_info_p = ctypes.POINTER(netsnmp_watcher_info)
+netsnmp_watcher_info._fields_ = [
+	("data",                ctypes.c_void_p),
+	("data_size",           ctypes.c_size_t),
+	("max_size",            ctypes.c_size_t),
+	("type",                ctypes.c_ubyte),
+	("flags",               ctypes.c_int)
+	# net-snmp 5.7.x knows data_size_p here as well but we ignore it for
+	# backwards compatibility with net-snmp 5.4.x.
+] 
 
 for f in [ libnsX.netsnmp_create_watcher_info ]:
 	f.argtypes = [

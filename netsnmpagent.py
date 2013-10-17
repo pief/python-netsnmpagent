@@ -36,10 +36,12 @@ class netsnmpAgent(object):
 		optional parameters:
 		
 		- AgentName     : The agent's name used for registration with net-snmp.
-		- MasterSocket  : The Unix domain socket of the running snmpd instance
-		                  to connect to. Change this if you want to use a custom
-		                  snmpd instance, eg. in example.sh or for automatic
-		                  testing.
+		- MasterSocket  : The transport specification of the AgentX socket of
+		                  the running snmpd instance to connect to (see the
+		                  "LISTENING ADDRESSES" section in the snmpd(8) manpage).
+		                  Change this if you want to use eg. a TCP transport or
+		                  access a custom snmpd instance, eg. as shown in
+		                  run_simple_agent.sh, or for automatic testing.
 		- PersistenceDir: The directory to use to store persistence information.
 		                  Change this if you want to use a custom snmpd
 		                  instance, eg. for automatic testing.
@@ -74,7 +76,9 @@ class netsnmpAgent(object):
 				"netsnmp_ds_set_boolean() failed for NETSNMP_DS_AGENT_ROLE!"
 			)
 
-		# Use an alternative Unix domain socket to connect to the master?
+		# Use an alternative transport specification to connect to the master?
+		# Defaults to "/var/run/agentx/master".
+		# (See the "LISTENING ADDRESSES" section in the snmpd(8) manpage)
 		if self.MasterSocket:
 			if libnsa.netsnmp_ds_set_string(
 				NETSNMP_DS_APPLICATION_ID,

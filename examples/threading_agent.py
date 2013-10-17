@@ -54,7 +54,7 @@ parser.add_option(
 	"-m",
 	"--mastersocket",
 	dest="mastersocket",
-	help="Sets the path to the master agent's AgentX unix domain socket",
+	help="Sets the transport specification for the master agent's AgentX socket",
 	default="/var/run/agentx/master"
 )
 parser.add_option(

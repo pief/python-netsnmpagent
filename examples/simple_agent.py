@@ -72,13 +72,17 @@ rows,columns = os.popen("stty size", "r").read().split()
 # First, create an instance of the netsnmpAgent class. We specify the
 # fully-qualified path to SIMPLE-MIB.txt ourselves here, so that you
 # don't have to copy the MIB to /usr/share/snmp/mibs.
-agent = netsnmpagent.netsnmpAgent(
-	AgentName      = "SimpleAgent",
-	MasterSocket   = options.mastersocket,
-	PersistenceDir = options.persistencedir,
-	MIBFiles       = [ os.path.abspath(os.path.dirname(sys.argv[0])) +
-	                   "/SIMPLE-MIB.txt" ]
-)
+try:
+	agent = netsnmpagent.netsnmpAgent(
+		AgentName      = "SimpleAgent",
+		MasterSocket   = options.mastersocket,
+		PersistenceDir = options.persistencedir,
+		MIBFiles       = [ os.path.abspath(os.path.dirname(sys.argv[0])) +
+		                   "/SIMPLE-MIB.txt" ]
+	)
+except netsnmpagent.netsnmpAgentException as e:
+	print "{0}: {1}".format(prgname, e)
+	sys.exit(1)
 
 # Then we create all SNMP scalar variables we're willing to serve.
 simpleInteger = agent.Integer32(
@@ -188,7 +192,13 @@ secondTableRow2.setRowCell(3, agent.Unsigned32(12842))
 
 # Finally, we tell the agent to "start". This actually connects the
 # agent to the master agent.
-agent.start()
+try:
+	agent.start()
+except netsnmpagent.netsnmpAgentException as e:
+	print "{0}: {1}".format(prgname, e)
+	sys.exit(1)
+
+print "{0}: AgentX connection to snmpd established.".format(prgname)
 
 # Helper function that dumps the state of all registered SNMP variables
 def DumpRegistered():

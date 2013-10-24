@@ -67,13 +67,17 @@ parser.add_option(
 (options, args) = parser.parse_args()
 
 # Create an instance of the netsnmpAgent class
-agent = netsnmpagent.netsnmpAgent(
-	AgentName      = "ThreadingAgent",
-	MasterSocket   = options.mastersocket,
-	PersistenceDir = options.persistencedir,
-	MIBFiles       = [ os.path.abspath(os.path.dirname(sys.argv[0])) +
-	                   "/THREADING-MIB.txt" ]
-)
+try:
+	agent = netsnmpagent.netsnmpAgent(
+		AgentName      = "ThreadingAgent",
+		MasterSocket   = options.mastersocket,
+		PersistenceDir = options.persistencedir,
+		MIBFiles       = [ os.path.abspath(os.path.dirname(sys.argv[0])) +
+		                   "/THREADING-MIB.txt" ]
+	)
+except netsnmpagent.netsnmpAgentException as e:
+	print "{0}: {1}".format(prgname, e)
+	sys.exit(1)
 
 # Register the only SNMP object we server, a DisplayString
 threadingString = agent.DisplayString(
@@ -159,7 +163,11 @@ def UpdateSNMPObjsAsync():
 		LogMsg("Data update still active, data update interval too low?")
 
 # Start the agent (eg. connect to the master agent).
-agent.start()
+try:
+	agent.start()
+except netsnmpagent.netsnmpAgentException as e:
+	LogMsg("{0}: {1}".format(prgname, e))
+	sys.exit(1)
 
 # Trigger initial data update.
 LogMsg("Doing initial call to UpdateSNMPObjsAsync().")

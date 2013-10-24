@@ -215,7 +215,7 @@ signal.signal(signal.SIGHUP, HupHandler)
 
 # The simple agent's main loop. We loop endlessly until our signal
 # handler above changes the "loop" variable.
-print "{0}: Serving SNMP requests, press ^C to terminate...".format(prgname)
+print "{0}: Serving SNMP requests, send SIGHUP to dump SNMP object state, press ^C to terminate...".format(prgname)
 
 loop = True
 while (loop):

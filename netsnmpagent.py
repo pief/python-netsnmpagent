@@ -10,7 +10,7 @@
 
 The Python bindings that ship with net-snmp support client operations
 only. I fixed a couple of issues in the existing python-agentx module
-but eventually to rewrite a new module from scratch due to design
+but eventually decided to write a new module from scratch due to design
 issues. For example, it implemented its own handler for registered SNMP
 variables, which requires re-doing a lot of stuff which net-snmp
 actually takes care of in its API's helpers.

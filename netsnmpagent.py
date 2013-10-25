@@ -19,12 +19,27 @@ This module, by contrast, concentrates on wrapping the net-snmp C API
 for SNMP subagents in an easy manner. It is still under heavy
 development and some features are yet missing."""
 
-import sys, os, socket, struct
+import sys, os, socket, struct, re
 from collections import defaultdict
 from netsnmpapi import *
 
 # Maximum string size supported by python-netsnmpagent
 MAX_STRING_SIZE                 = 1024
+
+# Helper function courtesy of Alec Thomas and taken from
+# http://stackoverflow.com/questions/36932/how-can-i-represent-an-enum-in-python
+def enum(*sequential, **named):
+	enums = dict(zip(sequential, range(len(sequential))), **named)
+	enums["Names"] = dict((value,key) for key, value in enums.iteritems())
+	return type("Enum", (), enums)
+
+# Indicates the status of a netsnmpAgent object
+netsnmpAgentStatus = enum(
+	"REGISTRATION", # Unconnected, SNMP object registrations possible
+	"DISCONNECTED", # No AgentX connection to snmpd yet, no more registrations
+	"CONNECTED",    # Connected to a running snmpd instance
+	"ECONNECT"      # Error connecting to snmpd
+)
 
 class netsnmpAgent(object):
 	""" Implements an SNMP agent using the net-snmp libraries. """
@@ -63,8 +78,130 @@ class netsnmpAgent(object):
 		if self.MIBFiles != None and not type(self.MIBFiles) in (list, tuple):
 			self.MIBFiles = (self.MIBFiles,)
 
-		# FIXME: log errors to stdout for now
-		libnsa.snmp_enable_stderrlog()
+		# Initialize status attribute -- until start() is called we will accept
+		# SNMP object registrations
+		self._status = netsnmpAgentStatus.REGISTRATION
+
+		# Unfortunately net-snmp does not give callers of init_snmp() (used
+		# in the start() method) any feedback about success or failure of
+		# connection establishment. But for AgentX clients this information is
+		# quite essential, thus we need to implement some more or less ugly
+		# workarounds.
+
+		# For net-snmp 5.7.x, we can derive success and failure from the log
+		# messages it generates. Normally these go to stderr, in the absence
+		# of other so-called log handlers. Alas we define a callback function
+		# that we will register with net-snmp as a custom log handler later on,
+		# hereby effectively gaining access to the desired information.
+		def _py_log_handler(majorID, minorID, serverarg, clientarg):
+			# "majorID" and "minorID" are the callback IDs with which this
+			# callback function was registered. They are useful if the same
+			# callback was registered multiple times.
+			# Both "serverarg" and "clientarg" are pointers that can be used to
+			# convey information from the calling context to the callback
+			# function: "serverarg" gets passed individually to every call of
+			# snmp_call_callbacks() while "clientarg" was initially passed to
+			# snmp_register_callback().
+
+			# In this case, "majorID" and "minorID" are always the same (see the
+			# registration code below). "serverarg" needs to be cast back to
+			# become a pointer to a "snmp_log_message" C structure (passed by
+			# net-snmp's log_handler_callback() in snmplib/snmp_logging.c) while
+			# "clientarg" will be None (see the registration code below).
+			logmsg = ctypes.cast(serverarg, snmp_log_message_p)
+
+			# Intercept log messages related to connection establishment and
+			# failure to update the status of this netsnmpAgent object. This is
+			# really an ugly hack, introducing a dependency on the particular
+			# text of log messages -- hopefully the net-snmp guys won't
+			# translate them one day.
+			if  logmsg.contents.priority == LOG_WARNING \
+			or  logmsg.contents.priority == LOG_ERR \
+			and re.match(".*: Failed to .* the agentx master agent.*", logmsg.contents.msg):
+				self._status = netsnmpAgentStatus.ECONNECT
+			elif logmsg.contents.priority == LOG_INFO \
+			and  re.match(".*AgentX subagent connected", logmsg.contents.msg):
+				self._status = netsnmpAgentStatus.CONNECTED
+			elif logmsg.contents.priority == LOG_INFO \
+			and  re.match(".*AgentX master disconnected us.*", logmsg.contents.msg):
+				self._status = netsnmpAgentStatus.DISCONNECTED
+
+			# Print all log messages to stderr to resemble previous behavior
+			# (but add log message's associated priority in plain text as well)
+			priorities = {
+				0: "Emerg", 1: "Alert", 2: "Crit", 3: "Err", 4: "Warning",
+				5: "Notice", 6: "Info", 7: "Debug"
+			}
+			print "[{0}] {1}".format(
+				priorities[logmsg.contents.priority],
+				logmsg.contents.msg
+			)
+
+			return 0
+
+		# We defined a Python function that needs a ctypes conversion so it can
+		# be called by C code such as net-snmp. That's what SNMPCallback() is
+		# used for. However we also need to store the reference in "self" as it
+		# will otherwise be lost at the exit of this function so that net-snmp's
+		# attempt to call it would end in nirvana...
+		self._log_handler = SNMPCallback(_py_log_handler)
+
+		# Now register our custom log handler with majorID SNMP_CALLBACK_LIBRARY
+		# and minorID SNMP_CALLBACK_LOGGING.
+		if libnsa.snmp_register_callback(
+			SNMP_CALLBACK_LIBRARY,
+			SNMP_CALLBACK_LOGGING,
+			self._log_handler,
+			None
+		) != SNMPERR_SUCCESS:
+			raise netsnmpAgentException(
+				"snmp_register_callback() failed for _netsnmp_log_handler!"
+			)
+
+		# Finally the net-snmp logging system needs to be told to enable
+		# logging through callback functions. This will actually register a
+		# NETSNMP_LOGHANDLER_CALLBACK log handler that will call out to any
+		# callback functions with the majorID and minorID shown above, such as
+		# ours.
+		libnsa.snmp_enable_calllog()
+
+		# Unfortunately our custom log handler above is still not enough: in
+		# net-snmp 5.4.x there were no "AgentX master disconnected" log
+		# messages yet. So we need another workaround to be able to detect
+		# disconnects for this release. Both net-snmp 5.4.x and 5.7.x support
+		# a callback mechanism using the "majorID" SNMP_CALLBACK_APPLICATION and
+		# the "minorID" SNMPD_CALLBACK_INDEX_STOP, which we can abuse for our
+		# purposes. Again, we start by defining a callback function.
+		def _py_index_stop_callback(majorID, minorID, serverarg, clientarg):
+			# For "majorID" and "minorID" see our log handler above.
+			# "serverarg" is a disguised pointer to a "netsnmp_session"
+			# structure (passed by net-snmp's subagent_open_master_session() and
+			# agentx_check_session() in agent/mibgroup/agentx/subagent.c). We
+			# can ignore it here since we have a single session only anyway.
+			# "clientarg" will be None again (see the registration code below).
+
+			# We only care about SNMPD_CALLBACK_INDEX_STOP as our custom log
+			# handler above already took care of all other events.
+			if minorID == SNMPD_CALLBACK_INDEX_STOP:
+				self._status = netsnmpAgentStatus.DISCONNECTED
+
+			return 0
+
+		# Convert it to a C callable function and store its reference
+		self._index_stop_callback = SNMPCallback(_py_index_stop_callback)
+
+		# Register it with net-snmp
+		if libnsa.snmp_register_callback(
+			SNMP_CALLBACK_APPLICATION,
+			SNMPD_CALLBACK_INDEX_STOP,
+			self._index_stop_callback,
+			None
+		) != SNMPERR_SUCCESS:
+			raise netsnmpAgentException(
+				"snmp_register_callback() failed for _netsnmp_index_callback!"
+			)
+
+		# No enabling necessary here
 
 		# Make us an AgentX client
 		if libnsa.netsnmp_ds_set_boolean(
@@ -119,7 +256,6 @@ class netsnmpAgent(object):
 
 		# Initialize our SNMP object registry
 		self._objs    = defaultdict(dict)
-		self._started = False
 
 	def _prepareRegistration(self, oidstr, writable = True):
 		""" Prepares the registration of an SNMP object.
@@ -128,7 +264,7 @@ class netsnmpAgent(object):
 		    "writable" indicates whether "snmpset" is allowed. """
 
 		# Make sure the agent has not been start()ed yet
-		if self._started == True:
+		if self._status != netsnmpAgentStatus.REGISTRATION:
 			raise netsnmpAgentException("Attempt to register SNMP object " \
 			                            "after agent has been started!")
 
@@ -688,8 +824,14 @@ class netsnmpAgent(object):
 	def start(self):
 		""" Starts the agent. Among other things, this means connecting
 		    to the master agent, if configured that way. """
-		self._started = True
-		libnsa.init_snmp(self.AgentName)
+		if self._status != netsnmpAgentStatus.CONNECTED:
+			self._status = netsnmpAgentStatus.DISCONNECTED
+			libnsa.init_snmp(self.AgentName)
+			if self._status == netsnmpAgentStatus.ECONNECT:
+				msg = "Error connecting to snmpd instance at \"{0}\" -- " \
+				      "incorrect \"MasterSocket\" or snmpd not running?"
+				msg = msg.format(self.MasterSocket)
+				raise netsnmpAgentException(msg)
 
 	def check_and_process(self, block=True):
 		""" Processes incoming SNMP requests.

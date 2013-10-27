@@ -35,10 +35,11 @@ def enum(*sequential, **named):
 
 # Indicates the status of a netsnmpAgent object
 netsnmpAgentStatus = enum(
-	"REGISTRATION", # Unconnected, SNMP object registrations possible
-	"DISCONNECTED", # No AgentX connection to snmpd yet, no more registrations
-	"CONNECTED",    # Connected to a running snmpd instance
-	"ECONNECT"      # Error connecting to snmpd
+	"REGISTRATION",     # Unconnected, SNMP object registrations possible
+	"FIRSTCONNECT",     # No more registrations, first connection attempt
+	"CONNECTFAILED",    # Error connecting to snmpd
+	"CONNECTED",        # Connected to a running snmpd instance
+	"RECONNECTING",     # Got disconnected, trying to reconnect
 )
 
 class netsnmpAgent(object):
@@ -155,13 +156,27 @@ class netsnmpAgent(object):
 			if  msgprio == "Warning" \
 			or  msgprio == "Error" \
 			and re.match("Failed to .* the agentx master agent.*", msgtext):
-				self._status = netsnmpAgentStatus.ECONNECT
+				# If this was the first connection attempt, we consider the
+				# condition fatal: it is more likely that an invalid
+				# "MasterSocket" was specified than that we've got concurrency
+				# issues with our agent being erroneously started before snmpd.
+				if self._status == netsnmpAgentStatus.FIRSTCONNECT:
+					self._status = netsnmpAgentStatus.CONNECTFAILED
+
+					# No need to log this message -- we'll generate our own when
+					# throwing a netsnmpAgentException as consequence of the
+					# ECONNECT
+					return 0
+
+				# Otherwise we'll stay at status RECONNECTING and log net-snmp's
+				# message like any other. net-snmp code will keep retrying to
+				# connect.
 			elif msgprio == "Info" \
 			and  re.match("AgentX subagent connected", msgtext):
 				self._status = netsnmpAgentStatus.CONNECTED
 			elif msgprio == "Info" \
 			and  re.match("AgentX master disconnected us.*", msgtext):
-				self._status = netsnmpAgentStatus.DISCONNECTED
+				self._status = netsnmpAgentStatus.RECONNECTING
 
 			# If "LogHandler" was defined, call it to take care of logging.
 			# Otherwise print all log messages to stderr to resemble net-snmp
@@ -218,7 +233,7 @@ class netsnmpAgent(object):
 			# We only care about SNMPD_CALLBACK_INDEX_STOP as our custom log
 			# handler above already took care of all other events.
 			if minorID == SNMPD_CALLBACK_INDEX_STOP:
-				self._status = netsnmpAgentStatus.DISCONNECTED
+				self._status = netsnmpAgentStatus.RECONNECTING
 
 			return 0
 
@@ -859,10 +874,11 @@ class netsnmpAgent(object):
 	def start(self):
 		""" Starts the agent. Among other things, this means connecting
 		    to the master agent, if configured that way. """
-		if self._status != netsnmpAgentStatus.CONNECTED:
-			self._status = netsnmpAgentStatus.DISCONNECTED
+		if  self._status != netsnmpAgentStatus.CONNECTED \
+		and self._status != netsnmpAgentStatus.RECONNECTING:
+			self._status = netsnmpAgentStatus.FIRSTCONNECT
 			libnsa.init_snmp(self.AgentName)
-			if self._status == netsnmpAgentStatus.ECONNECT:
+			if self._status == netsnmpAgentStatus.CONNECTFAILED:
 				msg = "Error connecting to snmpd instance at \"{0}\" -- " \
 				      "incorrect \"MasterSocket\" or snmpd not running?"
 				msg = msg.format(self.MasterSocket)

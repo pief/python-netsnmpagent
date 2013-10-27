@@ -125,9 +125,9 @@ class netsnmpAgent(object):
 
 			# Generate textual description of priority level
 			priorities = {
-				LOG_EMERG: "Emerg",
+				LOG_EMERG: "Emergency",
 				LOG_ALERT: "Alert",
-				LOG_CRIT: "Crit",
+				LOG_CRIT: "Critical",
 				LOG_ERR: "Error",
 				LOG_WARNING: "Warning",
 				LOG_NOTICE: "Notice",

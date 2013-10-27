@@ -64,14 +64,27 @@ class netsnmpAgent(object):
 		                  the OIDs, for which variables will be registered, do
 		                  not belong to standard MIBs and the custom MIBs are not
 		                  located in net-snmp's default MIB path
-		                  (/usr/share/snmp/mibs). """
+		                  (/usr/share/snmp/mibs).
+		- LogHandler    : An optional Python function that will be registered
+		                  with net-snmp as a custom log handler. If specified,
+		                  this function will be called for every log message
+		                  net-snmp itself generates, with parameters as follows:
+		                  1. a string indicating the message's priority
+		                  2. the actual log message. Note that heading strings
+		                  such as "Warning: " and "Error: " will be stripped off
+		                  since the priority level is explicitly known and can
+		                  be used to prefix the log message, if desired.
+		                  Trailing linefeeds will also have been stripped off.
+		                  If undefined, log messages will be written to stderr
+		                  instead. """
 
 		# Default settings
 		defaults = {
 			"AgentName"     : os.path.splitext(os.path.basename(sys.argv[0]))[0],
 			"MasterSocket"  : None,
 			"PersistenceDir": None,
-			"MIBFiles"      : None
+			"MIBFiles"      : None,
+			"LogHandler"    : None,
 		}
 		for key in defaults:
 			setattr(self, key, args.get(key, defaults[key]))
@@ -110,32 +123,52 @@ class netsnmpAgent(object):
 			# "clientarg" will be None (see the registration code below).
 			logmsg = ctypes.cast(serverarg, snmp_log_message_p)
 
+			# Generate textual description of priority level
+			priorities = {
+				LOG_EMERG: "Emerg",
+				LOG_ALERT: "Alert",
+				LOG_CRIT: "Crit",
+				LOG_ERR: "Error",
+				LOG_WARNING: "Warning",
+				LOG_NOTICE: "Notice",
+				LOG_INFO: "Info",
+				LOG_DEBUG: "Debug"
+			}
+			msgprio = priorities[logmsg.contents.priority]
+
+			# Strip trailing linefeeds and in addition "Warning: " and "Error: "
+			# from msgtext as these conditions are already indicated through
+			# msgprio
+			msgtext = re.sub(
+				"^(Warning|Error): *",
+				"",
+				logmsg.contents.msg.rstrip("\n")
+			)
+
 			# Intercept log messages related to connection establishment and
 			# failure to update the status of this netsnmpAgent object. This is
 			# really an ugly hack, introducing a dependency on the particular
 			# text of log messages -- hopefully the net-snmp guys won't
 			# translate them one day.
-			if  logmsg.contents.priority == LOG_WARNING \
-			or  logmsg.contents.priority == LOG_ERR \
-			and re.match(".*: Failed to .* the agentx master agent.*", logmsg.contents.msg):
+			if  msgprio == "Warning" \
+			or  msgprio == "Error" \
+			and re.match("Failed to .* the agentx master agent.*", msgtext):
 				self._status = netsnmpAgentStatus.ECONNECT
-			elif logmsg.contents.priority == LOG_INFO \
-			and  re.match(".*AgentX subagent connected", logmsg.contents.msg):
+			elif msgprio == "Info" \
+			and  re.match("AgentX subagent connected", msgtext):
 				self._status = netsnmpAgentStatus.CONNECTED
-			elif logmsg.contents.priority == LOG_INFO \
-			and  re.match(".*AgentX master disconnected us.*", logmsg.contents.msg):
+			elif msgprio == "Info" \
+			and  re.match("AgentX master disconnected us.*", msgtext):
 				self._status = netsnmpAgentStatus.DISCONNECTED
 
-			# Print all log messages to stderr to resemble previous behavior
-			# (but add log message's associated priority in plain text as well)
-			priorities = {
-				0: "Emerg", 1: "Alert", 2: "Crit", 3: "Err", 4: "Warning",
-				5: "Notice", 6: "Info", 7: "Debug"
-			}
-			print "[{0}] {1}".format(
-				priorities[logmsg.contents.priority],
-				logmsg.contents.msg
-			)
+			# If "LogHandler" was defined, call it to take care of logging.
+			# Otherwise print all log messages to stderr to resemble net-snmp
+			# standard behavior (but add log message's associated priority in
+			# plain text as well)
+			if self.LogHandler:
+				self.LogHandler(msgprio, msgtext)
+			else:
+				print "[{0}] {1}".format(msgprio, msgtext)
 
 			return 0
 

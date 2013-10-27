@@ -69,7 +69,9 @@ class netsnmpAgent(object):
 		                  with net-snmp as a custom log handler. If specified,
 		                  this function will be called for every log message
 		                  net-snmp itself generates, with parameters as follows:
-		                  1. a string indicating the message's priority
+		                  1. a string indicating the message's priority: one of
+		                  "Emergency", "Alert", "Critical", "Error", "Warning",
+		                  "Notice", "Info" or "Debug".
 		                  2. the actual log message. Note that heading strings
 		                  such as "Warning: " and "Error: " will be stripped off
 		                  since the priority level is explicitly known and can

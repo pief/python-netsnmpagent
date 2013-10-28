@@ -10,7 +10,7 @@
 
 The Python bindings that ship with net-snmp support client operations
 only. I fixed a couple of issues in the existing python-agentx module
-but eventually decided to write a new module from scratch due to design
+but eventually to rewrite a new module from scratch due to design
 issues. For example, it implemented its own handler for registered SNMP
 variables, which requires re-doing a lot of stuff which net-snmp
 actually takes care of in its API's helpers.
@@ -19,33 +19,12 @@ This module, by contrast, concentrates on wrapping the net-snmp C API
 for SNMP subagents in an easy manner. It is still under heavy
 development and some features are yet missing."""
 
-import pkg_resources, sys, os, socket, struct, re
+import sys, os, socket, struct
 from collections import defaultdict
 from netsnmpapi import *
 
-# Make version string from setuptools available as a property variable that
-# can be queried for by agents that require a specific version of
-# python-netsnmpagent
-__version__ = pkg_resources.require("netsnmpagent")[0].version
-
 # Maximum string size supported by python-netsnmpagent
 MAX_STRING_SIZE                 = 1024
-
-# Helper function courtesy of Alec Thomas and taken from
-# http://stackoverflow.com/questions/36932/how-can-i-represent-an-enum-in-python
-def enum(*sequential, **named):
-	enums = dict(zip(sequential, range(len(sequential))), **named)
-	enums["Names"] = dict((value,key) for key, value in enums.iteritems())
-	return type("Enum", (), enums)
-
-# Indicates the status of a netsnmpAgent object
-netsnmpAgentStatus = enum(
-	"REGISTRATION",     # Unconnected, SNMP object registrations possible
-	"FIRSTCONNECT",     # No more registrations, first connection attempt
-	"CONNECTFAILED",    # Error connecting to snmpd
-	"CONNECTED",        # Connected to a running snmpd instance
-	"RECONNECTING",     # Got disconnected, trying to reconnect
-)
 
 class netsnmpAgent(object):
 	""" Implements an SNMP agent using the net-snmp libraries. """
@@ -57,12 +36,10 @@ class netsnmpAgent(object):
 		optional parameters:
 		
 		- AgentName     : The agent's name used for registration with net-snmp.
-		- MasterSocket  : The transport specification of the AgentX socket of
-		                  the running snmpd instance to connect to (see the
-		                  "LISTENING ADDRESSES" section in the snmpd(8) manpage).
-		                  Change this if you want to use eg. a TCP transport or
-		                  access a custom snmpd instance, eg. as shown in
-		                  run_simple_agent.sh, or for automatic testing.
+		- MasterSocket  : The Unix domain socket of the running snmpd instance
+		                  to connect to. Change this if you want to use a custom
+		                  snmpd instance, eg. in example.sh or for automatic
+		                  testing.
 		- PersistenceDir: The directory to use to store persistence information.
 		                  Change this if you want to use a custom snmpd
 		                  instance, eg. for automatic testing.
@@ -70,193 +47,22 @@ class netsnmpAgent(object):
 		                  the OIDs, for which variables will be registered, do
 		                  not belong to standard MIBs and the custom MIBs are not
 		                  located in net-snmp's default MIB path
-		                  (/usr/share/snmp/mibs).
-		- LogHandler    : An optional Python function that will be registered
-		                  with net-snmp as a custom log handler. If specified,
-		                  this function will be called for every log message
-		                  net-snmp itself generates, with parameters as follows:
-		                  1. a string indicating the message's priority: one of
-		                  "Emergency", "Alert", "Critical", "Error", "Warning",
-		                  "Notice", "Info" or "Debug".
-		                  2. the actual log message. Note that heading strings
-		                  such as "Warning: " and "Error: " will be stripped off
-		                  since the priority level is explicitly known and can
-		                  be used to prefix the log message, if desired.
-		                  Trailing linefeeds will also have been stripped off.
-		                  If undefined, log messages will be written to stderr
-		                  instead. """
+		                  (/usr/share/snmp/mibs). """
 
 		# Default settings
 		defaults = {
 			"AgentName"     : os.path.splitext(os.path.basename(sys.argv[0]))[0],
 			"MasterSocket"  : None,
 			"PersistenceDir": None,
-			"MIBFiles"      : None,
-			"LogHandler"    : None,
+			"MIBFiles"      : None
 		}
 		for key in defaults:
 			setattr(self, key, args.get(key, defaults[key]))
 		if self.MIBFiles != None and not type(self.MIBFiles) in (list, tuple):
 			self.MIBFiles = (self.MIBFiles,)
 
-		# Initialize status attribute -- until start() is called we will accept
-		# SNMP object registrations
-		self._status = netsnmpAgentStatus.REGISTRATION
-
-		# Unfortunately net-snmp does not give callers of init_snmp() (used
-		# in the start() method) any feedback about success or failure of
-		# connection establishment. But for AgentX clients this information is
-		# quite essential, thus we need to implement some more or less ugly
-		# workarounds.
-
-		# For net-snmp 5.7.x, we can derive success and failure from the log
-		# messages it generates. Normally these go to stderr, in the absence
-		# of other so-called log handlers. Alas we define a callback function
-		# that we will register with net-snmp as a custom log handler later on,
-		# hereby effectively gaining access to the desired information.
-		def _py_log_handler(majorID, minorID, serverarg, clientarg):
-			# "majorID" and "minorID" are the callback IDs with which this
-			# callback function was registered. They are useful if the same
-			# callback was registered multiple times.
-			# Both "serverarg" and "clientarg" are pointers that can be used to
-			# convey information from the calling context to the callback
-			# function: "serverarg" gets passed individually to every call of
-			# snmp_call_callbacks() while "clientarg" was initially passed to
-			# snmp_register_callback().
-
-			# In this case, "majorID" and "minorID" are always the same (see the
-			# registration code below). "serverarg" needs to be cast back to
-			# become a pointer to a "snmp_log_message" C structure (passed by
-			# net-snmp's log_handler_callback() in snmplib/snmp_logging.c) while
-			# "clientarg" will be None (see the registration code below).
-			logmsg = ctypes.cast(serverarg, snmp_log_message_p)
-
-			# Generate textual description of priority level
-			priorities = {
-				LOG_EMERG: "Emergency",
-				LOG_ALERT: "Alert",
-				LOG_CRIT: "Critical",
-				LOG_ERR: "Error",
-				LOG_WARNING: "Warning",
-				LOG_NOTICE: "Notice",
-				LOG_INFO: "Info",
-				LOG_DEBUG: "Debug"
-			}
-			msgprio = priorities[logmsg.contents.priority]
-
-			# Strip trailing linefeeds and in addition "Warning: " and "Error: "
-			# from msgtext as these conditions are already indicated through
-			# msgprio
-			msgtext = re.sub(
-				"^(Warning|Error): *",
-				"",
-				logmsg.contents.msg.rstrip("\n")
-			)
-
-			# Intercept log messages related to connection establishment and
-			# failure to update the status of this netsnmpAgent object. This is
-			# really an ugly hack, introducing a dependency on the particular
-			# text of log messages -- hopefully the net-snmp guys won't
-			# translate them one day.
-			if  msgprio == "Warning" \
-			or  msgprio == "Error" \
-			and re.match("Failed to .* the agentx master agent.*", msgtext):
-				# If this was the first connection attempt, we consider the
-				# condition fatal: it is more likely that an invalid
-				# "MasterSocket" was specified than that we've got concurrency
-				# issues with our agent being erroneously started before snmpd.
-				if self._status == netsnmpAgentStatus.FIRSTCONNECT:
-					self._status = netsnmpAgentStatus.CONNECTFAILED
-
-					# No need to log this message -- we'll generate our own when
-					# throwing a netsnmpAgentException as consequence of the
-					# ECONNECT
-					return 0
-
-				# Otherwise we'll stay at status RECONNECTING and log net-snmp's
-				# message like any other. net-snmp code will keep retrying to
-				# connect.
-			elif msgprio == "Info" \
-			and  re.match("AgentX subagent connected", msgtext):
-				self._status = netsnmpAgentStatus.CONNECTED
-			elif msgprio == "Info" \
-			and  re.match("AgentX master disconnected us.*", msgtext):
-				self._status = netsnmpAgentStatus.RECONNECTING
-
-			# If "LogHandler" was defined, call it to take care of logging.
-			# Otherwise print all log messages to stderr to resemble net-snmp
-			# standard behavior (but add log message's associated priority in
-			# plain text as well)
-			if self.LogHandler:
-				self.LogHandler(msgprio, msgtext)
-			else:
-				print "[{0}] {1}".format(msgprio, msgtext)
-
-			return 0
-
-		# We defined a Python function that needs a ctypes conversion so it can
-		# be called by C code such as net-snmp. That's what SNMPCallback() is
-		# used for. However we also need to store the reference in "self" as it
-		# will otherwise be lost at the exit of this function so that net-snmp's
-		# attempt to call it would end in nirvana...
-		self._log_handler = SNMPCallback(_py_log_handler)
-
-		# Now register our custom log handler with majorID SNMP_CALLBACK_LIBRARY
-		# and minorID SNMP_CALLBACK_LOGGING.
-		if libnsa.snmp_register_callback(
-			SNMP_CALLBACK_LIBRARY,
-			SNMP_CALLBACK_LOGGING,
-			self._log_handler,
-			None
-		) != SNMPERR_SUCCESS:
-			raise netsnmpAgentException(
-				"snmp_register_callback() failed for _netsnmp_log_handler!"
-			)
-
-		# Finally the net-snmp logging system needs to be told to enable
-		# logging through callback functions. This will actually register a
-		# NETSNMP_LOGHANDLER_CALLBACK log handler that will call out to any
-		# callback functions with the majorID and minorID shown above, such as
-		# ours.
-		libnsa.snmp_enable_calllog()
-
-		# Unfortunately our custom log handler above is still not enough: in
-		# net-snmp 5.4.x there were no "AgentX master disconnected" log
-		# messages yet. So we need another workaround to be able to detect
-		# disconnects for this release. Both net-snmp 5.4.x and 5.7.x support
-		# a callback mechanism using the "majorID" SNMP_CALLBACK_APPLICATION and
-		# the "minorID" SNMPD_CALLBACK_INDEX_STOP, which we can abuse for our
-		# purposes. Again, we start by defining a callback function.
-		def _py_index_stop_callback(majorID, minorID, serverarg, clientarg):
-			# For "majorID" and "minorID" see our log handler above.
-			# "serverarg" is a disguised pointer to a "netsnmp_session"
-			# structure (passed by net-snmp's subagent_open_master_session() and
-			# agentx_check_session() in agent/mibgroup/agentx/subagent.c). We
-			# can ignore it here since we have a single session only anyway.
-			# "clientarg" will be None again (see the registration code below).
-
-			# We only care about SNMPD_CALLBACK_INDEX_STOP as our custom log
-			# handler above already took care of all other events.
-			if minorID == SNMPD_CALLBACK_INDEX_STOP:
-				self._status = netsnmpAgentStatus.RECONNECTING
-
-			return 0
-
-		# Convert it to a C callable function and store its reference
-		self._index_stop_callback = SNMPCallback(_py_index_stop_callback)
-
-		# Register it with net-snmp
-		if libnsa.snmp_register_callback(
-			SNMP_CALLBACK_APPLICATION,
-			SNMPD_CALLBACK_INDEX_STOP,
-			self._index_stop_callback,
-			None
-		) != SNMPERR_SUCCESS:
-			raise netsnmpAgentException(
-				"snmp_register_callback() failed for _netsnmp_index_callback!"
-			)
-
-		# No enabling necessary here
+		# FIXME: log errors to stdout for now
+		libnsa.snmp_enable_stderrlog()
 
 		# Make us an AgentX client
 		if libnsa.netsnmp_ds_set_boolean(
@@ -268,9 +74,7 @@ class netsnmpAgent(object):
 				"netsnmp_ds_set_boolean() failed for NETSNMP_DS_AGENT_ROLE!"
 			)
 
-		# Use an alternative transport specification to connect to the master?
-		# Defaults to "/var/run/agentx/master".
-		# (See the "LISTENING ADDRESSES" section in the snmpd(8) manpage)
+		# Use an alternative Unix domain socket to connect to the master?
 		if self.MasterSocket:
 			if libnsa.netsnmp_ds_set_string(
 				NETSNMP_DS_APPLICATION_ID,
@@ -311,6 +115,7 @@ class netsnmpAgent(object):
 
 		# Initialize our SNMP object registry
 		self._objs    = defaultdict(dict)
+		self._started = False
 
 	def _prepareRegistration(self, oidstr, writable = True):
 		""" Prepares the registration of an SNMP object.
@@ -319,7 +124,7 @@ class netsnmpAgent(object):
 		    "writable" indicates whether "snmpset" is allowed. """
 
 		# Make sure the agent has not been start()ed yet
-		if self._status != netsnmpAgentStatus.REGISTRATION:
+		if self._started == True:
 			raise netsnmpAgentException("Attempt to register SNMP object " \
 			                            "after agent has been started!")
 
@@ -366,9 +171,9 @@ class netsnmpAgent(object):
 		                          ctypes.create_string_buffer.
 		    - "flags"           : A net-snmp constant describing the C data
 		                          type's storage behavior, currently either
-		                          WATCHER_FIXED_SIZE or WATCHER_MAX_SIZE.
+		                          WATCHER_FIXED_SIZE or WATCHER_SIZE_STRLEN.
 		    - "max_size"        : The maximum allowed string size if "flags"
-		                          has been set to WATCHER_MAX_SIZE.
+		                          has been set to WATCHER_SIZE_STRLEN.
 		    - "initval"         : The value to initialize the C data type with,
 		                          eg. 0 or "".
 		    - "asntype"         : A constant defining the SNMP variable type
@@ -425,23 +230,18 @@ class netsnmpAgent(object):
 						handler_reginfo.contents.contextName = context
 
 						# Create the netsnmp_watcher_info structure.
-						self._watcher = libnsX.netsnmp_create_watcher_info(
+						watcher = libnsX.netsnmp_create_watcher_info(
 							self.cref(),
 							self._data_size,
 							self._asntype,
 							self._flags
 						)
-
-						# Explicitly set netsnmp_watcher_info structure's
-						# max_size parameter. netsnmp_create_watcher_info6 would
-						# have done that for us but that function was not yet
-						# available in net-snmp 5.4.x.
-						self._watcher.contents.max_size = self._max_size
+						watcher.max_size = self._max_size
 
 						# Register handler and watcher with net-snmp.
 						result = libnsX.netsnmp_register_watched_scalar(
 							handler_reginfo,
-							self._watcher
+							watcher
 						)
 						if result != 0:
 							raise netsnmpAgentException("Error registering variable with net-snmp!")
@@ -466,13 +266,13 @@ class netsnmpAgent(object):
 					if self._asntype == ASN_COUNTER64 and val >> 64:
 						val = val & 0xFFFFFFFFFFFFFFFF
 					self._cvar.value = val
-					if props["flags"] == WATCHER_MAX_SIZE:
+					if props["flags"] == WATCHER_SIZE_STRLEN:
 						if len(val) > self._max_size:
 							raise netsnmpAgentException(
 								"Value passed to update() truncated: {0} > {1} "
 								"bytes!".format(len(val), self._max_size))
 						self._cvar.value = val
-						self._data_size  = self._watcher.contents.data_size = len(val)
+						self._data_size  = len(val)
 
 				if props["asntype"] in [ASN_COUNTER, ASN_COUNTER64]:
 					def increment(self, count=1):
@@ -532,14 +332,11 @@ class netsnmpAgent(object):
 
 	# Note we can't use ctypes.c_char_p here since that creates an immutable
 	# type and net-snmp _can_ modify the buffer (unless writable is False).
-	# Also note that while net-snmp 5.5 introduced a WATCHER_SIZE_STRLEN flag,
-	# we have to stick to WATCHER_MAX_SIZE for now to support net-snmp 5.4.x
-	# (used eg. in SLES 11 SP2 and Ubuntu 12.04 LTS).
 	@VarTypeClass
 	def OctetString(self, initval = None, oidstr = None, writable = True, context = ""):
 		return {
 			"ctype"         : ctypes.create_string_buffer,
-			"flags"         : WATCHER_MAX_SIZE,
+			"flags"         : WATCHER_SIZE_STRLEN,
 			"max_size"      : MAX_STRING_SIZE,
 			"initval"       : "",
 			"asntype"       : ASN_OCTET_STR
@@ -551,7 +348,7 @@ class netsnmpAgent(object):
 	def DisplayString(self, initval = None, oidstr = None, writable = True, context = ""):
 		return {
 			"ctype"         : ctypes.create_string_buffer,
-			"flags"         : WATCHER_MAX_SIZE,
+			"flags"         : WATCHER_SIZE_STRLEN,
 			"max_size"      : MAX_STRING_SIZE,
 			"initval"       : "",
 			"asntype"       : ASN_OCTET_STR
@@ -879,15 +676,8 @@ class netsnmpAgent(object):
 	def start(self):
 		""" Starts the agent. Among other things, this means connecting
 		    to the master agent, if configured that way. """
-		if  self._status != netsnmpAgentStatus.CONNECTED \
-		and self._status != netsnmpAgentStatus.RECONNECTING:
-			self._status = netsnmpAgentStatus.FIRSTCONNECT
-			libnsa.init_snmp(self.AgentName)
-			if self._status == netsnmpAgentStatus.CONNECTFAILED:
-				msg = "Error connecting to snmpd instance at \"{0}\" -- " \
-				      "incorrect \"MasterSocket\" or snmpd not running?"
-				msg = msg.format(self.MasterSocket)
-				raise netsnmpAgentException(msg)
+		self._started = True
+		libnsa.init_snmp(self.AgentName)
 
 	def check_and_process(self, block=True):
 		""" Processes incoming SNMP requests.

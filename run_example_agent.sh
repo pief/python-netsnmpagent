@@ -1,13 +1,13 @@
 #
-# python-netsnmpagent simple example agent
+# python-netsnmpagent example agent
 #
 # Copyright (c) 2013 Pieter Hollants <pieter@hollants.com>
 # Licensed under the GNU Public License (GPL) version 3
 #
 
 #
-# This script makes running simple_agent.py easier for you because it takes
-# care of setting everything up so that the example agent can be run
+# This script makes running example_agent.py easier for you because it
+# takes care of setting everything up so that the example agent can be run
 # successfully.
 #
 
@@ -53,7 +53,7 @@ trap cleanup EXIT
 echo "* Preparing snmpd environment..."
 
 # Create a temporary directory
-TMPDIR="$(mktemp --directory --tmpdir simple_agent.XXXXXXXXXX)"
+TMPDIR="$(mktemp --directory --tmpdir example_agent.XXXXXXXXXX)"
 SNMPD_CONFFILE=$TMPDIR/snmpd.conf
 SNMPD_PIDFILE=$TMPDIR/snmpd.pid
 
@@ -61,12 +61,12 @@ SNMPD_PIDFILE=$TMPDIR/snmpd.pid
 cat <<EOF >>$SNMPD_CONFFILE
 [snmpd]
 rocommunity public 127.0.0.1
-rwcommunity simple 127.0.0.1
+rwcommunity example 127.0.0.1
 agentaddress localhost:5555
 informsink localhost:5556
 smuxsocket localhost:5557
 master agentx
-agentXSocket tcp:localhost:5558
+agentXSocket $TMPDIR/snmpd-agentx.sock
 
 [snmp]
 persistentDir $TMPDIR/state
@@ -79,19 +79,18 @@ $SNMPD_BIN -r -LE warning -C -c$SNMPD_CONFFILE -p$SNMPD_PIDFILE
 
 # Give the user guidance
 echo "* Our snmpd instance is now listening on localhost, port 5555."
-echo "  From a second console, use the net-snmp command line utilities like this:"
+echo "  From a second console, use snmpwalk, snmpget etc. like this:"
 echo ""
 echo "    cd `pwd`"
-echo "    snmpwalk -v 2c -c public -M+. localhost:5555 SIMPLE-MIB::simpleMIB"
-echo "    snmptable -v 2c -c public -M+. -Ci localhost:5555 SIMPLE-MIB::firstTable"
-echo "    snmpget -v 2c -c public -M+. localhost:5555 SIMPLE-MIB::simpleInteger.0"
-echo "    snmpset -v 2c -c simple -M+. localhost:5555 SIMPLE-MIB::simpleInteger.0 i 123"
+echo "    snmpwalk -v 2c -c public -M+. localhost:5555 EXAMPLE-MIB::exampleMIB"
+echo "    snmptable -v 2c -c public -M+. -Ci localhost:5555 EXAMPLE-MIB::firstTable"
+echo "    snmpset -v 2c -c example -M+. localhost:5555 EXAMPLE-MIB::exampleInteger.0 i 123"
 echo ""
 
 # Workaround to have CTRL-C not generate any visual feedback (we don't do any
 # input anyway)
 stty -echo
 
-# Now start the simple example agent
-echo "* Starting the simple example agent..."
-python simple_agent.py -m tcp:localhost:5558 -p $TMPDIR/
+# Now start the example agent
+echo "* Starting the example agent..."
+python example_agent.py -m $TMPDIR/snmpd-agentx.sock -p $TMPDIR/

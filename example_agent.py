@@ -1,49 +1,42 @@
 #!/usr/bin/env python
 #
-# python-netsnmpagent simple example agent
+# python-netsnmpagent example agent
 #
 # Copyright (c) 2013 Pieter Hollants <pieter@hollants.com>
 # Licensed under the GNU Public License (GPL) version 3
 #
 
 #
-# This is an example of a simple SNMP sub-agent using the AgentX protocol
+# This is an example of a SNMP sub-agent using the AgentX protocol
 # to connect to a master agent (snmpd), extending its MIB with the
-# information from the included SIMPLE-MIB.txt.
+# information from the included EXAMPLE-MIB.tx.
 #
-# Use the included script run_simple_agent.sh to test this example.
+# To run, net-snmp must be installed and snmpd must have as minimal
+# configuration:
 #
-# Alternatively, if you want to test with your system-wide snmpd instance,
-# it must have as minimal configuration:
-#
-#   rocommunity <rosecret> 127.0.0.1
 #   master agentx
 #
 # snmpd must be started first, then this agent must be started as root
-# (because of the AgentX socket under /var/run/agentx/master), eg. via "sudo".
+# (because of the AgentX socket under /var/run/agentx/master).
 #
-# Then, from a separate console and from inside the python-netsnmpagent
-# directory, you can run eg.:
+# Then, from a separate console, you can run eg.:
 #
-#  snmpwalk -v 2c -c <rosecret> -M+. localhost SIMPLE-MIB::simpleMIB
+#  snmpwalk -v 2c -c public -M+. localhost EXAMPLE-MIB::exampleMIB
 #
 # If you wish to test setting values as well, your snmpd.conf needs a
 # line like this:
 #
-#   rwcommunity <rwsecret> 127.0.0.1
+#   rwcommunity <secret> 127.0.0.1
 #
 # Then you can try something like:
 #
-#   snmpset -v 2c -c <rwsecret> -M+. localhost \
-#     SIMPLE-MIB::simpleInteger i 0
+#   snmpset -v 2c -c <secret> -M+. localhost \
+#     EXAMPLE-MIB::exampleInteger i 0
 #
 
 import sys, os, signal
 import optparse
 import pprint
-
-# Make sure we use the local copy, not a system-wide one
-sys.path.insert(0, os.path.dirname(os.getcwd()))
 import netsnmpagent
 
 prgname = sys.argv[0]
@@ -54,7 +47,7 @@ parser.add_option(
 	"-m",
 	"--mastersocket",
 	dest="mastersocket",
-	help="Sets the transport specification for the master agent's AgentX socket",
+	help="Sets the path to the master agent's AgentX unix domain socket",
 	default="/var/run/agentx/master"
 )
 parser.add_option(
@@ -70,75 +63,71 @@ parser.add_option(
 rows,columns = os.popen("stty size", "r").read().split()
 
 # First, create an instance of the netsnmpAgent class. We specify the
-# fully-qualified path to SIMPLE-MIB.txt ourselves here, so that you
+# fully-qualified path to EXAMPLE-MIB.txt ourselves here, so that you
 # don't have to copy the MIB to /usr/share/snmp/mibs.
-try:
-	agent = netsnmpagent.netsnmpAgent(
-		AgentName      = "SimpleAgent",
-		MasterSocket   = options.mastersocket,
-		PersistenceDir = options.persistencedir,
-		MIBFiles       = [ os.path.abspath(os.path.dirname(sys.argv[0])) +
-		                   "/SIMPLE-MIB.txt" ]
-	)
-except netsnmpagent.netsnmpAgentException as e:
-	print "{0}: {1}".format(prgname, e)
-	sys.exit(1)
+agent = netsnmpagent.netsnmpAgent(
+	AgentName      = "ExampleAgent",
+	MasterSocket   = options.mastersocket,
+	PersistenceDir = options.persistencedir,
+	MIBFiles       = [ os.path.abspath(os.path.dirname(sys.argv[0])) +
+	                   "/EXAMPLE-MIB.txt" ]
+)
 
 # Then we create all SNMP scalar variables we're willing to serve.
-simpleInteger = agent.Integer32(
-	oidstr = "SIMPLE-MIB::simpleInteger"
+exampleInteger = agent.Integer32(
+	oidstr = "EXAMPLE-MIB::exampleInteger"
 )
-simpleIntegerContext1 = agent.Integer32(
-	oidstr = "SIMPLE-MIB::simpleInteger",
+exampleIntegerContext1 = agent.Integer32(
+	oidstr = "EXAMPLE-MIB::exampleInteger",
 	context = "context1",
 	initval = 200,
 )
-simpleIntegerRO = agent.Integer32(
-	oidstr   = "SIMPLE-MIB::simpleIntegerRO",
+exampleIntegerRO = agent.Integer32(
+	oidstr   = "EXAMPLE-MIB::exampleIntegerRO",
 	writable = False
 )
-simpleUnsigned = agent.Unsigned32(
-	oidstr = "SIMPLE-MIB::simpleUnsigned"
+exampleUnsigned = agent.Unsigned32(
+	oidstr = "EXAMPLE-MIB::exampleUnsigned"
 )
-simpleUnsignedRO = agent.Unsigned32(
-	oidstr   = "SIMPLE-MIB::simpleUnsignedRO",
+exampleUnsignedRO = agent.Unsigned32(
+	oidstr   = "EXAMPLE-MIB::exampleUnsignedRO",
 	writable = False
 )
-simpleCounter32 = agent.Counter32(
-	oidstr = "SIMPLE-MIB::simpleCounter32"
+exampleCounter32 = agent.Counter32(
+	oidstr = "EXAMPLE-MIB::exampleCounter32"
 )
-simpleCounter32Context2 = agent.Counter32(
-	oidstr = "SIMPLE-MIB::simpleCounter32",
+exampleCounter32Context2 = agent.Counter32(
+	oidstr = "EXAMPLE-MIB::exampleCounter32",
 	context = "context2",
-	initval = pow(2,32) - 10, # To rule out endianness bugs
+	initval = pow(2,32) - 10,
 )
-simpleCounter64 = agent.Counter64(
-	oidstr = "SIMPLE-MIB::simpleCounter64"
-)
-simpleCounter64Context2 = agent.Counter64(
-	oidstr = "SIMPLE-MIB::simpleCounter64",
+exampleCounter64Context2 = agent.Counter64(
+	oidstr = "EXAMPLE-MIB::exampleCounter64",
 	context = "context2",
-	initval = pow(2,64) - 10, # To rule out endianness bugs
+	initval = pow(2,64) - 10,
 )
-simpleTimeTicks = agent.TimeTicks(
-	oidstr = "SIMPLE-MIB::simpleTimeTicks"
+exampleCounter64 = agent.Counter64(
+	oidstr = "EXAMPLE-MIB::exampleCounter64"
 )
-simpleIpAddress = agent.IpAddress(
-	oidstr = "SIMPLE-MIB::simpleIpAddress",
+exampleTimeTicks = agent.TimeTicks(
+	oidstr = "EXAMPLE-MIB::exampleTimeTicks"
+)
+exampleIpAddress = agent.IpAddress(
+	oidstr = "EXAMPLE-MIB::exampleIpAddress",
 	initval="127.0.0.1"
 )
-simpleOctetString = agent.OctetString(
-	oidstr  = "SIMPLE-MIB::simpleOctetString",
+exampleOctetString = agent.OctetString(
+	oidstr  = "EXAMPLE-MIB::exampleOctetString",
 	initval = "Hello World"
 )
-simpleDisplayString = agent.DisplayString(
-	oidstr  = "SIMPLE-MIB::simpleDisplayString",
+exampleDisplayString = agent.DisplayString(
+	oidstr  = "EXAMPLE-MIB::exampleDisplayString",
 	initval = "Nice to meet you"
 )
 
 # Create the first table
 firstTable = agent.Table(
-	oidstr = "SIMPLE-MIB::firstTable",
+	oidstr = "EXAMPLE-MIB::firstTable",
 	indexes = [
 		agent.DisplayString()
 	],
@@ -147,7 +136,7 @@ firstTable = agent.Table(
 		(3, agent.Integer32(0))
 	],
 	counterobj = agent.Unsigned32(
-		oidstr = "SIMPLE-MIB::firstTableNumber"
+		oidstr = "EXAMPLE-MIB::firstTableNumber"
 	)
 )
 
@@ -167,7 +156,7 @@ firstTableRow3.setRowCell(3, agent.Integer32(18))
 
 # Create the second table
 secondTable = agent.Table(
-	oidstr = "SIMPLE-MIB::secondTable",
+	oidstr = "EXAMPLE-MIB::secondTable",
 	indexes = [
 		agent.Integer32()
 	],
@@ -176,7 +165,7 @@ secondTable = agent.Table(
 		(3, agent.Unsigned32())
 	],
 	counterobj = agent.Unsigned32(
-		oidstr = "SIMPLE-MIB::secondTableNumber"
+		oidstr = "EXAMPLE-MIB::secondTableNumber"
 	)
 )
 
@@ -192,13 +181,7 @@ secondTableRow2.setRowCell(3, agent.Unsigned32(12842))
 
 # Finally, we tell the agent to "start". This actually connects the
 # agent to the master agent.
-try:
-	agent.start()
-except netsnmpagent.netsnmpAgentException as e:
-	print "{0}: {1}".format(prgname, e)
-	sys.exit(1)
-
-print "{0}: AgentX connection to snmpd established.".format(prgname)
+agent.start()
 
 # Helper function that dumps the state of all registered SNMP variables
 def DumpRegistered():
@@ -209,7 +192,7 @@ def DumpRegistered():
 		print
 DumpRegistered()
 
-# Install a signal handler that terminates our simple agent when
+# Install a signal handler that terminates our example agent when
 # CTRL-C is pressed or a KILL signal is received
 def TermHandler(signum, frame):
 	global loop
@@ -223,24 +206,24 @@ def HupHandler(signum, frame):
 	DumpRegistered()
 signal.signal(signal.SIGHUP, HupHandler)
 
-# The simple agent's main loop. We loop endlessly until our signal
+# The example agent's main loop. We loop endlessly until our signal
 # handler above changes the "loop" variable.
-print "{0}: Serving SNMP requests, send SIGHUP to dump SNMP object state, press ^C to terminate...".format(prgname)
+print "{0}: Serving SNMP requests, press ^C to terminate...".format(prgname)
 
 loop = True
 while (loop):
 	# Block and process SNMP requests, if available
 	agent.check_and_process()
 
-	# Since we didn't give simpleCounter, simpleCounter64 and simpleTimeTicks
-	# a real meaning in the SIMPLE-MIB, we can basically do with them whatever
+	# Since we didn't give exampleCounter, exampleCounter64 and exampleTimeTicks
+	# a real meaning in the EXAMPLE-MIB, we can basically do with them whatever
 	# we want. Here, we just increase them, although in different manners.
-	simpleCounter32.update(simpleCounter32.value() + 2)
-	simpleCounter64.update(simpleCounter64.value() + 4294967294)
-	simpleTimeTicks.update(simpleTimeTicks.value() + 1)
+	exampleCounter32.update(exampleCounter32.value() + 2)
+	exampleCounter64.update(exampleCounter64.value() + 4294967294)
+	exampleTimeTicks.update(exampleTimeTicks.value() + 1)
 
-	# With counters, you can also call increment() on them
-	simpleCounter32Context2.increment() # By 1
-	simpleCounter64Context2.increment(5) # By 5
+	# With counters, you can also increment them
+	exampleCounter32Context2.increment() # By 1
+	exampleCounter64Context2.increment(5) # By 5
 
 print "{0}: Terminating.".format(prgname)

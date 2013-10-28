@@ -19,7 +19,6 @@ BuildArch:      noarch
 %else
 %{!?python_sitelib: %global python_sitelib %(python -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")}
 %endif
-Requires:       python-setuptools
 
 %description
 python-netsnmpagent is a Python module that facilitates writing Net-SNMP
@@ -39,9 +38,7 @@ CFLAGS="%{optflags}" python setup.py build
 %install
 python setup.py install --prefix=%{_prefix} --root=%{buildroot}
 mkdir -p %{buildroot}%{_docdir}/%{name}/examples
-for FILE in examples/*; do
-	install -m 0644 $FILE %{buildroot}%{_docdir}/%{name}/examples/
-done
+install -m 0644 EXAMPLE-MIB.txt example_agent.py run_example_agent.sh %{buildroot}%{_docdir}/%{name}/examples/
 
 %files
 %defattr(-,root,root,-)

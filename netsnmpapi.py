@@ -35,51 +35,10 @@ try:
 except AttributeError:
 	libnsX = libnsh
 
-# include/net-snmp/library/callback.h
-
-# Callback major types 
-SNMP_CALLBACK_LIBRARY                   = 0
-SNMP_CALLBACK_APPLICATION               = 1
-
-# SNMP_CALLBACK_LIBRARY minor types 
-SNMP_CALLBACK_LOGGING                   = 4
-
-SNMPCallback = ctypes.CFUNCTYPE(
-	ctypes.c_int,                       # result type
-	ctypes.c_int,                       # int majorID
-	ctypes.c_int,                       # int minorID
-	ctypes.c_void_p,                    # void *serverarg
-	ctypes.c_void_p                     # void *clientarg
-)
-
-for f in [ libnsa.snmp_register_callback ]:
-	f.argtypes = [
-		ctypes.c_int,                   # int major
-		ctypes.c_int,                   # int minor
-		SNMPCallback,                   # SNMPCallback *new_callback
-		ctypes.c_void_p                 # void *arg
-	]
-	f.restype = int
-
-# include/net-snmp/agent/agent_callbacks.h
-SNMPD_CALLBACK_INDEX_STOP               = 11
-
 # include/net-snmp/library/snmp_logging.h
-LOG_EMERG                               = 0 # system is unusable
-LOG_ALERT                               = 1 # action must be taken immediately
-LOG_CRIT                                = 2 # critical conditions
-LOG_ERR                                 = 3 # error conditions
-LOG_WARNING                             = 4 # warning conditions
-LOG_NOTICE                              = 5 # normal but significant condition
-LOG_INFO                                = 6 # informational
-LOG_DEBUG                               = 7 # debug-level messages
-
-class snmp_log_message(ctypes.Structure): pass
-snmp_log_message_p = ctypes.POINTER(snmp_log_message)
-snmp_log_message._fields_ = [
-	("priority",            ctypes.c_int),
-	("msg",                 ctypes.c_char_p)
-]
+for f in [ libnsa.snmp_enable_stderrlog ]:
+	f.argtypes = None
+	f.restype  = None
 
 # include/net-snmp/library/snmp_api.h
 SNMPERR_SUCCESS                         = 0
@@ -232,19 +191,10 @@ ASN_COUNTER64                           = ASN_APPLICATION | 6
 
 # include/net-snmp/agent/watcher.h
 WATCHER_FIXED_SIZE                      = 0x01
-WATCHER_MAX_SIZE                        = 0x02
+WATCHER_SIZE_STRLEN                     = 0x08
 
 class netsnmp_watcher_info(ctypes.Structure): pass
 netsnmp_watcher_info_p = ctypes.POINTER(netsnmp_watcher_info)
-netsnmp_watcher_info._fields_ = [
-	("data",                ctypes.c_void_p),
-	("data_size",           ctypes.c_size_t),
-	("max_size",            ctypes.c_size_t),
-	("type",                ctypes.c_ubyte),
-	("flags",               ctypes.c_int)
-	# net-snmp 5.7.x knows data_size_p here as well but we ignore it for
-	# backwards compatibility with net-snmp 5.4.x.
-] 
 
 for f in [ libnsX.netsnmp_create_watcher_info ]:
 	f.argtypes = [

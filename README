@@ -33,15 +33,9 @@ the client side only, not the agent side.
 
 REQUIREMENTS
 
-python-netsnmpagent requires the net-snmp libraries to be installed. The
-runtime libraries are enough, development files are not necessary.
-
-Tested versions include 5.4.2 (included with SUSE Linux Enterprise Server 11
-SP2), 5.4.3 (included with Ubuntu 12.04 LTS) and net-snmp 5.7.1 (included with
-openSUSE 12.1). While the intent is to support both net-snmp 5.4.x and 5.7.x
-versions at least for the near future, I want to avoid double code paths
-whereever possible. I therefore have to stick to the net-snmp 5.4.x way of
-things at certain places indicated by code comments.
+python-netsnmpagent requires the net-snmp libraries to be installed,
+libnetsnmpagent to be precisely. The runtime library is enough, development
+files are not necessary.
 
 
 DOWNLOAD
@@ -72,15 +66,71 @@ This will most probably require appropriate rights (eg. being "root").
 
 EXAMPLE USAGE
 
-The "examples" subdirectory contains well-commented example agents that should
-give you a quickstart on how to use python-netsnmpagent. Read the "README" file
-contained there for a short introduction on the different examples.
+There is a well-commented example subagent included, example.py, together with
+an example MIB, surprisingly named EXAMPLE-MIB.txt. Here's some step-by-step
+instructions:
+
+1. Make sure net-snmp is installed, snmpd in particular.
+
+2. Run the included "run_example_agent.sh" script. This scripts runs snmpd with
+   a special configuration file on TCP port 5555 and starts the included
+   example agent.
+
+3. From a separate console, run the example SNMP client utilities as written
+   to the screen, eg.:
+
+   $ snmpwalk -v 2c -c public -M+. localhost EXAMPLE-MIB::exampleMIB
+   EXAMPLE-MIB::exampleUnsigned.0 = Gauge32: 0
+   EXAMPLE-MIB::exampleUnsignedRO.0 = Gauge32: 0
+   EXAMPLE-MIB::exampleInteger.0 = INTEGER: 0
+   EXAMPLE-MIB::exampleIntegerRO.0 = INTEGER: 0
+   [...]
+
+   The "-v" option selects version 2c of the SNMP protocol, "-c" specifies the
+   community to use. The special configuration used here uses a read-only
+   community string "public" and a read-write community string "example" (for
+   use with eg. snmpset).
+
+   The "-M" option modifies the search path for referenced MIBs. Since
+   we reference EXAMPLE-MIB in the specification of the root OID to walk and
+   we have not copied EXAMPLE-MIB.txt to the system's MIBs directory
+   /usr/share/snmp/mibs, we extend (the plus sign "+") the search path with the
+   current directory (which should be the python-netsnmpagent directory).
+
+   EXAMPLE-MIB::exampleMIB references the root node in the EXAMPLE-MIB. If you
+   haven't looked at the MIB yet, you should probably do so now.
+
+If you wish to run the example agent against your system-wide snmpd instance,
+your /etc/snmp/snmpd.conf (path may vary) should contain lines similar to the
+following:
+   
+  # Required to allow subagents to connect to snmpd via AgentX protocol
+  master agentx
+   
+  # Required for read-only access from localhost
+  rocommunity public 127.0.0.1
+   
+  # Required for read-write access from localhost
+  rwcommunity <yoursecret> 127.0.0.1
+     
+For SNMP versions 1 and 2c (which are basically those I care about for now),
+replace "<yoursecret>" with a secret not too obvious, since it is the only
+protection against unauthorized write access, safe for the localhost access
+restriction.
+
+Because connecting to the system-wide snmpd's AgentX socket requires root
+rights, start the example agent using sudo:
+   
+  $ sudo python example.py 
+  username's password:
+  NET-SNMP version 5.7.1 AgentX subagent connected
+  Serving SNMP requests, press ^C to terminate...
 
 
 API
 
-Admittedly the API for writing your own subagents in Python is not necessarily
-stable yet. For now, please see the example agents' source code for info on
+Admittedly the API for writing your own subagents in Python is nowhere next to
+stable yet. For now, please see the example_agent.py source code for info on
 how to use the python-netsnmpagent module, but notice that this may change at
 any time. You might want to follow development on the GitHub repo:
 
@@ -89,7 +139,6 @@ any time. You might want to follow development on the GitHub repo:
 
 TODO
 
-- notifications/traps
 - stabilize API
 - unit tests
 
@@ -102,7 +151,3 @@ on me.
 
 SNMP contexts support and various other additions were implemented by Steven
 Hiscocks <steven@hiscocks.me.uk>.
-
-The bug that DisplayStrings/OctetStrings got truncated when trying to update
-them with a string larger that the original InitVal was hunted down and fixed
-by Max "mk23" Kalika <max.kalika+projects@gmail.com>.

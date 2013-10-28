@@ -40,7 +40,7 @@ setup.py: setup.py.in
 	chmod u+x setup.py
 
 install: setup.py
-	python $@ install
+	python setup.py install
 
 .PHONY: ChangeLog
 ChangeLog:

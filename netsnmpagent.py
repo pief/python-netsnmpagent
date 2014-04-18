@@ -19,14 +19,9 @@ This module, by contrast, concentrates on wrapping the net-snmp C API
 for SNMP subagents in an easy manner. It is still under heavy
 development and some features are yet missing."""
 
-import pkg_resources, sys, os, socket, struct, re
+import sys, os, socket, struct, re
 from collections import defaultdict
 from netsnmpapi import *
-
-# Make version string from setuptools available as a property variable that
-# can be queried for by agents that require a specific version of
-# python-netsnmpagent
-__version__ = pkg_resources.require("netsnmpagent")[0].version
 
 # Maximum string size supported by python-netsnmpagent
 MAX_STRING_SIZE                 = 1024

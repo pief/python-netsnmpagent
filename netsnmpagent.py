@@ -24,7 +24,7 @@ from collections import defaultdict
 from netsnmpapi import *
 
 # Maximum string size supported by python-netsnmpagent
-MAX_STRING_SIZE                 = 1024
+MAX_STRING_SIZE = 1024
 
 # Helper function courtesy of Alec Thomas and taken from
 # http://stackoverflow.com/questions/36932/how-can-i-represent-an-enum-in-python
@@ -305,7 +305,7 @@ class netsnmpAgent(object):
 					                            "failed!".format(mib))
 
 		# Initialize our SNMP object registry
-		self._objs    = defaultdict(dict)
+		self._objs = defaultdict(dict)
 
 	def _prepareRegistration(self, oidstr, writable = True):
 		""" Prepares the registration of an SNMP object.
@@ -338,7 +338,7 @@ class netsnmpAgent(object):
 
 		# Create the netsnmp_handler_registration structure. It notifies
 		# net-snmp that we will be responsible for anything below the given
-		# OID. We use this for leaf nodes only, processing of subtress will be
+		# OID. We use this for leaf nodes only, processing of subtrees will be
 		# left to net-snmp.
 		handler_reginfo = libnsa.netsnmp_create_handler_registration(
 			oidstr,
@@ -857,12 +857,15 @@ class netsnmpAgent(object):
 		return Table(oidstr, indexes, columns, counterobj, extendable, context)
 
 	def getContexts(self):
+		""" Returns the defined contexts. """
+
 		return self._objs.keys()
 
 	def getRegistered(self, context = ""):
-		"""Returns a dictionary with the currently registered SNMP objects.
-		Returned is a dictionary objects for the specified `context`, which
-		defaults to the default context ""."""
+		""" Returns a dictionary with the currently registered SNMP objects.
+
+		    Returned is a dictionary objects for the specified "context",
+		    which defaults to the default context. """
 		myobjs = {}
 		for oidstr, snmpobj in self._objs[context].iteritems():
 			myobjs[oidstr] = {

@@ -26,6 +26,7 @@ help:
 	@echo "Version from \"git describe\": $(VERSION)"
 	@echo
 	@echo "Targets:"
+	@echo " tests      - Run local code tests (net-snmp integration tests)"
 	@echo " install    - Install locally"
 	@echo " srcdist    - Create source distribution archive in .tar.gz format"
 ifeq ($(TAGGED),1)
@@ -34,6 +35,12 @@ endif
 	@echo " rpms       - Build RPMs for the current distribution"
 	@echo " clean      - Clean up"
 	@echo
+
+.PHONY: test_netsnmptestenv
+test_netsnmptestenv:
+	@echo -e "\n*** Testing netsnmptestenv ***\n" && \
+	cd tests && python test_netsnmptestenv.py
+tests: test_netsnmptestenv
 
 setup.py: setup.py.in
 	sed 's/@NETSNMPAGENT_VERSION@/$(VERSION)/' setup.py.in >$@

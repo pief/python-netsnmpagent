@@ -138,6 +138,10 @@ for f in [ libnsa.init_agent ]:
 	]
 	f.restype = ctypes.c_int
 
+for f in [ libnsa.shutdown_agent ]:
+	f.argtypes = None
+	f.restype = ctypes.c_int
+
 # include/net-snmp/library/parse.h
 class tree(ctypes.Structure): pass
 

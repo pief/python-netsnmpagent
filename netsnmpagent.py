@@ -895,6 +895,7 @@ class netsnmpAgent(object):
 
 	def shutdown(self):
 		libnsa.snmp_shutdown(self.AgentName)
+		libnsa.shutdown_agent()
 
 class netsnmpAgentException(Exception):
 	pass

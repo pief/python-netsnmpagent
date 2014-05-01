@@ -244,3 +244,4 @@ while (loop):
 	simpleCounter64Context2.increment(5) # By 5
 
 print "{0}: Terminating.".format(prgname)
+agent.shutdown()

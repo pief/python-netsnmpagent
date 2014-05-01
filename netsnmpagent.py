@@ -893,7 +893,7 @@ class netsnmpAgent(object):
 		    will block until a SNMP packet is received. """
 		return libnsa.agent_check_and_process(int(bool(block)))
 
-	def __del__(self):
+	def shutdown(self):
 		libnsa.snmp_shutdown(self.AgentName)
 
 class netsnmpAgentException(Exception):

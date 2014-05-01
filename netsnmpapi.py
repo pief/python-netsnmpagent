@@ -142,7 +142,7 @@ for f in [ libnsa.init_agent ]:
 class tree(ctypes.Structure): pass
 
 # include/net-snmp/mib_api.h
-for f in [ libnsa.init_mib ]:
+for f in [ libnsa.netsnmp_init_mib ]:
 	f.argtypes = None
 	f.restype = None
 

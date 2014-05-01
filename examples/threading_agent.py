@@ -228,3 +228,4 @@ while loop:
 		LogMsg("net-snmp's check_and_process() returned (res={0}), doing another loop.".format(res))
 
 LogMsg("Terminating.")
+agent.shutdown()

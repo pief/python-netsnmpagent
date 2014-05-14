@@ -36,11 +36,14 @@ endif
 	@echo " clean      - Clean up"
 	@echo
 
-.PHONY: test_netsnmptestenv
-test_netsnmptestenv:
-	@echo -e "\n*** Testing netsnmptestenv ***\n" && \
-	cd tests && python test_netsnmptestenv.py
-tests: test_netsnmptestenv
+.PHONY: tests
+tests:
+	@if [ `which nosetests 2>/dev/null` ] ; then \
+		cd tests && nosetests -vx; \
+	else \
+		echo "Can't find the \"nosetests\" command, please install the \"nose\" Python module!"; \
+		exit 1; \
+	fi
 
 setup.py: setup.py.in
 	sed 's/@NETSNMPAGENT_VERSION@/$(VERSION)/' setup.py.in >$@

@@ -58,12 +58,7 @@ class netsnmpTestEnv(object):
 		subprocess.check_call(cmd, shell=True)
 
 	def shutdown(self):
-		# Check for existance of snmpd's PID file
-		if os.access(self.pidfile, os.R_OK):
-			# Read the PID
-			with open(self.pidfile, "r") as f:
-				pid = int(f.read())
-
+		def kill_process(pid):
 			# First we ask it nicely to quit. If after a second it hasn't, we
 			# will kill it the hard way.
 			try:
@@ -77,6 +72,15 @@ class netsnmpTestEnv(object):
 					os.kill(pid, 0)
 			except OSError as e:
 				pass
+
+		# Check for existance of snmpd's PID file
+		if os.access(self.pidfile, os.R_OK):
+			# Read the PID
+			with open(self.pidfile, "r") as f:
+				pid = int(f.read())
+
+			# And kill it
+			kill_process(pid)
 
 		# Recursively remove the temporary directory
 		if os.access(self.tmpdir, os.R_OK):

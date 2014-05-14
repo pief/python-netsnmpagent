@@ -13,7 +13,7 @@
 This module allows to run net-snmp instances with user privileges that do not
 interfere with any system-wide running net-snmp instance. """
 
-import sys, os, tempfile, subprocess, inspect, signal, time, shutil
+import sys, os, tempfile, subprocess, re, inspect, signal, time, shutil
 
 class netsnmpTestEnv(object):
 	""" Implements a net-snmp test environment. """
@@ -89,6 +89,12 @@ class netsnmpTestEnv(object):
 	def __del__(self):
 		self.shutdown()
 
+	class NoSuchOIDError(Exception):
+		pass
+
+	class SNMPTimeoutError(Exception):
+		pass
+
 	@staticmethod
 	def snmpcmd(op, oid):
 		""" Executes a SNMP client operation in the net-snmp test environment.
@@ -112,7 +118,12 @@ class netsnmpTestEnv(object):
 		output = proc.communicate()[0].strip()
 		rc = proc.poll()
 		if rc == 0:
+			if re.match(" = No Such Object available on this agent at this OID", output):
+				raise netsmpTestEnv.NoSuchOIDError(oid)
 			return output
+
+		if re.match("Timeout: No Response from ", output):
+			raise netsnmpTestEnv.SNMPTimeoutError("localhost:6555")
 
 		# SLES11 SP2's Python 2.6 has a subprocess module whose
 		# CalledProcessError exception does not yet know the third "output"

@@ -20,7 +20,7 @@ class netsnmpTestEnvTest(unittest.TestCase):
 
 	def test_snmpget_snmpv2mib(self):
 		# Initially snmpget should fail
-		with self.assertRaises(subprocess.CalledProcessError):
+		with self.assertRaises(netsnmoTestEnv.SNMPTimeoutError):
 			netsnmpTestEnv.snmpget("SNMPv2-MIB::snmpSetSerialNo.0")
 
 		# After we create our test environment...
@@ -40,7 +40,7 @@ class netsnmpTestEnvTest(unittest.TestCase):
 			del self.testenv
 
 		# snmpget should fail
-		with self.assertRaises(subprocess.CalledProcessError):
+		with self.assertRaises(netsnmoTestEnv.SNMPTimeoutError):
 			netsnmpTestEnv.snmpget("SNMPv2-MIB::snmpSetSerialNo.0")
 
 if __name__ == '__main__':

@@ -21,6 +21,10 @@ class netsnmpTestEnv(object):
 	def __init__(self, **args):
 		""" Initializes a new net-snmp test environment. """
 
+		self.agentport  = 6555
+		self.informport = 6556
+		self.smuxport   = 6557
+
 		# Create a temporary directory to hold the snmpd files
 		self.tmpdir = tempfile.mkdtemp(os.path.basename(sys.argv[0]))
 
@@ -36,9 +40,9 @@ class netsnmpTestEnv(object):
 			f.write("[snmpd]\n")
 			f.write("rocommunity public 127.0.0.1\n")
 			f.write("rwcommunity simple 127.0.0.1\n")
-			f.write("agentaddress localhost:6555\n")
-			f.write("informsink localhost:6556\n")
-			f.write("smuxsocket localhost:6557\n")
+			f.write("agentaddress localhost:{0}\n".format(self.agentport))
+			f.write("informsink localhost:{0}\n".format(self.informport))
+			f.write("smuxsocket localhost:{0}\n".format(self.smuxport))
 			f.write("master agentx\n")
 			f.write("agentXSocket {0}\n\n".format(self.mastersocket))
 			f.write("[snmp]\n")

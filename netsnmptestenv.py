@@ -102,10 +102,10 @@ class netsnmpTestEnv(object):
 			cmd, shell=True, env={ "LANG": "C" },
 			stdout=subprocess.PIPE, stderr=subprocess.STDOUT
 		)
-		output = proc.communicate()[0]
+		output = proc.communicate()[0].strip()
 		rc = proc.poll()
 		if rc == 0:
-			return output.strip()
+			return output
 
 		# SLES11 SP2's Python 2.6 has a subprocess module whose
 		# CalledProcessError exception does not yet know the third "output"

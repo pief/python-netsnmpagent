@@ -57,7 +57,7 @@ class netsnmpTestEnv(object):
 		)
 		subprocess.check_call(cmd, shell=True)
 
-	def __del__(self):
+	def shutdown(self):
 		# Check for existance of snmpd's PID file
 		if os.access(self.pidfile, os.R_OK):
 			# Read the PID
@@ -81,6 +81,9 @@ class netsnmpTestEnv(object):
 		# Recursively remove the temporary directory
 		if os.access(self.tmpdir, os.R_OK):
 			shutil.rmtree(self.tmpdir)
+
+	def __del__(self):
+		self.shutdown()
 
 	@staticmethod
 	def snmpcmd(op, oid):

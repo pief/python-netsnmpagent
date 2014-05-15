@@ -13,19 +13,22 @@ sys.path.insert(1, "..")
 from netsnmptestenv import netsnmpTestEnv
 from nose.tools import *
 
+@timed(3)
 def test_FirstGetFails():
 	""" No test environment yet, snmpget fails """
 
 	with assert_raises(netsnmpTestEnv.SNMPTimeoutError):
 		netsnmpTestEnv.snmpget("SNMPv2-MIB::snmpSetSerialNo.0")
 
+@timed(1)
 def test_Instantiation():
-	""" Instantiation without exceptions """
+	""" Instantiation without exceptions and within reasonable time """
 
 	global testenv
 
 	testenv = netsnmpTestEnv()
 
+@timed(1)
 def test_SecondGetWorks():
 	""" test environment set up, snmpget succeeds """
 
@@ -38,8 +41,9 @@ def test_SecondGetWorks():
 	except AssertionError:
 		raise AssertionError("'{0}' != ^SNMPv2-MIB::snmpSetSerialNo.0 = INTEGER: \d+$".format(output))
 
+@timed(1)
 def test_Shutdown():
-	""" Shutdown without exceptions """
+	""" Shutdown without exceptions and within reasonable time """
 
 	global testenv
 

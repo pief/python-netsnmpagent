@@ -14,11 +14,11 @@ from netsnmptestenv import netsnmpTestEnv
 from nose.tools import *
 
 @timed(3)
+@raises(netsnmpTestEnv.SNMPTimeoutError)
 def test_FirstGetFails():
 	""" No test environment yet, snmpget fails """
 
-	with assert_raises(netsnmpTestEnv.SNMPTimeoutError):
-		netsnmpTestEnv.snmpget("SNMPv2-MIB::snmpSetSerialNo.0")
+	netsnmpTestEnv.snmpget("SNMPv2-MIB::snmpSetSerialNo.0")
 
 @timed(1)
 def test_Instantiation():
@@ -35,11 +35,7 @@ def test_SecondGetWorks():
 	global testenv
 
 	output = testenv.snmpget("SNMPv2-MIB::snmpSetSerialNo.0")
-	m = re.match(r"^SNMPv2-MIB::snmpSetSerialNo.0 = INTEGER: \d+$", output)
-	try:
-		assert_not_equal(m, None)
-	except AssertionError:
-		raise AssertionError("'{0}' != ^SNMPv2-MIB::snmpSetSerialNo.0 = INTEGER: \d+$".format(output))
+	ok_(re.match(r"^SNMPv2-MIB::snmpSetSerialNo.0 = INTEGER: \d+$", output) != None)
 
 @timed(1)
 def test_Shutdown():

@@ -46,6 +46,33 @@ def test_SecondGetWorks():
 	ok_(re.match(r"^SNMPv2-MIB::snmpSetSerialNo.0 = INTEGER: \d+$", output) != None)
 
 @timed(1)
+@raises(netsnmpTestEnv.UnknownOIDError)
+def test_GetUnknownMIBThrowsException():
+	""" snmpget of unknown MIB raises exception """
+
+	global testenv
+
+	testenv.snmpget("FOO-MIB::fooBarBaz.0")
+
+@timed(1)
+@raises(netsnmpTestEnv.UnknownOIDError)
+def test_GetUnknownOIDThrowsException():
+	""" snmpget of unknown OID raises exception """
+
+	global testenv
+
+	testenv.snmpget("SNMPv2-MIB::fooBarBaz.0")
+
+@timed(1)
+@raises(netsnmpTestEnv.MIBUnavailableError)
+def test_GetAbsentMIBThrowsException():
+	""" snmpget of absent MIB raises exception """
+
+	global testenv
+
+	testenv.snmpget("TEST-MIB::testUnsignedRW.0")
+
+@timed(1)
 def test_Shutdown():
 	""" Shutdown without exceptions and within reasonable time """
 

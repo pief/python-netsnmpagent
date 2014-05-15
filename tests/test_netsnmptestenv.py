@@ -38,7 +38,9 @@ def test_SecondGetWorks():
 	except AssertionError:
 		raise AssertionError("'{0}' != ^SNMPv2-MIB::snmpSetSerialNo.0 = INTEGER: \d+$".format(output))
 
-def tearDown(self):
+def test_Shutdown():
+	""" Shutdown without exceptions """
+
 	global testenv
 
 	testenv.shutdown()

@@ -59,19 +59,23 @@ class netsnmpTestEnv(object):
 
 	def shutdown(self):
 		def kill_process(pid):
-			# First we ask it nicely to quit. If after a second it hasn't, we
-			# will kill it the hard way.
-			try:
-				starttime = time.clock()
-				os.kill(pid, signal.SIGTERM)
-				while time.clock() == starttime:
-					os.kill(pid, 0)
-				os.kill(pid, signal.SIGKILL)
-				starttime = time.clock()
-				while True:
-					os.kill(pid, 0)
-			except OSError as e:
-				pass
+			def is_running(pid):
+				return os.path.exists("/proc/{0}".format(pid))
+
+			if not is_running(pid):
+				return
+
+			starttime = time.clock()
+			os.kill(pid, signal.SIGTERM)
+			while time.clock() == starttime:
+				time.sleep(0.25)
+
+			if not is_running(pid):
+				return
+
+			os.kill(pid, signal.SIGTERM)
+			while is_running(pid):
+				time.sleep(0.25)
 
 		# Check for existance of snmpd's PID file
 		if os.access(self.pidfile, os.R_OK):

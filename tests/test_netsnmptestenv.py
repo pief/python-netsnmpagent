@@ -9,9 +9,9 @@
 #
 
 import sys, os, time, subprocess, re
+from nose.tools import *
 sys.path.insert(1, "..")
 from netsnmptestenv import netsnmpTestEnv
-from nose.tools import *
 
 @timed(3)
 @raises(netsnmpTestEnv.SNMPTimeoutError)

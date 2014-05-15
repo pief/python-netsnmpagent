@@ -44,3 +44,10 @@ def test_Shutdown():
 	global testenv
 
 	testenv.shutdown()
+
+@timed(3)
+@raises(netsnmpTestEnv.SNMPTimeoutError)
+def test_ThirdGetFailsAgain():
+	""" No more test environment, snmpget fails """
+
+	netsnmpTestEnv.snmpget("SNMPv2-MIB::snmpSetSerialNo.0")

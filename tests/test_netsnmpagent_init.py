@@ -65,7 +65,7 @@ def test_Instantiation():
 	# - uses its statedir
 	# - loads the TEST-MIB from our tests directory
 	# - uses the net-snmp logging handler defined above
-	testMIBPath = os.path.abspath(os.path.dirname(sys.argv[0])) + \
+	testMIBPath = os.path.abspath(os.path.dirname(__file__)) + \
 				  "/TEST-MIB.txt"
 	agent = netsnmpagent.netsnmpAgent(
 		AgentName      = "netsnmpAgentTestAgent",

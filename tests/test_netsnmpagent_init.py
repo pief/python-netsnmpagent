@@ -5,7 +5,7 @@
 # Copyright (c) 2013 Pieter Hollants <pieter@hollants.com>
 # Licensed under the GNU Public License (GPL) version 3
 #
-# Integration tests for the netsnmpagent module
+# Integration tests for the netsnmpagent module (init behavior)
 #
 
 import sys, os, re, subprocess, threading, signal, time

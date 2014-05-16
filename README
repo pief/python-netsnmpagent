@@ -37,8 +37,8 @@ python-netsnmpagent requires the net-snmp libraries to be installed. The
 runtime libraries are enough, development files are not necessary.
 
 Tested versions include 5.4.2 (included with SUSE Linux Enterprise Server 11
-SP2), 5.4.3 (included with Ubuntu 12.04 LTS) and net-snmp 5.7.1 (included with
-openSUSE 12.1). While the intent is to support both net-snmp 5.4.x and 5.7.x
+SP2), 5.4.3 (included with Ubuntu 12.04 LTS) and net-snmp 5.7.3 (included with
+openSUSE 12.3). While the intent is to support both net-snmp 5.4.x and 5.7.x
 versions at least for the near future, I want to avoid double code paths
 whereever possible. I therefore have to stick to the net-snmp 5.4.x way of
 things at certain places indicated by code comments.
@@ -55,7 +55,7 @@ the Open Build Service Project page at
 
   https://build.opensuse.org/package/show?package=python-netsnmpagent&project=home%3Apfhllnts
 
-If you wish to follow development more closely clone the GitHub:
+If you wish to follow development more closely clone the GitHub repo:
 
   https://github.com/pief/python-netsnmpagent.git
 
@@ -79,19 +79,22 @@ contained there for a short introduction on the different examples.
 
 API
 
-Admittedly the API for writing your own subagents in Python is not necessarily
-stable yet. For now, please see the example agents' source code for info on
-how to use the python-netsnmpagent module, but notice that this may change at
-any time. You might want to follow development on the GitHub repo:
+The Python API has not really been documented yet. For now, please see the
+example agents' source code for info on how to use the python-netsnmpagent
+module.
 
-  https://github.com/pief/python-netsnmpagent.git
+
+TESTS
+
+python-netsnmpagent now comes with integration tests to test the net-snmp
+integration. Type "make tests" to run them. See tests/README for the reasons
+why "nosetests" can't be run directly.
 
 
 TODO
 
 - notifications/traps
-- stabilize API
-- unit tests
+- more tests
 
 
 CREDITS

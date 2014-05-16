@@ -1,0 +1,16 @@
+Do NOT run nosetests directly!
+
+Instead use the top-level Makefile's "tests" target:
+
+  $ make tests
+
+Due to broken shutdown functions in net-snmp, the netsnmpagent test files MUST
+each run in new Python interpreter instances. If you run nosetests directly,
+a single Python interpreter instance will be used and the netsnmpagent setup
+in test_02_netsnmpagent_init.py will sabotage the netsnmpagent setup in
+test_03_netsnmpagent_snmpobjs.py.
+
+One way to fix this would be to have nosetests run each test file inside a
+separate process, but it's easier to just call nosetests with each test file
+separately from a shell loop as done in the top-level Makefile.
+

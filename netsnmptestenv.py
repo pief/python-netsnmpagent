@@ -58,6 +58,11 @@ class netsnmpTestEnv(object):
 		subprocess.check_call(cmd, shell=True)
 
 	def shutdown(self):
+		# Explicitly import used Python modules once more because they may
+		# have been __del__'d before us and then we'd hit AttributeError
+		# exceptions due to "os" being None
+		import os, time
+
 		def kill_process(pid):
 			def is_running(pid):
 				return os.path.exists("/proc/{0}".format(pid))

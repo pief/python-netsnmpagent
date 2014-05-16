@@ -42,8 +42,8 @@ def test_SecondGetWorks():
 
 	global testenv
 
-	output = testenv.snmpget("SNMPv2-MIB::snmpSetSerialNo.0")
-	ok_(re.match(r"^SNMPv2-MIB::snmpSetSerialNo.0 = INTEGER: \d+$", output) != None)
+	(data, datatype) = testenv.snmpget("SNMPv2-MIB::snmpSetSerialNo.0")
+	eq_(datatype, "INTEGER")
 
 @timed(1)
 @raises(netsnmpTestEnv.UnknownOIDError)

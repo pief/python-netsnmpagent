@@ -156,9 +156,12 @@ class netsnmpTestEnv(object):
 	def snmpget(self, oid):
 		""" Executes a "snmpget" operation in the net-snmp test environment.
 
-		    "oid" is the OID to run the operation against. """
+		    "oid" is the OID to run the operation against.
 
-		return self.snmpcmd("get", oid)
+		    Returns a two-tuple (data, datatype). """
+
+		(datatype, data) = self.snmpcmd("get", oid).split("=")[1].split(":")
+		return (data.strip(), datatype.strip())
 
 	@classmethod
 	def snmpwalk(self, oid):

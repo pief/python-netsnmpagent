@@ -895,7 +895,12 @@ class netsnmpAgent(object):
 
 	def shutdown(self):
 		libnsa.snmp_shutdown(self.AgentName)
-		libnsa.shutdown_agent()
+
+		# Unfortunately we can't safely call shutdown_agent() for the time
+		# being. All net-snmp versions up to and including 5.7.3 are unable
+		# to do proper cleanup and cause issues such as double free()s so that
+		# one effectively has to rely on the OS to release resources.
+		#libnsa.shutdown_agent()
 
 class netsnmpAgentException(Exception):
 	pass

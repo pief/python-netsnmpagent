@@ -33,7 +33,7 @@ def tearDown(self):
 def test_FirstGetFails():
 	""" Instance not created yet, MIB unvailable """
 
-	print netsnmpTestEnv.snmpget("TEST-MIB::testUnsignedRW.0")
+	print netsnmpTestEnv.snmpget("TEST-MIB::testUnsigned32NoInitval.0")
 
 @timed(1)
 def test_Instantiation():
@@ -94,7 +94,7 @@ def test_SecondGetFails():
 
 	global testenv
 
-	testenv.snmpget("TEST-MIB::testUnsignedRW.0")
+	testenv.snmpget("TEST-MIB::testUnsigned32NoInitval.0")
 
 @timed(1)
 def test_StartingAgentConnectsToMaster():
@@ -113,4 +113,4 @@ def test_ThirdGetFails():
 
 	global testenv
 
-	testenv.snmpget("TEST-MIB::testUnsignedRW.0")
+	testenv.snmpget("TEST-MIB::testUnsigned32NoInitval.0")

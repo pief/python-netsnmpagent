@@ -46,20 +46,50 @@ testScalars     OBJECT IDENTIFIER ::= { testMIBObjects 1 }
 -- Scalars
 ------------------------------------------------------------------------
 
-testUnsignedRW OBJECT-TYPE
+testUnsigned32  OBJECT IDENTIFIER ::= { testScalars 1 }
+
+-- Test OIDs for the Unsigned32 scalar type
+testUnsigned32NoInitval OBJECT-TYPE
     SYNTAX      Unsigned32
     MAX-ACCESS  read-write
     STATUS      current
     DESCRIPTION
-        "A read-write, unsigned, 32-bits integer value."
-    ::= { testScalars 1 }
+        "A read-write, unsigned, 32-bits integer value, with no initval."
+    ::= { testUnsigned32 1 }
 
-testUnsignedRO OBJECT-TYPE
+testUnsigned32ZeroInitval OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "A read-write, unsigned, 32-bits integer value, with an initval of
+        zero."
+    ::= { testUnsigned32 2 }
+
+testUnsigned32MinusOneInitval OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "A read-write, unsigned, 32-bits integer value, with an initval of
+        minus one."
+    ::= { testUnsigned32 3 }
+
+testUnsigned32MaxInitval OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "A read-write, unsigned, 32-bits integer value, with an initval of
+        the maximum value (4294967295)."
+    ::= { testUnsigned32 4 }
+
+testUnsigned32ReadOnly OBJECT-TYPE
     SYNTAX      Unsigned32
     MAX-ACCESS  read-only
     STATUS      current
     DESCRIPTION
-        "A read-only, unsigned, 32-bits integer value."
-    ::= { testScalars 2 }
+        "A read-only, unsigned, 32-bits integer value, with no initval."
+    ::= { testUnsigned32 5 }
 
 END

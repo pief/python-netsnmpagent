@@ -70,7 +70,7 @@ def test_GetAbsentMIBThrowsException():
 
 	global testenv
 
-	testenv.snmpget("TEST-MIB::testUnsignedRW.0")
+	testenv.snmpget("TEST-MIB::testUnsigned32NoInitval.0")
 
 @timed(1)
 def test_Shutdown():

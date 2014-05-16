@@ -107,16 +107,25 @@ class netsnmpTestEnv(object):
 	class MIBUnavailableError(Exception):
 		pass
 
+	class NotWritableError(Exception):
+		pass
+
 	@staticmethod
-	def snmpcmd(op, oid):
+	def snmpcmd(op, oid, data=None, datatype=None):
 		""" Executes a SNMP client operation in the net-snmp test environment.
 		    
-		    "op" is either "get", "walk" or "table".
-		    "oid" is the OID to run the operation against. """
+		    "op" is either "get", "set", "walk" or "table".
+		    "oid" is the OID to run the operation against.
+		    "data" is the data to set in case of a "set" operation.
+			"datatype" is the type of the data (as specified to "snmpset"). """
 
 		# Compose the SNMP client command
-		cmd = "/usr/bin/snmp{0} -M+. -r0 -v 2c -c public localhost:6555 {1}"
-		cmd = cmd.format(op, oid)
+		if op == "set":
+			cmd = "/usr/bin/snmp{0} -M+. -r0 -v 2c -c simple localhost:6555 {1} {2} {3}"
+			cmd = cmd.format(op, oid, datatype, data)
+		else:
+			cmd = "/usr/bin/snmp{0} -M+. -r0 -v 2c -c public localhost:6555 {1}"
+			cmd = cmd.format(op, oid)
 
 		# Python 2.6 (used eg. in SLES11SP2) does not yet know about
 		# subprocess.check_output(), so we wrap subprocess.Popen() instead.
@@ -140,6 +149,9 @@ class netsnmpTestEnv(object):
 		if re.search("Timeout: No Response from ", output):
 			raise netsnmpTestEnv.SNMPTimeoutError("localhost:6555")
 
+		if re.search("Reason: notWritable \(That object does not support modification\)", output):
+			raise netsnmpTestEnv.NotWritableError(oid)
+
 		# SLES11 SP2's Python 2.6 has a subprocess module whose
 		# CalledProcessError exception does not yet know the third "output"
 		# argument, so we monkey-patch support into it
@@ -162,6 +174,16 @@ class netsnmpTestEnv(object):
 
 		(datatype, data) = self.snmpcmd("get", oid).split("=")[1].split(":")
 		return (data.strip(), datatype.strip())
+
+	@classmethod
+	def snmpset(self, oid, data, datatype):
+		""" Executes a "snmpset" operation in the net-snmp test environment.
+
+		    "oid" is the OID to run the operation against.
+		    "data" is the data to set.
+		    "datatype" is the type of the data (as specified to "snmpset"). """
+
+		return self.snmpcmd("set", oid, data, datatype)
 
 	@classmethod
 	def snmpwalk(self, oid):

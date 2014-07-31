@@ -61,12 +61,15 @@ class netsnmpAgent(object):
 		- PersistenceDir: The directory to use to store persistence information.
 		                  Change this if you want to use a custom snmpd
 		                  instance, eg. for automatic testing.
-	        - UseMIB        : Whether to use MIB files at all or not.
 		- MIBFiles      : A list of filenames of MIBs to be loaded. Required if
 		                  the OIDs, for which variables will be registered, do
 		                  not belong to standard MIBs and the custom MIBs are not
 		                  located in net-snmp's default MIB path
 		                  (/usr/share/snmp/mibs).
+		- UseMIBFiles   : Whether to use MIB files at all or not. When False,
+		                  the parser for MIB files will not be initialized, so
+				  neither system-wide MIB files nor the ones provided
+				  in the MIBFiles argument will be in use.
 		- LogHandler    : An optional Python function that will be registered
 		                  with net-snmp as a custom log handler. If specified,
 		                  this function will be called for every log message
@@ -87,13 +90,13 @@ class netsnmpAgent(object):
 			"AgentName"     : os.path.splitext(os.path.basename(sys.argv[0]))[0],
 			"MasterSocket"  : None,
 			"PersistenceDir": None,
-			"UseMIB"        : True,
+			"UseMIBFiles"   : True,
 			"MIBFiles"      : None,
 			"LogHandler"    : None,
 		}
 		for key in defaults:
 			setattr(self, key, args.get(key, defaults[key]))
-		if self.UseMIB and self.MIBFiles is not None and type(self.MIBFiles) not in (list, tuple):
+		if self.UseMIBFiles and self.MIBFiles is not None and type(self.MIBFiles) not in (list, tuple):
 			self.MIBFiles = (self.MIBFiles,)
 
 		# Initialize status attribute -- until start() is called we will accept
@@ -294,14 +297,14 @@ class netsnmpAgent(object):
 			raise netsnmpAgentException("init_agent() failed!")
 
 		# Initialize MIB parser
-		if self.UseMIB:
+		if self.UseMIBFiles:
 			libnsa.netsnmp_init_mib()
 
 		# If MIBFiles were specified (ie. MIBs that can not be found in
 		# net-snmp's default MIB directory /usr/share/snmp/mibs), read
 		# them in so we can translate OID strings to net-snmp's internal OID
 		# format.
-		if self.UseMIB and self.MIBFiles:
+		if self.UseMIBFiles and self.MIBFiles:
 			for mib in self.MIBFiles:
 				if libnsa.read_mib(mib) == 0:
 					raise netsnmpAgentException("netsnmp_read_module({0}) " +
@@ -322,7 +325,7 @@ class netsnmpAgent(object):
 			                            "after agent has been started!")
 
 
-		if self.UseMIB:
+		if self.UseMIBFiles:
 			# We can't know the length of the internal OID representation
 			# beforehand, so we use a MAX_OID_LEN sized buffer for the call to
 			# read_objid() below

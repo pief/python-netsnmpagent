@@ -66,6 +66,10 @@ class netsnmpAgent(object):
 		                  not belong to standard MIBs and the custom MIBs are not
 		                  located in net-snmp's default MIB path
 		                  (/usr/share/snmp/mibs).
+		- UseMIBFiles   : Whether to use MIB files at all or not. When False,
+		                  the parser for MIB files will not be initialized, so
+				  neither system-wide MIB files nor the ones provided
+				  in the MIBFiles argument will be in use.
 		- LogHandler    : An optional Python function that will be registered
 		                  with net-snmp as a custom log handler. If specified,
 		                  this function will be called for every log message
@@ -86,12 +90,13 @@ class netsnmpAgent(object):
 			"AgentName"     : os.path.splitext(os.path.basename(sys.argv[0]))[0],
 			"MasterSocket"  : None,
 			"PersistenceDir": None,
+			"UseMIBFiles"   : True,
 			"MIBFiles"      : None,
 			"LogHandler"    : None,
 		}
 		for key in defaults:
 			setattr(self, key, args.get(key, defaults[key]))
-		if self.MIBFiles != None and not type(self.MIBFiles) in (list, tuple):
+		if self.UseMIBFiles and self.MIBFiles is not None and type(self.MIBFiles) not in (list, tuple):
 			self.MIBFiles = (self.MIBFiles,)
 
 		# Initialize status attribute -- until start() is called we will accept
@@ -292,13 +297,14 @@ class netsnmpAgent(object):
 			raise netsnmpAgentException("init_agent() failed!")
 
 		# Initialize MIB parser
-		libnsa.netsnmp_init_mib()
+		if self.UseMIBFiles:
+			libnsa.netsnmp_init_mib()
 
 		# If MIBFiles were specified (ie. MIBs that can not be found in
 		# net-snmp's default MIB directory /usr/share/snmp/mibs), read
 		# them in so we can translate OID strings to net-snmp's internal OID
 		# format.
-		if self.MIBFiles:
+		if self.UseMIBFiles and self.MIBFiles:
 			for mib in self.MIBFiles:
 				if libnsa.read_mib(mib) == 0:
 					raise netsnmpAgentException("netsnmp_read_module({0}) " +
@@ -318,19 +324,31 @@ class netsnmpAgent(object):
 			raise netsnmpAgentException("Attempt to register SNMP object " \
 			                            "after agent has been started!")
 
-		# We can't know the length of the internal OID representation
-		# beforehand, so we use a MAX_OID_LEN sized buffer for the call to
-		# read_objid() below
-		oid = (c_oid * MAX_OID_LEN)()
-		oid_len = ctypes.c_size_t(MAX_OID_LEN)
 
-		# Let libsnmpagent parse the OID
-		if libnsa.read_objid(
-			oidstr,
-			ctypes.cast(ctypes.byref(oid), c_oid_p),
-			ctypes.byref(oid_len)
-		) == 0:
-			raise netsnmpAgentException("read_objid({0}) failed!".format(oidstr))
+		if self.UseMIBFiles:
+			# We can't know the length of the internal OID representation
+			# beforehand, so we use a MAX_OID_LEN sized buffer for the call to
+			# read_objid() below
+			oid = (c_oid * MAX_OID_LEN)()
+			oid_len = ctypes.c_size_t(MAX_OID_LEN)
+
+			# Let libsnmpagent parse the OID
+			if libnsa.read_objid(
+				oidstr,
+				ctypes.cast(ctypes.byref(oid), c_oid_p),
+				ctypes.byref(oid_len)
+			) == 0:
+				raise netsnmpAgentException("read_objid({0}) failed!".format(oidstr))
+		else:
+			# Interpret the given oidstr as the oid itself.
+			try:
+				parts = [c_oid(long(x)) for x in oidstr.split('.')]
+			except ValueError:
+				raise netsnmpAgentException("Invalid OID (not using MIB): {0}".format(oidstr))
+
+			oid = (c_oid * len(parts))(*parts)
+			oid_len = ctypes.c_size_t(len(parts))
+
 
 		# Do we allow SNMP SETting to this OID?
 		handler_modes = HANDLER_CAN_RWRITE if writable \

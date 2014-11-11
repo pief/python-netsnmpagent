@@ -91,6 +91,9 @@ dist:
 python-netsnmpagent.spec.changelog: dist
 	@[ -e $@ ] && rm $@ || true
 	@PKGREMAIL=`git config user.email`; \
+	if [ -z "$$PKGREMAIL" ] ; then \
+		PKGREMAIL="`whoami`@`hostname`"; \
+	fi; \
 	CURRENT=`git describe`; \
 	set -- `git tag -l | egrep ^[[:digit:]]+.[[:digit:]]+\(.[[:digit:]]+\)?$ | sort -r`; \
 	if [ "$$CURRENT" == "$$1" ] ; then shift; fi; \

@@ -68,8 +68,8 @@ class netsnmpAgent(object):
 		                  (/usr/share/snmp/mibs).
 		- UseMIBFiles   : Whether to use MIB files at all or not. When False,
 		                  the parser for MIB files will not be initialized, so
-				  neither system-wide MIB files nor the ones provided
-				  in the MIBFiles argument will be in use.
+		                  neither system-wide MIB files nor the ones provided
+		                  in the MIBFiles argument will be in use.
 		- LogHandler    : An optional Python function that will be registered
 		                  with net-snmp as a custom log handler. If specified,
 		                  this function will be called for every log message
@@ -483,7 +483,8 @@ class netsnmpAgent(object):
 						if len(val) > self._max_size:
 							raise netsnmpAgentException(
 								"Value passed to update() truncated: {0} > {1} "
-								"bytes!".format(len(val), self._max_size))
+								"bytes!".format(len(val), self._max_size)
+							)
 						self._cvar.value = val
 						self._data_size  = self._watcher.contents.data_size = len(val)
 
@@ -725,7 +726,7 @@ class netsnmpAgent(object):
 						# netsnmp_set_row_column() ignores the ASN type, so it doesn't
 						# do special handling for the trailing zero byte in C strings
 						size = snmpobj._data_size + 1 if snmpobj._asntype == ASN_OCTET_STR \
-													  else snmpobj._data_size
+						                              else snmpobj._data_size
 						result = libnsX.netsnmp_set_row_column(
 							self._table_row,
 							column,

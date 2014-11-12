@@ -172,7 +172,7 @@ class netsnmpTestEnv(object):
 
 		    Returns a two-tuple (data, datatype). """
 
-		(datatype, data) = self.snmpcmd("get", oid).split("=")[1].split(":")
+		(datatype, data) = self.snmpcmd("get", oid).split("=")[1].split(":", 1)
 		return (data.strip(), datatype.strip())
 
 	@classmethod

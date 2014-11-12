@@ -319,8 +319,8 @@ def test_GET_Unsigned32ZeroInitval_eq_Zero():
 	eq_(int(data), 0)
 
 @timed(1)
-def test_GET_Unsigned32MinusOneInitval_eq_MinusOne():
-	""" GET(Unsigned32(initval=-1)) == -1
+def test_GET_Unsigned32MinusOneInitval_eq_Max():
+	""" GET(Unsigned32(initval=-1)) == 4294967295
 
 	This tests that the instantiation of an Unsigned32 SNMP object with an
 	initval of -1 resulted in a snmpget'able scalar variable of type Gauge32
@@ -329,6 +329,7 @@ def test_GET_Unsigned32MinusOneInitval_eq_MinusOne():
 	global testenv
 
 	(data, datatype) = testenv.snmpget("TEST-MIB::testUnsigned32MinusOneInitval.0")
+	eq_(datatype, "Gauge32")
 	eq_(int(data), 4294967295)
 
 @timed(1)
@@ -351,11 +352,12 @@ def test_GET_Unsigned32MaxInitval_eq_max():
 
 	This tests that the instantiation of an Unsigned32 SNMP object with an
 	initval of 4294967295 resulted in a snmpget'able scalar variable of type
-	INTEGER and value 4294967295. """
+	Gauge32 and value 4294967295. """
 
 	global testenv
 
 	(data, datatype) = testenv.snmpget("TEST-MIB::testUnsigned32MaxInitval.0")
+	eq_(datatype, "Gauge32")
 	eq_(int(data), 4294967295)
 
 @timed(1)
@@ -364,11 +366,12 @@ def test_GET_Unsigned32MaxPlusOneInitval_eq_zero():
 
 	This tests that the instantiation of an Unsigned32 SNMP object with an
 	initval of 4294967296 resulted in a snmpget'able scalar variable of type
-	INTEGER and value 0. """
+	Gauge32 and value 0. """
 
 	global testenv
 
 	(data, datatype) = testenv.snmpget("TEST-MIB::testUnsigned32MaxPlusOneInitval.0")
+	eq_(datatype, "Gauge32")
 	eq_(int(data), 0)
 
 @timed(1)

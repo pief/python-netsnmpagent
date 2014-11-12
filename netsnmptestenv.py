@@ -172,8 +172,16 @@ class netsnmpTestEnv(object):
 
 		    Returns a two-tuple (data, datatype). """
 
-		(datatype, data) = self.snmpcmd("get", oid).split("=")[1].split(":", 1)
-		return (data.strip(), datatype.strip())
+		data = self.snmpcmd("get", oid).split("=")[1]
+		if ":" in data:
+			(datatype, data) = data.split(":", 1)
+			datatype = datatype.strip()
+		else:
+			datatype = "STRING"
+		data = data.strip()
+		if data.startswith('"') and data.endswith('"'):
+			data = data[1:-1]
+		return (data, datatype)
 
 	@classmethod
 	def snmpset(self, oid, data, datatype):

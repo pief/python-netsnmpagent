@@ -112,6 +112,76 @@ def setUp(self):
 		writable = False,
 	)
 
+	# Test OIDs for Counter32 scalar type
+	settableCounter32 = agent.Counter32(
+		oidstr = "TEST-MIB::testCounter32NoInitval",
+	)
+
+	agent.Counter32(
+		oidstr  = "TEST-MIB::testCounter32ZeroInitval",
+		initval = 0,
+	)
+
+	agent.Counter32(
+		oidstr  = "TEST-MIB::testCounter32MinusOneInitval",
+		initval = -1,
+	)
+
+	agent.Counter32(
+		oidstr  = "TEST-MIB::testCounter32OneInitval",
+		initval = 1,
+	)
+
+	agent.Counter32(
+		oidstr  = "TEST-MIB::testCounter32MaxInitval",
+		initval = 4294967295,
+	)
+
+	agent.Counter32(
+		oidstr  = "TEST-MIB::testCounter32MaxPlusOneInitval",
+		initval = 4294967296,
+	)
+
+	agent.Counter32(
+		oidstr   = "TEST-MIB::testCounter32ReadOnly",
+		writable = False,
+	)
+
+	# Test OIDs for Counter64 scalar type
+	settableCounter64 = agent.Counter64(
+		oidstr = "TEST-MIB::testCounter64NoInitval",
+	)
+
+	agent.Counter64(
+		oidstr  = "TEST-MIB::testCounter64ZeroInitval",
+		initval = 0,
+	)
+
+	agent.Counter64(
+		oidstr  = "TEST-MIB::testCounter64MinusOneInitval",
+		initval = -1,
+	)
+
+	agent.Counter64(
+		oidstr  = "TEST-MIB::testCounter64OneInitval",
+		initval = 1,
+	)
+
+	agent.Counter64(
+		oidstr  = "TEST-MIB::testCounter64MaxInitval",
+		initval = 18446744073709551615,
+	)
+
+	agent.Counter64(
+		oidstr  = "TEST-MIB::testCounter64MaxPlusOneInitval",
+		initval = 18446744073709551616,
+	)
+
+	agent.Counter64(
+		oidstr   = "TEST-MIB::testCounter64ReadOnly",
+		writable = False,
+	)
+
 	# Connect to master snmpd instance
 	agent.start()
 
@@ -413,3 +483,179 @@ def test_SET_Unsigned32ReadOnly_42_raises_Exception():
 	global testenv
 
 	testenv.snmpset("TEST-MIB::testUnsigned32ReadOnly.0", 42, "u")
+
+@timed(1)
+def test_GET_Counter32WithoutInitval_eq_Zero():
+	""" GET(Counter32()) == 0
+
+	This tests that the instantiation of a Counter32 SNMP object without
+	specifying an initval resulted in a snmpget'able scalar variable of type
+	Counter32 and value 0. """
+
+	global testenv
+
+	(data, datatype) = testenv.snmpget("TEST-MIB::testCounter32NoInitval.0")
+	eq_(datatype, "Counter32")
+	eq_(int(data), 0)
+
+@timed(1)
+def test_GET_Counter32ZeroInitval_eq_Zero():
+	""" GET(Counter32(initval=0)) == 0
+
+	This tests that the instantiation of a Counter32 SNMP object with an
+	initval of 0 resulted in a snmpget'able scalar variable of type Counter32
+	and value 0. """
+
+	global testenv
+
+	(data, datatype) = testenv.snmpget("TEST-MIB::testCounter32ZeroInitval.0")
+	eq_(datatype, "Counter32")
+	eq_(int(data), 0)
+
+@timed(1)
+def test_GET_Counter32MinusOneInitval_eq_Max():
+	""" GET(Counter32(initval=-1)) == 4294967295
+
+	This tests that the instantiation of a Counter32 SNMP object with an
+	initval of -1 resulted in a snmpget'able scalar variable of type Counter32
+	and value 4294967295. """
+
+	global testenv
+
+	(data, datatype) = testenv.snmpget("TEST-MIB::testCounter32MinusOneInitval.0")
+	eq_(datatype, "Counter32")
+	eq_(int(data), 4294967295)
+
+@timed(1)
+def test_GET_Counter32OneInitval_eq_One():
+	""" GET(Counter32(initval=1)) == 1
+
+	This tests that the instantiation of a Counter32 SNMP object with an
+	initval of 1 resulted in a snmpget'able scalar variable of type Counter32
+	and value 1. """
+
+	global testenv
+
+	(data, datatype) = testenv.snmpget("TEST-MIB::testCounter32OneInitval.0")
+	eq_(datatype, "Counter32")
+	eq_(int(data), 1)
+
+@timed(1)
+def test_GET_Counter32MaxInitval_eq_max():
+	""" GET(Counter32(initval=4294967295)) == 4294967295
+
+	This tests that the instantiation of a Counter32 SNMP object with an
+	initval of 4294967295 resulted in a snmpget'able scalar variable of type
+	Counter32 and value 4294967295. """
+
+	global testenv
+
+	(data, datatype) = testenv.snmpget("TEST-MIB::testCounter32MaxInitval.0")
+	eq_(datatype, "Counter32")
+	eq_(int(data), 4294967295)
+
+@timed(1)
+def test_GET_Counter32MaxPlusOneInitval_eq_zero():
+	""" GET(Counter32(initval=4294967296)) == 0
+
+	This tests that the instantiation of an Counter32 SNMP object with an
+	initval of 4294967296 resulted in a snmpget'able scalar variable of type
+	Counter32 and value 0. """
+
+	global testenv
+
+	(data, datatype) = testenv.snmpget("TEST-MIB::testCounter32MaxPlusOneInitval.0")
+	eq_(datatype, "Counter32")
+	eq_(int(data), 0)
+
+# No way to test SETting a Counter64 because snmpset does not support it
+# (see http://sourceforge.net/p/net-snmp/feature-requests/4/ and RFC2578
+# Section 7.1.6)
+
+@timed(1)
+def test_GET_Counter64WithoutInitval_eq_Zero():
+	""" GET(Counter64()) == 0
+
+	This tests that the instantiation of a Counter64 SNMP object without
+	specifying an initval resulted in a snmpget'able scalar variable of type
+	Counter64 and value 0. """
+
+	global testenv
+
+	(data, datatype) = testenv.snmpget("TEST-MIB::testCounter64NoInitval.0")
+	eq_(datatype, "Counter64")
+	eq_(int(data), 0)
+
+@timed(1)
+def test_GET_Counter64ZeroInitval_eq_Zero():
+	""" GET(Counter64(initval=0)) == 0
+
+	This tests that the instantiation of a Counter64 SNMP object with an
+	initval of 0 resulted in a snmpget'able scalar variable of type Counter64
+	and value 0. """
+
+	global testenv
+
+	(data, datatype) = testenv.snmpget("TEST-MIB::testCounter64ZeroInitval.0")
+	eq_(datatype, "Counter64")
+	eq_(int(data), 0)
+
+@timed(1)
+def test_GET_Counter64MinusOneInitval_eq_Max():
+	""" GET(Counter64(initval=-1)) == 18446744073709551615
+
+	This tests that the instantiation of a Counter64 SNMP object with an
+	initval of -1 resulted in a snmpget'able scalar variable of type Counter64
+	and value 18446744073709551615. """
+
+	global testenv
+
+	(data, datatype) = testenv.snmpget("TEST-MIB::testCounter64MinusOneInitval.0")
+	eq_(datatype, "Counter64")
+	eq_(int(data), 18446744073709551615)
+
+@timed(1)
+def test_GET_Counter64OneInitval_eq_One():
+	""" GET(Counter64(initval=1)) == 1
+
+	This tests that the instantiation of a Counter64 SNMP object with an
+	initval of 1 resulted in a snmpget'able scalar variable of type Counter64
+	and value 1. """
+
+	global testenv
+
+	(data, datatype) = testenv.snmpget("TEST-MIB::testCounter64OneInitval.0")
+	eq_(datatype, "Counter64")
+	eq_(int(data), 1)
+
+@timed(1)
+def test_GET_Counter64MaxInitval_eq_max():
+	""" GET(Counter64(initval=18446744073709551615)) == 18446744073709551615
+
+	This tests that the instantiation of a Counter64 SNMP object with an
+	initval of 18446744073709551616 resulted in a snmpget'able scalar variable
+	of type Counter64 and value 18446744073709551615. """
+
+	global testenv
+
+	(data, datatype) = testenv.snmpget("TEST-MIB::testCounter64MaxInitval.0")
+	eq_(datatype, "Counter64")
+	eq_(int(data), 18446744073709551615)
+
+@timed(1)
+def test_GET_Counter64MaxPlusOneInitval_eq_zero():
+	""" GET(Counter64(initval=18446744073709551616)) == 0
+
+	This tests that the instantiation of an Counter64 SNMP object with an
+	initval of 18446744073709551617 resulted in a snmpget'able scalar variable
+	of type Counter64 and value 0. """
+
+	global testenv
+
+	(data, datatype) = testenv.snmpget("TEST-MIB::testCounter64MaxPlusOneInitval.0")
+	eq_(datatype, "Counter64")
+	eq_(int(data), 0)
+
+# No way to test SETting a Counter64 because snmpset does not support it
+# (see http://sourceforge.net/p/net-snmp/feature-requests/4/ and RFC2578
+# Section 7.1.10)

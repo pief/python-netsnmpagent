@@ -46,11 +46,12 @@ testScalars     OBJECT IDENTIFIER ::= { testMIBObjects 1 }
 -- Scalars
 ------------------------------------------------------------------------
 
-testInteger32   OBJECT IDENTIFIER ::= { testScalars 1 }
-testUnsigned32  OBJECT IDENTIFIER ::= { testScalars 2 }
-testCounter32   OBJECT IDENTIFIER ::= { testScalars 3 }
-testCounter64   OBJECT IDENTIFIER ::= { testScalars 4 }
-testTimeTicks   OBJECT IDENTIFIER ::= { testScalars 5 }
+testInteger32    OBJECT IDENTIFIER ::= { testScalars 1 }
+testUnsigned32   OBJECT IDENTIFIER ::= { testScalars 2 }
+testCounter32    OBJECT IDENTIFIER ::= { testScalars 3 }
+testCounter64    OBJECT IDENTIFIER ::= { testScalars 4 }
+testTimeTicks    OBJECT IDENTIFIER ::= { testScalars 5 }
+testOctetString  OBJECT IDENTIFIER ::= { testScalars 6 }
 
 -- Test OIDs for the Integer32 scalar type
 testInteger32NoInitval OBJECT-TYPE
@@ -366,5 +367,76 @@ testTimeTicksReadOnly OBJECT-TYPE
     DESCRIPTION
         "A read-only, unsigned, 32-bits integer value, with no initval."
     ::= { testTimeTicks 7 }
+
+-- Test OIDs for the OctetString scalar type
+testOctetStringNoInitval OBJECT-TYPE
+    SYNTAX      OctetString
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "A read-write OctetString with no initval."
+    ::= { testOctetString 1 }
+
+testOctetStringEmptyInitval OBJECT-TYPE
+    SYNTAX      OctetString
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "A read-write OctetString with an empty string as initval."
+    ::= { testOctetString 2 }
+
+testOctetStringOneASCIICharInitval OBJECT-TYPE
+    SYNTAX      OctetString
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "A read-write OctetString with a string consisting of a single
+        ASCII character as initval."
+    ::= { testOctetString 3 }
+
+testOctetStringOneUTF8CharInitval OBJECT-TYPE
+    SYNTAX      OctetString
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "A read-write OctetString with a string consisting of a single
+        UTF8 character as initval."
+    ::= { testOctetString 4 }
+
+testOctetString255ASCIICharsInitval OBJECT-TYPE
+    SYNTAX      OctetString
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "A read-write OctetString with a string consisting of 255 ASCII
+        characters as initval."
+    ::= { testOctetString 5 }
+
+testOctetString255UTF8CharsInitval OBJECT-TYPE
+    SYNTAX      OctetString
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "A read-write OctetString with a string consisting of 255 UTF8
+        characters as initval."
+    ::= { testOctetString 6 }
+
+testOctetString256ASCIICharsInitval OBJECT-TYPE
+    SYNTAX      OctetString
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "A read-write OctetString with a string consisting of 256 ASCII
+        characters as initval."
+    ::= { testOctetString 7 }
+
+testOctetString256UTF8CharsInitval OBJECT-TYPE
+    SYNTAX      OctetString
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "A read-write OctetString with a string consisting of 256 UTF8
+        characters as initval."
+    ::= { testOctetString 8 }
 
 END

@@ -17,6 +17,7 @@ import netsnmpagent
 def setUp(self):
 	global testenv, agent
 	global settableInteger32, settableUnsigned32, settableTimeTicks
+	global settableOctetString
 
 	testenv = netsnmpTestEnv()
 
@@ -206,6 +207,46 @@ def setUp(self):
 	agent.TimeTicks(
 		oidstr   = "TEST-MIB::testTimeTicksReadOnly",
 		writable = False,
+	)
+
+	# Test OIDs for OctetString scalar type
+	settableOctetString = agent.OctetString(
+		oidstr = "TEST-MIB::testOctetStringNoInitval",
+	)
+
+	agent.OctetString(
+		oidstr  = "TEST-MIB::testOctetStringEmptyInitval",
+		initval = "",
+	)
+
+	agent.OctetString(
+		oidstr  = "TEST-MIB::testOctetStringOneASCIICharInitval",
+		initval = "A",
+	)
+
+	agent.OctetString(
+		oidstr  = "TEST-MIB::testOctetStringOneUTF8CharInitval",
+		initval = "Ä",
+	)
+
+	agent.OctetString(
+		oidstr  = "TEST-MIB::testOctetString255ASCIICharsInitval",
+		initval = "A" * 255,
+	)
+
+	agent.OctetString(
+		oidstr  = "TEST-MIB::testOctetString255UTF8CharsInitval",
+		initval = "Ä" * 255,
+	)
+
+	agent.OctetString(
+		oidstr  = "TEST-MIB::testOctetString256ASCIICharsInitval",
+		initval = "A" * 256,
+	)
+
+	agent.OctetString(
+		oidstr  = "TEST-MIB::testOctetString256UTF8CharsInitval",
+		initval = "Ä" * 256,
 	)
 
 	# Connect to master snmpd instance
@@ -809,3 +850,153 @@ def test_SET_TimeTicksReadOnly_42_raises_Exception():
 	global testenv
 
 	testenv.snmpset("TEST-MIB::testTimeTicksReadOnly.0", 42, "t")
+
+@timed(1)
+def test_GET_OctetStringWithoutInitval_eq_Empty():
+	""" GET(OctetString()) == ""
+
+	This tests that the instantiation of an OctetString SNMP object without
+	specifying an initval resulted in a snmpget'able scalar variable of type
+	STRING and an empty string as value. """
+
+	global testenv
+
+	(data, datatype) = testenv.snmpget("TEST-MIB::testOctetStringNoInitval.0")
+	eq_(datatype, "STRING")
+	eq_(data, "")
+
+@timed(1)
+def test_GET_OctetStringEmptyInitval_eq_Empty():
+	""" GET(OctetString(initval="")) == ""
+
+	This tests that the instantiation of an OctetString SNMP object with an
+	empty string as initval resulted in a snmpget'able scalar variable of type
+	STRING and an empty string as value. """
+
+	global testenv
+
+	(data, datatype) = testenv.snmpget("TEST-MIB::testOctetStringEmptyInitval.0")
+	eq_(datatype, "STRING")
+	eq_(data, "")
+
+@timed(1)
+def test_GET_OctetStringOneASCIICharInitval_eq_ASCIIChar():
+	""" GET(OctetString(initval="A")) == "A"
+
+	This tests that the instantiation of an OctetString SNMP object with a
+	string consisting of a single ASCII character 'A' as initval resulted in a
+	snmpget'able scalar variable of type STRING and the single ASCII character
+	'A' as value. """
+
+	global testenv
+
+	(data, datatype) = testenv.snmpget("TEST-MIB::testOctetStringOneASCIICharInitval.0")
+	eq_(datatype, "STRING")
+	eq_(data, "A")
+
+@timed(1)
+def test_GET_OctetStringOneUTF8CharInitval_eq_UTF8Char():
+	""" GET(OctetString(initval="Ä")) == utf8("Ä")
+
+	This tests that the instantiation of an OctetString SNMP object with a
+	string consisting of the single UTF8 character 'Ä' as initval resulted in
+	a snmpget'able scalar variable of type Hex-STRING and the UTF8 hexadecimal
+	representation of 'Ä', "C384", as value. """
+
+	global testenv
+
+	(data, datatype) = testenv.snmpget("TEST-MIB::testOctetStringOneUTF8CharInitval.0")
+	eq_(datatype, "Hex-STRING")
+	data = re.sub('( |\n)', '', data)
+	eq_(data, "C384")
+
+@timed(1)
+def test_GET_OctetString255ASCIICharsInitval_eq_255ASCIIChars():
+	""" GET(OctetString(initval="AAA..." [n=255])) == "AAA..." [n=255]
+
+	This tests that the instantiation of an OctetString SNMP object with a
+	string consisting of 255 ASCII characters as initval resulted in a
+	snmpget'able scalar variable of type STRING and the 255 ASCII characters
+	as value. """
+
+	global testenv
+
+	(data, datatype) = testenv.snmpget("TEST-MIB::testOctetString255ASCIICharsInitval.0")
+	eq_(datatype, "STRING")
+	eq_(data, "A" * 255)
+
+@timed(1)
+def test_GET_OctetString255UTF8CharsInitval_eq_255UTF8Chars():
+	""" GET(OctetString(initval="ÄÄÄ..." [n=255])) == utf8("ÄÄÄ...") [n=255]
+
+	This tests that the instantiation of an OctetString SNMP object with a
+	string consisting of 255 UTF8 characters 'Ä' as initval resulted in a
+	snmpget'able scalar variable of type Hex-STRING and the UTF8 hexadecimal
+	representation of the 255 'Ä' characters as value. """
+
+	global testenv
+
+	(data, datatype) = testenv.snmpget("TEST-MIB::testOctetString255UTF8CharsInitval.0")
+	eq_(datatype, "Hex-STRING")
+	data = re.sub('( |\n)', '', data)
+	eq_(data, "C384" * 255)
+
+@timed(1)
+def test_GET_OctetString256ASCIICharsInitval_eq_256ASCIIChars():
+	""" GET(OctetString(initval="AAA..." [n=256])) == "AAA..." [n=256]
+
+	This tests that the instantiation of an OctetString SNMP object with a
+	string consisting of 256 ASCII characters as initval resulted in a
+	snmpget'able scalar variable of type STRING and 256 ASCII characters
+	as value. """
+
+	global testenv
+
+	(data, datatype) = testenv.snmpget("TEST-MIB::testOctetString256ASCIICharsInitval.0")
+	eq_(datatype, "STRING")
+	eq_(data, "A" * 256)
+
+@timed(1)
+def test_GET_OctetString256UTF8CharsInitval_eq_256UTF8Chars():
+	""" GET(OctetString(initval="ÄÄÄ..." [n=256])) == utf8("ÄÄÄ...") [n=256]
+
+	This tests that the instantiation of an OctetString SNMP object with a
+	string consisting of 256 UTF8 characters 'Ä' as initval resulted in a
+	snmpget'able scalar variable of type Hex-STRING and the UTF8 hexadecimal
+	representation of the 256 'Ä' characters as value. """
+
+	global testenv
+
+	(data, datatype) = testenv.snmpget("TEST-MIB::testOctetString256UTF8CharsInitval.0")
+	eq_(datatype, "Hex-STRING")
+	data = re.sub('( |\n)', '', data)
+	eq_(data, "C384" * 256)
+
+@timed(1)
+def test_SET_OctetStringWithoutInterval_abcdef_eq_abcdef():
+	""" SET(OctetString(), abcdef) == abcdef
+
+	This tests that calling snmpset on a previously instantiated scalar
+	variable of type OctetString and the empty string "" as value (this was
+	confirmed by an earlier test) with the new value "abcdef" results in the
+	netsnmpagent SNMP object returning "abcdef" as its value, too. """
+
+	global testenv, settableOctetString
+
+	print testenv.snmpset("TEST-MIB::testOctetStringNoInitval.0", "abcdef", "s")
+
+	eq_(settableOctetString.value(), "abcdef")
+
+@timed(1)
+def test_GET_SET_OctetStringWithoutInterval_abcdef_eq_abcdef():
+	""" GET(SET(OctetString(), abcdef)) == abcdef
+
+	This tests that calling snmpget on the previously instantiated scalar
+	variable of type OctetString that has just been set to "abcdef" also
+	returns this new variable when accessed through snmpget. """
+
+	global testenv
+
+	(data, datatype) = testenv.snmpget("TEST-MIB::testOctetStringNoInitval.0")
+	eq_(datatype, "STRING")
+	eq_(data, "abcdef")

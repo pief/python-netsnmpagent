@@ -15,7 +15,8 @@ from netsnmptestenv import netsnmpTestEnv
 import netsnmpagent
 
 def setUp(self):
-	global testenv, agent, settableInteger32, settableUnsigned32
+	global testenv, agent
+	global settableInteger32, settableUnsigned32, settableTimeTicks
 
 	testenv = netsnmpTestEnv()
 
@@ -170,6 +171,41 @@ def setUp(self):
 	agent.Counter64(
 		oidstr  = "TEST-MIB::testCounter64MaxPlusOneInitval",
 		initval = 18446744073709551616,
+	)
+
+	# Test OIDs for TimeTicks scalar type
+	settableTimeTicks = agent.TimeTicks(
+		oidstr = "TEST-MIB::testTimeTicksNoInitval",
+	)
+
+	agent.TimeTicks(
+		oidstr  = "TEST-MIB::testTimeTicksZeroInitval",
+		initval = 0,
+	)
+
+	agent.TimeTicks(
+		oidstr  = "TEST-MIB::testTimeTicksMinusOneInitval",
+		initval = -1,
+	)
+
+	agent.TimeTicks(
+		oidstr  = "TEST-MIB::testTimeTicksOneInitval",
+		initval = 1,
+	)
+
+	agent.TimeTicks(
+		oidstr  = "TEST-MIB::testTimeTicksMaxInitval",
+		initval = 4294967295,
+	)
+
+	agent.TimeTicks(
+		oidstr  = "TEST-MIB::testTimeTicksMaxPlusOneInitval",
+		initval = 4294967296,
+	)
+
+	agent.TimeTicks(
+		oidstr   = "TEST-MIB::testTimeTicksReadOnly",
+		writable = False,
 	)
 
 	# Connect to master snmpd instance
@@ -649,3 +685,127 @@ def test_GET_Counter64MaxPlusOneInitval_eq_zero():
 # No way to test SETting a Counter64 because snmpset does not support it
 # (see http://sourceforge.net/p/net-snmp/feature-requests/4/ and RFC2578
 # Section 7.1.10)
+
+@timed(1)
+def test_GET_TimeTicksWithoutInitval_eq_Zero():
+	""" GET(TimeTicks()) == 0
+
+	This tests that the instantiation of a TimeTicks SNMP object without
+	specifying an initval resulted in a snmpget'able scalar variable of type
+	Timeticks and value 0. """
+
+	global testenv
+
+	(data, datatype) = testenv.snmpget("TEST-MIB::testTimeTicksNoInitval.0")
+	eq_(datatype, "Timeticks")
+	eq_(data, "(0) 0:00:00.00")
+
+@timed(1)
+def test_GET_TimeTicksZeroInitval_eq_Zero():
+	""" GET(TimeTicks(initval=0)) == 0
+
+	This tests that the instantiation of a TimeTicks SNMP object with an
+	initval of 0 resulted in a snmpget'able scalar variable of type Timeticks
+	and value 0. """
+
+	global testenv
+
+	(data, datatype) = testenv.snmpget("TEST-MIB::testTimeTicksZeroInitval.0")
+	eq_(datatype, "Timeticks")
+	eq_(data, "(0) 0:00:00.00")
+
+@timed(1)
+def test_GET_TimeTicksMinusOneInitval_eq_Max():
+	""" GET(TimeTicks(initval=-1)) == 4294967295
+
+	This tests that the instantiation of a TimeTicks SNMP object with an
+	initval of -1 resulted in a snmpget'able scalar variable of type Timeticks
+	and value 4294967295. """
+
+	global testenv
+
+	(data, datatype) = testenv.snmpget("TEST-MIB::testTimeTicksMinusOneInitval.0")
+	eq_(datatype, "Timeticks")
+	eq_(data, "(4294967295) 497 days, 2:27:52.95")
+
+@timed(1)
+def test_GET_TimeTicksOneInitval_eq_One():
+	""" GET(TimeTicks(initval=1)) == 1
+
+	This tests that the instantiation of a TimeTicks SNMP object with an
+	initval of 1 resulted in a snmpget'able scalar variable of type Timeticks
+	and value 1. """
+
+	global testenv
+
+	(data, datatype) = testenv.snmpget("TEST-MIB::testTimeTicksOneInitval.0")
+	eq_(datatype, "Timeticks")
+	eq_(data, "(1) 0:00:00.01")
+
+@timed(1)
+def test_GET_TimeTicksMaxInitval_eq_max():
+	""" GET(TimeTicks(initval=4294967295)) == 4294967295
+
+	This tests that the instantiation of a TimeTicks SNMP object with an
+	initval of 4294967295 resulted in a snmpget'able scalar variable of type
+	Timeticks and value 4294967295. """
+
+	global testenv
+
+	(data, datatype) = testenv.snmpget("TEST-MIB::testTimeTicksMaxInitval.0")
+	eq_(datatype, "Timeticks")
+	eq_(data, "(4294967295) 497 days, 2:27:52.95")
+
+@timed(1)
+def test_GET_TimeTicksMaxPlusOneInitval_eq_zero():
+	""" GET(TimeTicks(initval=4294967296)) == 0
+
+	This tests that the instantiation of a TimeTicks SNMP object with an
+	initval of 4294967296 resulted in a snmpget'able scalar variable of type
+	Timeticks and value 0. """
+
+	global testenv
+
+	(data, datatype) = testenv.snmpget("TEST-MIB::testTimeTicksMaxPlusOneInitval.0")
+	eq_(datatype, "Timeticks")
+	eq_(data, "(0) 0:00:00.00")
+
+@timed(1)
+def test_SET_TimeTicks_42_eq_42():
+	""" SET(TimeTicks(), 42) == 42
+
+	This tests that calling snmpset on a previously instantiated scalar
+	variable of type TimeTicks and value 0 (this was confirmed by an earlier
+	test) with the new value 42 results in the netsnmpagent SNMP object
+	returning 42 as its value, too. """
+
+	global testenv, settableTimeTicks
+
+	print testenv.snmpset("TEST-MIB::testTimeTicksNoInitval.0", 42, "t")
+
+	eq_(settableTimeTicks.value(), 42)
+
+@timed(1)
+def test_GET_SET_TimeTicks_42_eq_42():
+	""" GET(SET(TimeTicks(), 42)) == 42
+
+	This tests that calling snmpget on the previously instantiated scalar
+	variable of type TimeTicks that has just been set to 42 also returns this
+	new variable when accessed through snmpget. """
+
+	(data, datatype) = testenv.snmpget("TEST-MIB::testTimeTicksNoInitval.0")
+	eq_(datatype, "Timeticks")
+	eq_(data, "(42) 0:00:00.42")
+
+@timed(1)
+@raises(netsnmpTestEnv.NotWritableError)
+def test_SET_TimeTicksReadOnly_42_raises_Exception():
+	""" SET(TimeTicks(readonly=True) raises Exception
+
+	This tests that calling snmpset on a previously instantiated scalar
+	variable of type TimeTicks that has the readonly property set triggers
+	a NotWriteableError exception. """
+
+	global testenv
+
+	testenv.snmpset("TEST-MIB::testTimeTicksReadOnly.0", 42, "t")

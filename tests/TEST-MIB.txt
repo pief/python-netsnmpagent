@@ -50,6 +50,7 @@ testInteger32   OBJECT IDENTIFIER ::= { testScalars 1 }
 testUnsigned32  OBJECT IDENTIFIER ::= { testScalars 2 }
 testCounter32   OBJECT IDENTIFIER ::= { testScalars 3 }
 testCounter64   OBJECT IDENTIFIER ::= { testScalars 4 }
+testTimeTicks   OBJECT IDENTIFIER ::= { testScalars 5 }
 
 -- Test OIDs for the Integer32 scalar type
 testInteger32NoInitval OBJECT-TYPE
@@ -303,5 +304,67 @@ testCounter64MaxPlusOneInitval OBJECT-TYPE
         value, with an initval of the maximum value (18446744073709551615)
         plus one."
     ::= { testCounter64 6 }
+
+-- Test OIDs for the TimeTicks scalar type
+testTimeTicksNoInitval OBJECT-TYPE
+    SYNTAX      TimeTicks
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "A read-write, unsigned, 32-bits integer value, with no initval."
+    ::= { testTimeTicks 1 }
+
+testTimeTicksZeroInitval OBJECT-TYPE
+    SYNTAX      TimeTicks
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "A read-write, unsigned, 32-bits integer value, with an initval of
+        zero."
+    ::= { testTimeTicks 2 }
+
+testTimeTicksMinusOneInitval OBJECT-TYPE
+    SYNTAX      TimeTicks
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "A read-write, unsigned, 32-bits integer value, with an initval of
+        minus one."
+    ::= { testTimeTicks 3 }
+
+testTimeTicksOneInitval OBJECT-TYPE
+    SYNTAX      TimeTicks
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "A read-write, unsigned, 32-bits integer value, with an initval of
+        one."
+    ::= { testTimeTicks 4 }
+
+testTimeTicksMaxInitval OBJECT-TYPE
+    SYNTAX      TimeTicks
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "A read-write, unsigned, 32-bits integer value, with an initval of
+        the maximum value (4294967295)."
+    ::= { testTimeTicks 5 }
+
+testTimeTicksMaxPlusOneInitval OBJECT-TYPE
+    SYNTAX      TimeTicks
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "A read-write, unsigned, 32-bits integer value, with an initval of
+        the maximum value (4294967295) plus one."
+    ::= { testTimeTicks 6 }
+
+testTimeTicksReadOnly OBJECT-TYPE
+    SYNTAX      TimeTicks
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "A read-only, unsigned, 32-bits integer value, with no initval."
+    ::= { testTimeTicks 7 }
 
 END

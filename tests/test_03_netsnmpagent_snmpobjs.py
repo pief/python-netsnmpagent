@@ -113,7 +113,7 @@ def setUp(self):
 	)
 
 	# Test OIDs for Counter32 scalar type
-	settableCounter32 = agent.Counter32(
+	agent.Counter32(
 		oidstr = "TEST-MIB::testCounter32NoInitval",
 	)
 
@@ -142,13 +142,8 @@ def setUp(self):
 		initval = 4294967296,
 	)
 
-	agent.Counter32(
-		oidstr   = "TEST-MIB::testCounter32ReadOnly",
-		writable = False,
-	)
-
 	# Test OIDs for Counter64 scalar type
-	settableCounter64 = agent.Counter64(
+	agent.Counter64(
 		oidstr = "TEST-MIB::testCounter64NoInitval",
 	)
 
@@ -175,11 +170,6 @@ def setUp(self):
 	agent.Counter64(
 		oidstr  = "TEST-MIB::testCounter64MaxPlusOneInitval",
 		initval = 18446744073709551616,
-	)
-
-	agent.Counter64(
-		oidstr   = "TEST-MIB::testCounter64ReadOnly",
-		writable = False,
 	)
 
 	# Connect to master snmpd instance

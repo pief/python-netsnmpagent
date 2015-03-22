@@ -651,18 +651,13 @@ class netsnmpAgent(object):
 					writable = coldef[2] if len(coldef) > 2 \
 					                     else 0
 
-					# netsnmp_table_set_add_default_row() ignores the ASN type,
-					# so it doesn't implement any special handling for the
-					# trailing zero byte in C strings
-					size = defobj._data_size + 1 if defobj._asntype == ASN_OCTET_STR \
-												 else defobj._data_size
 					result = libnsX.netsnmp_table_set_add_default_row(
 						self._dataset,
 						colno,
 						defobj._asntype,
 						writable,
 						defobj.cref(),
-						size
+						defobj._data_size
 					)
 					if result != SNMPERR_SUCCESS:
 						raise netsnmpAgentException(
@@ -723,16 +718,12 @@ class netsnmpAgent(object):
 								raise netsnmpAgentException("snmp_varlist_add_variable() failed!")
 
 					def setRowCell(self, column, snmpobj):
-						# netsnmp_set_row_column() ignores the ASN type, so it doesn't
-						# do special handling for the trailing zero byte in C strings
-						size = snmpobj._data_size + 1 if snmpobj._asntype == ASN_OCTET_STR \
-						                              else snmpobj._data_size
 						result = libnsX.netsnmp_set_row_column(
 							self._table_row,
 							column,
 							snmpobj._asntype,
 							snmpobj.cref(),
-							size
+							snmpobj._data_size
 						)
 						if result != SNMPERR_SUCCESS:
 							raise netsnmpAgentException("netsnmp_set_row_column() failed with error code {0}!".format(result))

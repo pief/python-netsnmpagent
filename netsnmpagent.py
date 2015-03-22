@@ -775,7 +775,7 @@ class netsnmpAgent(object):
 					retdict[0][int(col.contents.column)]["type"] = asntypes[col.contents.type]
 					if bool(col.contents.data):
 						if col.contents.type == ASN_OCTET_STR:
-							retdict[0][int(col.contents.column)]["value"] = col.contents.data.string
+							retdict[0][int(col.contents.column)]["value"] = ctypes.string_at(col.contents.data.string, col.contents.data_len)
 						else:
 							retdict[0][int(col.contents.column)]["value"] = col.contents.data.integer.contents.value
 					col = col.contents.next
@@ -849,7 +849,7 @@ class netsnmpAgent(object):
 					while bool(data):
 						if bool(data.contents.data):
 							if data.contents.type == ASN_OCTET_STR:
-								retdict[indices][int(data.contents.column)] = data.contents.data.string
+								retdict[indices][int(data.contents.column)] = ctypes.string_at(data.contents.data.string, data.contents.data_len)
 							else:
 								retdict[indices][int(data.contents.column)] = data.contents.data.integer.contents.value
 						else:

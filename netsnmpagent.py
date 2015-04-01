@@ -313,18 +313,11 @@ class netsnmpAgent(object):
 		# Initialize our SNMP object registry
 		self._objs = defaultdict(dict)
 
-	def _prepareRegistration(self, oidstr, writable = True):
-		""" Prepares the registration of an SNMP object.
-
-		    "oidstr" is the OID to register the object at.
-		    "writable" indicates whether "snmpset" is allowed. """
-
-		# Make sure the agent has not been start()ed yet
-		if self._status != netsnmpAgentStatus.REGISTRATION:
-			raise netsnmpAgentException("Attempt to register SNMP object " \
-			                            "after agent has been started!")
-
-
+	def _prepareOID(self, oidstr):
+		""" Convert OID to c_oid type.
+		    "oidstr" is the oid to read
+		    Return tuple c_oid array and c_size_t length
+		"""
 		if self.UseMIBFiles:
 			# We can't know the length of the internal OID representation
 			# beforehand, so we use a MAX_OID_LEN sized buffer for the call to
@@ -339,6 +332,10 @@ class netsnmpAgent(object):
 				ctypes.byref(oid_len)
 			) == 0:
 				raise netsnmpAgentException("read_objid({0}) failed!".format(oidstr))
+			
+			# trim trailing zeroes in oid array
+			trimOID = c_oid * oid_len.value
+			oid = trimOID( *oid[0:oid_len.value] )
 		else:
 			# Interpret the given oidstr as the oid itself.
 			try:
@@ -348,7 +345,22 @@ class netsnmpAgent(object):
 
 			oid = (c_oid * len(parts))(*parts)
 			oid_len = ctypes.c_size_t(len(parts))
+		
+		return (oid, oid_len)
 
+
+	def _prepareRegistration(self, oidstr, writable = True):
+		""" Prepares the registration of an SNMP object.
+
+		    "oidstr" is the OID to register the object at.
+		    "writable" indicates whether "snmpset" is allowed. """
+
+		# Make sure the agent has not been start()ed yet
+		if self._status != netsnmpAgentStatus.REGISTRATION:
+			raise netsnmpAgentException("Attempt to register SNMP object " \
+			                            "after agent has been started!")
+
+		(oid, oid_len) = self._prepareOID( oidstr )
 
 		# Do we allow SNMP SETting to this OID?
 		handler_modes = HANDLER_CAN_RWRITE if writable \

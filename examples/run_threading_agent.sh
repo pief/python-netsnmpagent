@@ -48,7 +48,7 @@ cleanup() {
 	# Make sure echo is back on
 	stty echo
 }
-trap cleanup EXIT
+trap cleanup EXIT QUIT TERM KILL INT HUP
 
 echo "* Preparing snmpd environment..."
 

@@ -28,12 +28,33 @@ if [ -z "$SNMPD_BIN" ] ; then
 	exit 1
 fi
 
+# Find path to snmptrapd executable
+SNMPTRAPD_BIN=""
+for DIR in /usr/local/sbin /usr/sbin
+do
+	if [ -x $DIR/snmptrapd ] ; then
+		SNMPTRAPD_BIN=$DIR/snmptrapd
+		break
+	fi
+done
+if [ -z "$SNMPTRAPD_BIN" ] ; then
+	echo "snmptrapd executable not found -- net-snmp not installed?"
+	exit 1
+fi
+
 # Make sure we leave a clean system upon exit
 cleanup() {
 	if [ -n "$TMPDIR" -a -d "$TMPDIR" ] ; then
 		# Terminate snmpd, if running
 		if [ -n "$SNMPD_PIDFILE" -a -e "$SNMPD_PIDFILE" ] ; then
 			PID="$(cat $SNMPD_PIDFILE)"
+			if [ -n "$PID" ] ; then
+				kill -TERM "$PID"
+			fi
+		fi
+		# Terminate snmptrapd, if running
+		if [ -n "$SNMPTRAPD_PIDFILE" -a -e "$SNMPTRAPD_PIDFILE" ] ; then
+			PID="$(cat $SNMPTRAPD_PIDFILE)"
 			if [ -n "$PID" ] ; then
 				kill -TERM "$PID"
 			fi
@@ -56,6 +77,7 @@ echo "* Preparing snmpd environment..."
 TMPDIR="$(mktemp --directory --tmpdir threading_agent.XXXXXXXXXX)"
 SNMPD_CONFFILE=$TMPDIR/snmpd.conf
 SNMPD_PIDFILE=$TMPDIR/snmpd.pid
+AGENTX_SOCK=$TMPDIR/snmpd-agentx.sock
 
 # Create a minimal snmpd configuration for our purposes
 cat <<EOF >>$SNMPD_CONFFILE
@@ -66,7 +88,12 @@ agentaddress localhost:5555
 informsink localhost:5556
 smuxsocket localhost:5557
 master agentx
-agentXSocket $TMPDIR/snmpd-agentx.sock
+agentXSocket $AGENTX_SOCK
+
+trapcommunity public
+trapsink localhost:5558
+trap2sink localhost:5559
+informsink localhost:5560
 
 [snmp]
 persistentDir $TMPDIR/state
@@ -75,7 +102,48 @@ touch $TMPDIR/mib_indexes
 
 # Start a snmpd instance for testing purposes, run as the current user and
 # and independent from any other running snmpd instance
-$SNMPD_BIN -r -LE warning -C -c$SNMPD_CONFFILE -p$SNMPD_PIDFILE
+$SNMPD_BIN -r -LE warning -M+./ -C -c$SNMPD_CONFFILE -p$SNMPD_PIDFILE
+
+echo "* Preparing snmptrapd environment..."
+
+SNMPTRAPD_CONFFILE=$TMPDIR/snmptrapd.conf
+SNMPTRAPD_PIDFILE=$TMPDIR/snmptrapd.pid
+SNMPTRAPD_HANDLE=$TMPDIR/snmptrapd.handle
+
+# Create a minimal snmptrapd configuration for our purposes
+cat <<EOF >>$SNMPTRAPD_CONFFILE
+snmpTrapdAddr localhost:5558,localhost:5559,localhost:5560
+
+doNotRetainNotificationLogs yes
+
+authCommunity log,execute,net public
+#authUser log,execute,net simpleUser noauth
+
+disableAuthorization yes
+
+traphandle default $SNMPTRAPD_HANDLE
+EOF
+
+cat <<EOF >>$SNMPTRAPD_HANDLE
+#!/bin/sh
+
+PATH=/sbin:/usr/sbin:/bin:/usr/bin
+
+read host
+read ip
+
+logger -t \${0##*/} "host:\$host ip:\$ip"
+
+while read oid val
+do
+    logger -t \${0##*/} "\$oid \$val"
+done
+EOF
+chmod a+x "$SNMPTRAPD_HANDLE"
+
+# Start a snmptrapd instance for testing purposes, run as the current user
+# and independent from any other running snmptrapd instance
+$SNMPTRAPD_BIN -LE warning -M+./ -C -c$SNMPTRAPD_CONFFILE -p$SNMPTRAPD_PIDFILE -x$AGENTX_SOCK
 
 # Give the user guidance
 echo "* Our snmpd instance is now listening on localhost, port 5555."
@@ -92,4 +160,8 @@ stty -echo
 
 # Now start the threading agent
 echo "* Starting the threading agent..."
-python threading_agent.py -m $TMPDIR/snmpd-agentx.sock -p $TMPDIR/
+python threading_agent_trap.py -m $AGENTX_SOCK -p $TMPDIR/
+
+# Debug mode
+# Remember to comment out 'stty -echo' few lines above
+#gdb python -ex "run threading_agent_trap.py -m $AGENTX_SOCK -p $TMPDIR/"

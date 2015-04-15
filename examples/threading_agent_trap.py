@@ -154,6 +154,17 @@ def UpdateSNMPObjs():
 	LogMsg(msg.format(output))
 	threadingString.update(output)
 
+	# send trap
+	global agent
+	trapOid = 'SNMPv2-MIB::sysDescr'
+	trapData = [
+		{ 'oid':'SNMPv2-MIB::sysDescr.0', 'val':'test threading agent trap' },
+	]
+	agent.send_trap(
+		oid = trapOid,
+		traps = trapData,
+	)
+
 	LogMsg("Data update done, exiting thread.")
 
 def UpdateSNMPObjsAsync():

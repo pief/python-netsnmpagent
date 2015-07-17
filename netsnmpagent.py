@@ -853,6 +853,8 @@ class netsnmpAgent(object):
 						if bool(data.contents.data):
 							if data.contents.type == ASN_OCTET_STR:
 								retdict[indices][int(data.contents.column)] = ctypes.string_at(data.contents.data.string, data.contents.data_len)
+							elif data.contents.type == ASN_COUNTER64:
+								retdict[indices][int(data.contents.column)] = data.contents.data.counter64.contents.value
 							else:
 								retdict[indices][int(data.contents.column)] = data.contents.data.integer.contents.value
 						else:

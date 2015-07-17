@@ -78,7 +78,7 @@ def LogMsg(msg):
 			"MainThread",
 			"UpdateSNMPObjsThread"
 		)
-		print "{:-^120}".format("-")
+		print "{0:-^120}".format("-")
 		headerlogged = 1
 
 	threadname = threading.currentThread().name

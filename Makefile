@@ -1,6 +1,6 @@
 #
 # python-netsnmpagent module
-# Copyright (c) 2013 Pieter Hollants <pieter@hollants.com>
+# Copyright (c) 2013-2016 Pieter Hollants <pieter@hollants.com>
 # Licensed under the GNU Lesser Public License (LGPL) version 3
 #
 # Makefile for Git repository-based builds
@@ -21,7 +21,7 @@ all: help
 help:
 	@echo
 	@echo "                        python-netsnmpagent Module"
-	@echo "         Copyright (c) 2013 Pieter Hollants <pieter@hollants.com>"
+	@echo "       Copyright (c) 2013-2016 Pieter Hollants <pieter@hollants.com>"
 	@echo
 	@echo "Version from \"git describe\": $(VERSION)"
 	@echo

@@ -7,7 +7,7 @@
 Name:           python-netsnmpagent
 Version:        @NETSNMPAGENT_VERSION@
 Release:        0
-License:        GPL-3.0
+License:        LGPL-3.0
 Summary:        Facilitates writing Net-SNMP (AgentX) subagents in Python
 Url:            http://pypi.python.org/pypi/netsnmpagent
 Group:          Development/Languages/Python

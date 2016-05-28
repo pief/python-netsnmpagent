@@ -2,7 +2,7 @@
 #
 # python-netsnmpagent module
 # Copyright (c) 2013 Pieter Hollants <pieter@hollants.com>
-# Licensed under the GNU Public License (GPL) version 3
+# Licensed under the GNU Lesser Public License (LGPL) version 3
 #
 # Distutils setup script
 #
@@ -31,12 +31,12 @@ and data types of the information within the MIB module.""",
 	author				= "Pieter Hollants",
 	author_email		= "pieter@hollants.com",
 	py_modules			= [ "netsnmpagent", "netsnmpapi" ],
-	license				= "GPL-3.0",
+	license				= "LGPL-3.0",
 	url					= "https://github.com/pief/python-netsnmpagent",
 	classifiers			= [
 		'Intended Audience :: Developers',
 		'Natural Language :: English',
-		'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
+		'License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)',
 		'Operating System :: POSIX',
 		'Programming Language :: Python :: 2',
 		'Programming Language :: Python :: 2.6',

@@ -1,7 +1,7 @@
 
                         python-netsnmpagent Module
          Copyright (c) 2013 Pieter Hollants <pieter@hollants.com>
-           Licensed under the GNU Public License (GPL) version 3
+       Licensed under the GNU Lesser Public License (LGPL) version 3
 
 
 WHAT IS IT?
@@ -42,6 +42,15 @@ openSUSE 12.3). While the intent is to support both net-snmp 5.4.x and 5.7.x
 versions at least for the near future, I want to avoid double code paths
 whereever possible. I therefore have to stick to the net-snmp 5.4.x way of
 things at certain places indicated by code comments.
+
+
+
+LICENSE
+
+Version older than May 28th, 2016 were licensed under the GNU General Public
+License (GPL), version 3. Since May 28th, 2016, python-netsnmpagent is being
+licensed under the GNU Lesser General Public License (LGPL), version 3. See
+http://www.gnu.org/licenses/lgpl-3.0.txt or the included file LICENSE.
 
 
 DOWNLOAD

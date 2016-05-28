@@ -3,7 +3,7 @@ TEST-MIB DEFINITIONS ::= BEGIN
 ------------------------------------------------------------------------
 -- MIB for python-netsnmpagent unit tests
 -- Copyright (c) 2014 Pieter Hollants <pieter@hollants.com>
--- Licensed under the GNU Public License (GPL) version 3
+-- Licensed under the GNU Lesser Public License (LGPL) version 3
 ------------------------------------------------------------------------
 
 -- Imports

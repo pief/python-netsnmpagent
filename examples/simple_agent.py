@@ -3,7 +3,7 @@
 # python-netsnmpagent simple example agent
 #
 # Copyright (c) 2013 Pieter Hollants <pieter@hollants.com>
-# Licensed under the GNU Public License (GPL) version 3
+# Licensed under the GNU Lesser Public License (LGPL) version 3
 #
 
 #

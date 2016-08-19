@@ -469,7 +469,7 @@ class netsnmpAgent(object):
 						val = int(val)
 					return val
 
-				def cref(self):
+				def cref(self, **kwargs):
 					return ctypes.byref(self._cvar) if self._flags == WATCHER_FIXED_SIZE \
 					                                else self._cvar
 
@@ -578,9 +578,13 @@ class netsnmpAgent(object):
 
 		class IpAddress(object):
 			def __init__(self):
+				self._flags = WATCHER_FIXED_SIZE
+				self._asntype = ASN_IPADDRESS
 				self._cvar = ctypes.c_uint(0)
+				self._data_size = ctypes.sizeof(self._cvar)
+				self._max_size  = self._data_size
 				self.update(initval)
-				
+
 				if oidstr:
 					# Prepare the netsnmp_handler_registration structure.
 					handler_reginfo = agent._prepareRegistration(oidstr, writable)
@@ -608,14 +612,26 @@ class netsnmpAgent(object):
 					agent._objs[context][oidstr] = self
 
 			def value(self):
+				# Get string representation of IP address.
 				return socket.inet_ntoa(
 					struct.pack("I", self._cvar.value)
 				)
 
-			def cref(self):
-				return ctypes.byref(self._cvar)
+			def cref(self, **kwargs):
+				# Due to an unfixed Net-SNMP issue (see
+				# https://sourceforge.net/p/net-snmp/bugs/2136/) we have
+				# to convert the value to host byte order if it shall be
+				# used as table index.
+				if kwargs.get('is_table_index', False) == False:
+					return ctypes.byref(self._cvar)
+				else:
+					_cidx = ctypes.c_uint(0)
+					_cidx.value = struct.unpack("I", struct.pack("!I", self._cvar.value))[0]
+					return ctypes.byref(_cidx)
 
 			def update(self, val):
+				# Convert dotted decimal IP address string to ctypes
+				# unsigned int in network byte order.
 				self._cvar.value = struct.unpack(
 					"I",
 					socket.inet_aton(val)
@@ -711,7 +727,7 @@ class netsnmpAgent(object):
 								None,
 								0,
 								idxobj._asntype,
-								idxobj.cref(),
+								idxobj.cref(is_table_index=True),
 								idxobj._data_size
 							)
 							if result == None:
@@ -767,6 +783,12 @@ class netsnmpAgent(object):
 					if bool(col.contents.data):
 						if col.contents.type == ASN_OCTET_STR:
 							retdict[0][int(col.contents.column)]["value"] = ctypes.string_at(col.contents.data.string, col.contents.data_len)
+						elif col.contents.type == ASN_IPADDRESS:
+							uint_value = ctypes.cast(
+								(ctypes.c_int*1)(col.contents.data.integer.contents.value),
+								ctypes.POINTER(ctypes.c_uint)
+							).contents.value
+							retdict[0][int(col.contents.column)]["value"] = socket.inet_ntoa(struct.pack("I", uint_value))
 						else:
 							retdict[0][int(col.contents.column)]["value"] = col.contents.data.integer.contents.value
 					col = col.contents.next
@@ -823,8 +845,8 @@ class netsnmpAgent(object):
 						rootoidlen + 2 + indexoidlen
 					)
 
-					# And finally do away with anything left of the last dot
-					indices = oidcstr.value.split(".")[-1].replace('"', '')
+					# And finally do away with anything left of the first dot
+					indices = oidcstr.value.split(".", 1)[1].replace('"', '')
 
 					# If it's a string, remove the double quotes. If it's a
 					# string containing an integer, make it one
@@ -843,6 +865,12 @@ class netsnmpAgent(object):
 								retdict[indices][int(data.contents.column)] = ctypes.string_at(data.contents.data.string, data.contents.data_len)
 							elif data.contents.type == ASN_COUNTER64:
 								retdict[indices][int(data.contents.column)] = data.contents.data.counter64.contents.value
+							elif data.contents.type == ASN_IPADDRESS:
+								uint_value = ctypes.cast((ctypes.c_int*1)(
+									data.contents.data.integer.contents.value),
+									ctypes.POINTER(ctypes.c_uint)
+									).contents.value
+								retdict[indices][int(data.contents.column)] = socket.inet_ntoa(struct.pack("I", uint_value))
 							else:
 								retdict[indices][int(data.contents.column)] = data.contents.data.integer.contents.value
 						else:

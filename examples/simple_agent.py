@@ -190,6 +190,34 @@ secondTableRow2 = secondTable.addRow([agent.Integer32(2)])
 secondTableRow2.setRowCell(2, agent.DisplayString("foo1"))
 secondTableRow2.setRowCell(3, agent.Unsigned32(12842))
 
+# Create the third table
+thirdTable = agent.Table(
+	oidstr = "SIMPLE-MIB::thirdTable",
+	indexes = [
+		agent.IpAddress()
+	],
+	columns = [
+		(2, agent.DisplayString("Broadcast")),
+		(3, agent.IpAddress("192.168.0.255"))
+	],
+	counterobj = agent.Unsigned32(
+		oidstr = "SIMPLE-MIB::thirdTableNumber"
+	)
+)
+
+# Add the first table row
+thirdTableRow1 = thirdTable.addRow([agent.IpAddress("192.168.0.1")])
+thirdTableRow1.setRowCell(2, agent.DisplayString("Host 1"))
+thirdTableRow1.setRowCell(3, agent.IpAddress("192.168.0.1"))
+
+# Add the second table row
+thirdTableRow2 = thirdTable.addRow([agent.IpAddress("192.168.0.2")])
+thirdTableRow2.setRowCell(2, agent.DisplayString("Host 2"))
+thirdTableRow2.setRowCell(3, agent.IpAddress("192.168.0.2"))
+
+# Add the third table row
+thirdTableRow3 = thirdTable.addRow([agent.IpAddress("192.168.0.3")])
+
 # Finally, we tell the agent to "start". This actually connects the
 # agent to the master agent.
 try:

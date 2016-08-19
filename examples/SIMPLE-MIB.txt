@@ -265,6 +265,63 @@ secondTableEntryValue OBJECT-TYPE
         "An secondTableEntry's value."
     ::= { secondTableEntry 3 }
 
+thirdTableNumber OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "The number of entries in thirdTable."
+    ::= { simpleTables 5 }
+
+thirdTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF FirstTableEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "The third simple table"
+    ::= { simpleTables 6 }
+
+FirstTableEntry ::=
+    SEQUENCE {
+        thirdTableEntryIndex  IpAddress,
+        thirdTableEntryDesc   DisplayString,
+        thirdTableEntryValue  Integer32
+    }
+
+thirdTableEntry OBJECT-TYPE
+    SYNTAX      FirstTableEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "A particular thirdTable row."
+    INDEX { thirdTableEntryIndex }
+    ::= { thirdTable 1 }
+
+thirdTableEntryIndex OBJECT-TYPE
+    SYNTAX      IpAddress
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "The index column used to generate IpAddress indices into
+        thirdTable."
+    ::= { thirdTableEntry 1 }
+
+thirdTableEntryDesc OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "A thirdTableEntry's description."
+    ::= { thirdTableEntry 2 }
+
+thirdTableEntryValue OBJECT-TYPE
+    SYNTAX      IpAddress
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "A thirdTableEntry's value."
+    ::= { thirdTableEntry 3 }
+
 ------------------------------------------------------------------------
 -- Notifications
 ------------------------------------------------------------------------

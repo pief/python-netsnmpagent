@@ -115,4 +115,7 @@ The bug that DisplayStrings/OctetStrings got truncated when trying to update
 them with a string larger that the original InitVal was hunted down and fixed
 by Max "mk23" Kalika <max.kalika+projects@gmail.com>.
 
+Tobias Deiminger <tobias.deiminger@gmail.com> contributed fixes related to
+using IpAddress objects as table indices.
+
 Additional smaller bugfixes were done by Anton Todorov <a.todorov@storpool.com>.

@@ -221,7 +221,7 @@ secondTable OBJECT-TYPE
     MAX-ACCESS  not-accessible
     STATUS      current
     DESCRIPTION
-        "The first simple table"
+        "The second simple table"
     ::= { simpleTables 4 }
 
 SecondTableEntry ::=
@@ -335,7 +335,7 @@ simpleUnsignedROChange NOTIFICATION-TYPE
     }
     STATUS  current
     DESCRIPTION
-        "An simpleScalarsChange notification signifies that there has
+        "A simpleScalarsChange notification signifies that there has
         been a change to the value of simpleUnsignedRO."
     ::= { events 1 }
 
@@ -345,7 +345,7 @@ firstTableChange NOTIFICATION-TYPE
     }
     STATUS  current
     DESCRIPTION
-        "An firstTableChange notification signifies that there has
+        "A firstTableChange notification signifies that there has
         been a change to an firstTableEntry."
     ::= { events 2 }
 

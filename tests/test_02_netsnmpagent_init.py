@@ -33,7 +33,7 @@ def tearDown(self):
 def test_FirstGetFails():
 	""" Instance not created yet, MIB unvailable """
 
-	print netsnmpTestEnv.snmpget("TEST-MIB::testUnsigned32NoInitval.0")
+	print(netsnmpTestEnv.snmpget("TEST-MIB::testUnsigned32NoInitval.0"))
 
 @timed(1)
 def test_Instantiation():
@@ -58,7 +58,7 @@ def test_Instantiation():
 
 		# Also print them out to stdout as the default log handler would, nose
 		# will capture the output and display it if a test fails
-		print "[{0}] {1}".format(msgprio, msgtext)
+		print("[{0}] {1}".format(msgprio, msgtext))
 
 	# Create a new netsnmpAgent instance which
 	# - connects to the net-snmp test environment's snmpd instance

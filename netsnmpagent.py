@@ -190,7 +190,7 @@ class netsnmpAgent(object):
 			if self.LogHandler:
 				self.LogHandler(msgprio, msgtext)
 			else:
-				print "[{0}] {1}".format(msgprio, msgtext)
+				print("[{0}] {1}".format(msgprio, msgtext))
 
 			return 0
 

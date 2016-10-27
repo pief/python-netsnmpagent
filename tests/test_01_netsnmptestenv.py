@@ -101,9 +101,9 @@ def test_TmpdirRemoved():
 	global tmpdir
 
 	# List the tempdir's name and its contents if the assert fails
-	print tmpdir
+	print(tmpdir)
 	try:
-		print os.listdir(tmpdir)
+		print(os.listdir(tmpdir))
 	except OSError:
 		pass
 	ok_(os.path.exists(tmpdir) == False)

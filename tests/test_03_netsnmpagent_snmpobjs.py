@@ -398,7 +398,7 @@ def test_SET_Integer32_42_eq_42():
 
 	global testenv, settableInteger32
 
-	print testenv.snmpset("TEST-MIB::testInteger32NoInitval.0", 42, "i")
+	print(testenv.snmpset("TEST-MIB::testInteger32NoInitval.0", 42, "i"))
 
 	eq_(settableInteger32.value(), 42)
 
@@ -522,7 +522,7 @@ def test_SET_Unsigned32_42_eq_42():
 
 	global testenv, settableUnsigned32
 
-	print testenv.snmpset("TEST-MIB::testUnsigned32NoInitval.0", 42, "u")
+	print(testenv.snmpset("TEST-MIB::testUnsigned32NoInitval.0", 42, "u"))
 
 	eq_(settableUnsigned32.value(), 42)
 
@@ -822,7 +822,7 @@ def test_SET_TimeTicks_42_eq_42():
 
 	global testenv, settableTimeTicks
 
-	print testenv.snmpset("TEST-MIB::testTimeTicksNoInitval.0", 42, "t")
+	print(testenv.snmpset("TEST-MIB::testTimeTicksNoInitval.0", 42, "t"))
 
 	eq_(settableTimeTicks.value(), 42)
 
@@ -983,7 +983,7 @@ def test_SET_OctetStringWithoutInterval_abcdef_eq_abcdef():
 
 	global testenv, settableOctetString
 
-	print testenv.snmpset("TEST-MIB::testOctetStringNoInitval.0", "abcdef", "s")
+	print(testenv.snmpset("TEST-MIB::testOctetStringNoInitval.0", "abcdef", "s"))
 
 	eq_(settableOctetString.value(), "abcdef")
 

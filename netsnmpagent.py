@@ -30,7 +30,13 @@ MAX_STRING_SIZE = 1024
 # http://stackoverflow.com/questions/36932/how-can-i-represent-an-enum-in-python
 def enum(*sequential, **named):
 	enums = dict(zip(sequential, range(len(sequential))), **named)
-	enums["Names"] = dict((value,key) for key, value in enums.iteritems())
+	try:
+		# Python 2.x
+		enums_iterator = enums.iteritems()
+	except AttributeError:
+		# Python 3.x
+		enums_iterator = enums.items()
+	enums["Names"] = dict((value,key) for key, value in enums_iterator)
 	return type("Enum", (), enums)
 
 # Indicates the status of a netsnmpAgent object
@@ -907,7 +913,13 @@ class netsnmpAgent(object):
 		    Returned is a dictionary objects for the specified "context",
 		    which defaults to the default context. """
 		myobjs = {}
-		for oidstr, snmpobj in self._objs[context].iteritems():
+		try:
+			# Python 2.x
+			objs_iterator = self._objs[context].iteritems()
+		except AttributeError:
+			# Python 3.x
+			objs_iterator = self._objs[context].items()
+		for oidstr, snmpobj in objs_iterator:
 			myobjs[oidstr] = {
 				"type": type(snmpobj).__name__,
 				"value": snmpobj.value()

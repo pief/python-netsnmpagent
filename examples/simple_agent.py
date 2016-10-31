@@ -67,7 +67,7 @@ parser.add_option(
 (options, args) = parser.parse_args()
 
 # Get terminal width for usage with pprint
-rows,columns = os.popen("stty size", "r").read().split()
+rows, columns = os.popen("stty size", "r").read().split()
 
 # First, create an instance of the netsnmpAgent class. We specify the
 # fully-qualified path to SIMPLE-MIB.txt ourselves here, so that you
@@ -86,59 +86,59 @@ except netsnmpagent.netsnmpAgentException as e:
 
 # Then we create all SNMP scalar variables we're willing to serve.
 simpleInteger = agent.Integer32(
-	oidstr = "SIMPLE-MIB::simpleInteger"
+	oidstr   = "SIMPLE-MIB::simpleInteger"
 )
 simpleIntegerContext1 = agent.Integer32(
-	oidstr = "SIMPLE-MIB::simpleInteger",
-	context = "context1",
-	initval = 200,
+	oidstr   = "SIMPLE-MIB::simpleInteger",
+	context  = "context1",
+	initval  = 200,
 )
 simpleIntegerRO = agent.Integer32(
 	oidstr   = "SIMPLE-MIB::simpleIntegerRO",
 	writable = False
 )
 simpleUnsigned = agent.Unsigned32(
-	oidstr = "SIMPLE-MIB::simpleUnsigned"
+	oidstr   = "SIMPLE-MIB::simpleUnsigned"
 )
 simpleUnsignedRO = agent.Unsigned32(
 	oidstr   = "SIMPLE-MIB::simpleUnsignedRO",
 	writable = False
 )
 simpleCounter32 = agent.Counter32(
-	oidstr = "SIMPLE-MIB::simpleCounter32"
+	oidstr   = "SIMPLE-MIB::simpleCounter32"
 )
 simpleCounter32Context2 = agent.Counter32(
-	oidstr = "SIMPLE-MIB::simpleCounter32",
-	context = "context2",
-	initval = pow(2,32) - 10, # To rule out endianness bugs
+	oidstr   = "SIMPLE-MIB::simpleCounter32",
+	context  = "context2",
+	initval  = pow(2,32) - 10, # To rule out endianness bugs
 )
 simpleCounter64 = agent.Counter64(
-	oidstr = "SIMPLE-MIB::simpleCounter64"
+	oidstr   = "SIMPLE-MIB::simpleCounter64"
 )
 simpleCounter64Context2 = agent.Counter64(
-	oidstr = "SIMPLE-MIB::simpleCounter64",
-	context = "context2",
-	initval = pow(2,64) - 10, # To rule out endianness bugs
+	oidstr   = "SIMPLE-MIB::simpleCounter64",
+	context  = "context2",
+	initval  = pow(2,64) - 10, # To rule out endianness bugs
 )
 simpleTimeTicks = agent.TimeTicks(
-	oidstr = "SIMPLE-MIB::simpleTimeTicks"
+	oidstr   = "SIMPLE-MIB::simpleTimeTicks"
 )
 simpleIpAddress = agent.IpAddress(
-	oidstr = "SIMPLE-MIB::simpleIpAddress",
-	initval="127.0.0.1"
+	oidstr   = "SIMPLE-MIB::simpleIpAddress",
+	initval  = "127.0.0.1"
 )
 simpleOctetString = agent.OctetString(
-	oidstr  = "SIMPLE-MIB::simpleOctetString",
-	initval = "Hello World"
+	oidstr   = "SIMPLE-MIB::simpleOctetString",
+	initval  = "Hello World"
 )
 simpleDisplayString = agent.DisplayString(
-	oidstr  = "SIMPLE-MIB::simpleDisplayString",
-	initval = "Nice to meet you"
+	oidstr   = "SIMPLE-MIB::simpleDisplayString",
+	initval  = "Nice to meet you"
 )
 
 # Create the first table
 firstTable = agent.Table(
-	oidstr = "SIMPLE-MIB::firstTable",
+	oidstr  = "SIMPLE-MIB::firstTable",
 	indexes = [
 		agent.DisplayString()
 	],
@@ -167,7 +167,7 @@ firstTableRow3.setRowCell(3, agent.Integer32(18))
 
 # Create the second table
 secondTable = agent.Table(
-	oidstr = "SIMPLE-MIB::secondTable",
+	oidstr  = "SIMPLE-MIB::secondTable",
 	indexes = [
 		agent.Integer32()
 	],
@@ -192,11 +192,11 @@ secondTableRow2.setRowCell(3, agent.Unsigned32(12842))
 
 # Create the third table
 thirdTable = agent.Table(
-	oidstr = "SIMPLE-MIB::thirdTable",
-	indexes = [
+	oidstr     = "SIMPLE-MIB::thirdTable",
+	indexes    = [
 		agent.IpAddress()
 	],
-	columns = [
+	columns    = [
 		(2, agent.DisplayString("Broadcast")),
 		(3, agent.IpAddress("192.168.0.255"))
 	],

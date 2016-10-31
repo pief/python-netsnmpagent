@@ -584,9 +584,9 @@ class netsnmpAgent(object):
 
 		class IpAddress(object):
 			def __init__(self):
-				self._flags = WATCHER_FIXED_SIZE
-				self._asntype = ASN_IPADDRESS
-				self._cvar = ctypes.c_uint(0)
+				self._flags     = WATCHER_FIXED_SIZE
+				self._asntype   = ASN_IPADDRESS
+				self._cvar      = ctypes.c_uint(0)
 				self._data_size = ctypes.sizeof(self._cvar)
 				self._max_size  = self._data_size
 				self.update(initval)
@@ -628,7 +628,7 @@ class netsnmpAgent(object):
 				# https://sourceforge.net/p/net-snmp/bugs/2136/) we have
 				# to convert the value to host byte order if it shall be
 				# used as table index.
-				if kwargs.get('is_table_index', False) == False:
+				if kwargs.get("is_table_index", False) == False:
 					return ctypes.byref(self._cvar)
 				else:
 					_cidx = ctypes.c_uint(0)
@@ -825,7 +825,7 @@ class netsnmpAgent(object):
 
 					# Registered OID
 					rootoidlen = self._handler_reginfo.contents.rootoid_len
-					for i in range(0,rootoidlen):
+					for i in range(0, rootoidlen):
 						fulloid[i] = self._handler_reginfo.contents.rootoid[i]
 
 					# Entry
@@ -835,12 +835,12 @@ class netsnmpAgent(object):
 					# table_data_set handlers, we do not have one here. No
 					# biggie, using a fixed value will do for our purposes as
 					# we'll do away with anything left of the last dot below.
-					fulloid[rootoidlen+1] = 2
+					fulloid[rootoidlen + 1] = 2
 
 					# Index data
 					indexoidlen = row.contents.index_oid_len
-					for i in range(0,indexoidlen):
-						fulloid[rootoidlen+2+i] = row.contents.index_oid[i]
+					for i in range(0, indexoidlen):
+						fulloid[rootoidlen + 2 + i] = row.contents.index_oid[i]
 
 					# Convert the full oid to its string representation
 					oidcstr = ctypes.create_string_buffer(MAX_OID_LEN)

@@ -53,7 +53,7 @@ def test_Instantiation():
 		logbuf.append({
 			"time": time.clock(),
 			"prio": msgprio,
-			"text": msgtext,
+			"text": msgtext
 		})
 
 		# Also print them out to stdout as the default log handler would, nose

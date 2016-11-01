@@ -48,6 +48,14 @@ netsnmpAgentStatus = enum(
 	"RECONNECTING",     # Got disconnected, trying to reconnect
 )
 
+# Helper function to determine if "x" is a num
+def isnum(x):
+	try:
+		x + 1
+		return True
+	except TypeError:
+		return False
+
 class netsnmpAgent(object):
 	""" Implements an SNMP agent using the net-snmp libraries. """
 
@@ -471,8 +479,13 @@ class netsnmpAgent(object):
 
 				def value(self):
 					val = self._cvar.value
-					if val <= sys.maxint:
+
+					if isnum(val):
+						# Python 2.x will automatically switch from the "int"
+						# type to the "long" type, if necessary. Python 3.x
+						# has no limits on the "int" type anymore.
 						val = int(val)
+
 					return val
 
 				def cref(self, **kwargs):

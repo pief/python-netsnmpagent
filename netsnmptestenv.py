@@ -13,7 +13,7 @@
 This module allows to run net-snmp instances with user privileges that do not
 interfere with any system-wide running net-snmp instance. """
 
-import sys, os, atexit, tempfile, subprocess, re, inspect, signal, time, shutil
+import sys, os, atexit, tempfile, subprocess, locale, re, inspect, signal, time, shutil
 
 class netsnmpTestEnv(object):
 	""" Implements a net-snmp test environment. """
@@ -133,6 +133,11 @@ class netsnmpTestEnv(object):
 			stdout=subprocess.PIPE, stderr=subprocess.STDOUT
 		)
 		output = proc.communicate()[0].strip()
+
+		# Python 3's "str" strings are Unicode strings, not byte strings
+		if not isinstance("Test", bytes):
+			output = output.decode(locale.getpreferredencoding())
+
 		rc = proc.poll()
 		if rc == 0:
 			if re.search(" = No Such Object available on this agent at this OID", output):

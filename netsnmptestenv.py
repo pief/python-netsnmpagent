@@ -21,6 +21,7 @@ class netsnmpTestEnv(object):
 	def __init__(self, **args):
 		""" Initializes a new net-snmp test environment. """
 
+		# Currently hardcoded. Doesn't really allow parallel runs :/
 		self.agentport  = 6555
 		self.informport = 6556
 		self.smuxport   = 6557

@@ -29,9 +29,11 @@ def test_Instantiation():
 	# Try creating the instance without raising exceptions
 	testenv = netsnmpTestEnv()
 
-	# Remember the PID file the tmpdir the instance uses
+	# Wait for snmpd to have started
 	while not os.path.exists(testenv.pidfile):
 		time.sleep(.1)
+
+	# Remember the PID file and the tmpdir the instance uses
 	with open(testenv.pidfile, "r") as f:
 		pid = int(f.read())
 	tmpdir = testenv.tmpdir

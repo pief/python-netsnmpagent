@@ -517,7 +517,6 @@ class netsnmpAgent(object):
 								"Value passed to update() truncated: {0} > {1} "
 								"bytes!".format(len(val), self._max_size)
 							)
-						self._cvar.value = val
 						self._data_size  = self._watcher.contents.data_size = len(val)
 
 				if props["asntype"] in [ASN_COUNTER, ASN_COUNTER64]:

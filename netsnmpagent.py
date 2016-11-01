@@ -6,7 +6,7 @@
 # Main module
 #
 
-"""Allows to write net-snmp subagents in Python.
+""" Allows to write net-snmp subagents in Python.
 
 The Python bindings that ship with net-snmp support client operations
 only. I fixed a couple of issues in the existing python-agentx module
@@ -16,8 +16,7 @@ variables, which requires re-doing a lot of stuff which net-snmp
 actually takes care of in its API's helpers.
 
 This module, by contrast, concentrates on wrapping the net-snmp C API
-for SNMP subagents in an easy manner. It is still under heavy
-development and some features are yet missing."""
+for SNMP subagents in an easy manner. """
 
 import sys, os, socket, struct, re, locale
 from collections import defaultdict

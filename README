@@ -43,6 +43,10 @@ versions at least for the near future, I want to avoid double code paths
 whereever possible. I therefore have to stick to the net-snmp 5.4.x way of
 things at certain places indicated by code comments.
 
+python-netsnmpagent has been tested and is compatible with:
+- Python 2.6
+- Python 2.7
+- Python 3.5 (since November 1st, 2016)
 
 
 LICENSE

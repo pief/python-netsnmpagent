@@ -859,7 +859,7 @@ class netsnmpAgent(object):
 					# Fake the column number. Unlike the table_data and
 					# table_data_set handlers, we do not have one here. No
 					# biggie, using a fixed value will do for our purposes as
-					# we'll do away with anything left of the last dot below.
+					# we'll do away with anything left of the first dot below.
 					fulloid[rootoidlen + 1] = 2
 
 					# Index data
@@ -867,7 +867,7 @@ class netsnmpAgent(object):
 					for i in range(0, indexoidlen):
 						fulloid[rootoidlen + 2 + i] = row.contents.index_oid[i]
 
-					# Convert the full oid to its string representation
+					# Convert the full OID to its string representation
 					oidcstr = ctypes.create_string_buffer(MAX_OID_LEN)
 					libnsa.snprint_objid(
 						oidcstr,
@@ -877,6 +877,7 @@ class netsnmpAgent(object):
 					)
 
 					# And finally do away with anything left of the first dot
+					# so we keep the row index only
 					indices = oidcstr.value.split(b".", 1)[1]
 
 					# If it's a string, remove the double quotes. If it's a

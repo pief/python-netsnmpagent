@@ -13,7 +13,7 @@
 This module allows to run net-snmp instances with user privileges that do not
 interfere with any system-wide running net-snmp instance. """
 
-import sys, os, tempfile, subprocess, re, inspect, signal, time, shutil
+import sys, os, atexit, tempfile, subprocess, re, inspect, signal, time, shutil
 
 class netsnmpTestEnv(object):
 	""" Implements a net-snmp test environment. """
@@ -25,6 +25,9 @@ class netsnmpTestEnv(object):
 		self.agentport  = 6555
 		self.informport = 6556
 		self.smuxport   = 6557
+
+		# Ensure we get a chance to clean up after ourselves
+		atexit.register(self.shutdown)
 
 		# Create a temporary directory to hold the snmpd files
 		self.tmpdir = tempfile.mkdtemp(os.path.basename(sys.argv[0]))
@@ -59,11 +62,6 @@ class netsnmpTestEnv(object):
 		subprocess.check_call(cmd, shell=True)
 
 	def shutdown(self):
-		# Explicitly import used Python modules once more because they may
-		# have been __del__'d before us and then we'd hit AttributeError
-		# exceptions due to "os" being None
-		import os, time
-
 		def kill_process(pid):
 			def is_running(pid):
 				return os.path.exists("/proc/{0}".format(pid))
@@ -84,7 +82,7 @@ class netsnmpTestEnv(object):
 				time.sleep(0.25)
 
 		# Check for existance of snmpd's PID file
-		if os.access(self.pidfile, os.R_OK):
+		if hasattr(self, "pidfile") and os.access(self.pidfile, os.R_OK):
 			# Read the PID
 			with open(self.pidfile, "r") as f:
 				pid = int(f.read())
@@ -93,11 +91,8 @@ class netsnmpTestEnv(object):
 			kill_process(pid)
 
 		# Recursively remove the temporary directory
-		if os.access(self.tmpdir, os.R_OK):
+		if hasattr(self, "tmpdir") and os.access(self.tmpdir, os.R_OK):
 			shutil.rmtree(self.tmpdir)
-
-	def __del__(self):
-		self.shutdown()
 
 	class SNMPTimeoutError(Exception):
 		pass

@@ -38,18 +38,28 @@ endif
 
 .PHONY: tests
 tests:
-	@if [ `which nosetests 2>/dev/null` ] ; then \
-		cd tests && \
-		for FILE in test_*.py ; do \
-			echo "----------------------------------------------------------------------"; \
-			echo $$FILE; \
-			echo "----------------------------------------------------------------------"; \
-			nosetests -vx $$FILE || exit 1; \
-		done \
-	else \
-		echo "Can't find the \"nosetests\" command, please install the \"nose\" Python module!"; \
-		exit 1; \
-	fi
+	@for PYVER in 2 3 ; do \
+		if which python$${PYVER} >/dev/null 2>&1 ; then \
+			if python$${PYVER} -c "import nose" 2>/dev/null ; then \
+				echo "----------------------------------------------------------------------"; \
+				echo "                           Python $${PYVER} tests"; \
+				echo "----------------------------------------------------------------------"; \
+				echo; \
+				cd tests; \
+				for FILE in test_*.py ; do \
+					echo $$FILE; \
+					echo "----------------------------------------------------------------------"; \
+					python$${PYVER} -c "import nose; nose.main()" -vx $$FILE || exit 1; \
+					echo; \
+				done; \
+				cd ..; \
+			else \
+				echo "No nose module found for python$${PYVER}, skipping tests for this version!"; \
+			fi; \
+		else \
+			echo "No python$${PYVER} found, skipping tests for this version!"; \
+		fi; \
+	done
 
 setup.py: setup.py.in
 	sed 's/@NETSNMPAGENT_VERSION@/$(VERSION)/' setup.py.in >$@

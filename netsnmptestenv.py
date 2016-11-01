@@ -30,7 +30,7 @@ class netsnmpTestEnv(object):
 		atexit.register(self.shutdown)
 
 		# Create a temporary directory to hold the snmpd files
-		self.tmpdir = tempfile.mkdtemp(os.path.basename(sys.argv[0]))
+		self.tmpdir = tempfile.mkdtemp("netsnmptestenv")
 
 		# Compose paths to files inside the temp dir
 		conffile          = os.path.join(self.tmpdir, "snmpd.conf")

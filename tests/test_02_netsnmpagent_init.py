@@ -8,7 +8,7 @@
 # Integration tests for the netsnmpagent module (init behavior)
 #
 
-import sys, os, re, subprocess, threading, signal, time
+import sys, os, re, locale, time
 from nose.tools import *
 sys.path.insert(1, "..")
 from netsnmptestenv import netsnmpTestEnv

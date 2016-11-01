@@ -350,7 +350,6 @@ class netsnmpAgent(object):
 			raise netsnmpAgentException("Attempt to register SNMP object " \
 			                            "after agent has been started!")
 
-
 		if self.UseMIBFiles:
 			# We can't know the length of the internal OID representation
 			# beforehand, so we use a MAX_OID_LEN sized buffer for the call to
@@ -517,7 +516,7 @@ class netsnmpAgent(object):
 								"Value passed to update() truncated: {0} > {1} "
 								"bytes!".format(len(val), self._max_size)
 							)
-						self._data_size  = self._watcher.contents.data_size = len(val)
+						self._data_size = self._watcher.contents.data_size = len(val)
 
 				if props["asntype"] in [ASN_COUNTER, ASN_COUNTER64]:
 					def increment(self, count=1):

@@ -37,17 +37,10 @@ CFLAGS="%{optflags}" python setup.py build
 
 %install
 python setup.py install --prefix=%{_prefix} --root=%{buildroot}
-mkdir -p %{buildroot}%{_docdir}/%{name}/examples
-for FILE in examples/*; do
-	install -m 0644 $FILE %{buildroot}%{_docdir}/%{name}/examples/
-done
 
 %files
 %defattr(-,root,root,-)
 %{python_sitelib}/*
-%doc README LICENSE ChangeLog
-%if 0%{!?suse_version:1}
-%{_docdir}/%{name}/examples
-%endif
+%doc README LICENSE ChangeLog examples
 
 %changelog

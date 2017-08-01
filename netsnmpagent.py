@@ -1,12 +1,12 @@
 #
 # python-netsnmpagent module
-# Copyright (c) 2013 Pieter Hollants <pieter@hollants.com>
-# Licensed under the GNU Public License (GPL) version 3
+# Copyright (c) 2013-2016 Pieter Hollants <pieter@hollants.com>
+# Licensed under the GNU Lesser Public License (LGPL) version 3
 #
 # Main module
 #
 
-"""Allows to write net-snmp subagents in Python.
+""" Allows to write net-snmp subagents in Python.
 
 The Python bindings that ship with net-snmp support client operations
 only. I fixed a couple of issues in the existing python-agentx module
@@ -16,10 +16,9 @@ variables, which requires re-doing a lot of stuff which net-snmp
 actually takes care of in its API's helpers.
 
 This module, by contrast, concentrates on wrapping the net-snmp C API
-for SNMP subagents in an easy manner. It is still under heavy
-development and some features are yet missing."""
+for SNMP subagents in an easy manner. """
 
-import sys, os, socket, struct, re
+import sys, os, socket, struct, re, locale
 from collections import defaultdict
 from netsnmpapi import *
 
@@ -30,8 +29,26 @@ MAX_STRING_SIZE = 1024
 # http://stackoverflow.com/questions/36932/how-can-i-represent-an-enum-in-python
 def enum(*sequential, **named):
 	enums = dict(zip(sequential, range(len(sequential))), **named)
-	enums["Names"] = dict((value,key) for key, value in enums.iteritems())
+	try:
+		# Python 2.x
+		enums_iterator = enums.iteritems()
+	except AttributeError:
+		# Python 3.x
+		enums_iterator = enums.items()
+	enums["Names"] = dict((value,key) for key, value in enums_iterator)
 	return type("Enum", (), enums)
+
+# Helper functions to deal with converting between byte strings (required by
+# ctypes) and Unicode strings (possibly used by the Python version in use)
+def b(s):
+	""" Encodes Unicode strings to byte strings, if necessary. """
+
+	return s if isinstance(s, bytes) else s.encode(locale.getpreferredencoding())
+
+def u(s):
+	""" Decodes byte strings to Unicode strings, if necessary. """
+
+	return s if isinstance("Test", bytes) else s.decode(locale.getpreferredencoding())
 
 # Indicates the status of a netsnmpAgent object
 netsnmpAgentStatus = enum(
@@ -41,6 +58,14 @@ netsnmpAgentStatus = enum(
 	"CONNECTED",        # Connected to a running snmpd instance
 	"RECONNECTING",     # Got disconnected, trying to reconnect
 )
+
+# Helper function to determine if "x" is a num
+def isnum(x):
+	try:
+		x + 1
+		return True
+	except TypeError:
+		return False
 
 class netsnmpAgent(object):
 	""" Implements an SNMP agent using the net-snmp libraries. """
@@ -150,7 +175,7 @@ class netsnmpAgent(object):
 			msgtext = re.sub(
 				"^(Warning|Error): *",
 				"",
-				logmsg.contents.msg.rstrip("\n")
+				u(logmsg.contents.msg.rstrip(b"\n"))
 			)
 
 			# Intercept log messages related to connection establishment and
@@ -190,7 +215,7 @@ class netsnmpAgent(object):
 			if self.LogHandler:
 				self.LogHandler(msgprio, msgtext)
 			else:
-				print "[{0}] {1}".format(msgprio, msgtext)
+				print("[{0}] {1}".format(msgprio, msgtext))
 
 			return 0
 
@@ -275,7 +300,7 @@ class netsnmpAgent(object):
 			if libnsa.netsnmp_ds_set_string(
 				NETSNMP_DS_APPLICATION_ID,
 				NETSNMP_DS_AGENT_X_SOCKET,
-				self.MasterSocket
+				b(self.MasterSocket)
 			) != SNMPERR_SUCCESS:
 				raise netsnmpAgentException(
 					"netsnmp_ds_set_string() failed for NETSNMP_DS_AGENT_X_SOCKET!"
@@ -286,14 +311,14 @@ class netsnmpAgent(object):
 			if libnsa.netsnmp_ds_set_string(
 				NETSNMP_DS_LIBRARY_ID,
 				NETSNMP_DS_LIB_PERSISTENT_DIR,
-				ctypes.c_char_p(self.PersistenceDir)
+				b(self.PersistenceDir)
 			) != SNMPERR_SUCCESS:
 				raise netsnmpAgentException(
 					"netsnmp_ds_set_string() failed for NETSNMP_DS_LIB_PERSISTENT_DIR!"
 				)
 
 		# Initialize net-snmp library (see netsnmp_agent_api(3))
-		if libnsa.init_agent(self.AgentName) != 0:
+		if libnsa.init_agent(b(self.AgentName)) != 0:
 			raise netsnmpAgentException("init_agent() failed!")
 
 		# Initialize MIB parser
@@ -306,7 +331,7 @@ class netsnmpAgent(object):
 		# format.
 		if self.UseMIBFiles and self.MIBFiles:
 			for mib in self.MIBFiles:
-				if libnsa.read_mib(mib) == 0:
+				if libnsa.read_mib(b(mib)) == 0:
 					raise netsnmpAgentException("netsnmp_read_module({0}) " +
 					                            "failed!".format(mib))
 
@@ -327,7 +352,7 @@ class netsnmpAgent(object):
 
 			# Let libsnmpagent parse the OID
 			if libnsa.read_objid(
-				oidstr,
+				b(oidstr),
 				ctypes.cast(ctypes.byref(oid), c_oid_p),
 				ctypes.byref(oid_len)
 			) == 0:
@@ -339,7 +364,7 @@ class netsnmpAgent(object):
 		else:
 			# Interpret the given oidstr as the oid itself.
 			try:
-				parts = [c_oid(long(x)) for x in oidstr.split('.')]
+				parts = [c_oid(long(x) if sys.version_info <= (3,) else int(x)) for x in oidstr.split('.')]
 			except ValueError:
 				raise netsnmpAgentException("Invalid OID (not using MIB): {0}".format(oidstr))
 
@@ -371,7 +396,7 @@ class netsnmpAgent(object):
 		# OID. We use this for leaf nodes only, processing of subtrees will be
 		# left to net-snmp.
 		handler_reginfo = libnsa.netsnmp_create_handler_registration(
-			oidstr,
+			b(oidstr),
 			None,
 			oid,
 			oid_len,
@@ -436,18 +461,18 @@ class netsnmpAgent(object):
 					# has no fixed size, pass the maximum size as second
 					# argument to the constructor.
 					if props["flags"] == WATCHER_FIXED_SIZE:
-						self._cvar      = props["ctype"](initval)
+						self._cvar      = props["ctype"](initval if isnum(initval) else b(initval))
 						self._data_size = ctypes.sizeof(self._cvar)
 						self._max_size  = self._data_size
 					else:
-						self._cvar      = props["ctype"](initval, props["max_size"])
+						self._cvar      = props["ctype"](initval if isnum(initval) else b(initval), props["max_size"])
 						self._data_size = len(self._cvar.value)
 						self._max_size  = max(self._data_size, props["max_size"])
 
 					if oidstr:
 						# Prepare the netsnmp_handler_registration structure.
 						handler_reginfo = agent._prepareRegistration(oidstr, writable)
-						handler_reginfo.contents.contextName = context
+						handler_reginfo.contents.contextName = b(context)
 
 						# Create the netsnmp_watcher_info structure.
 						self._watcher = libnsX.netsnmp_create_watcher_info(
@@ -477,11 +502,18 @@ class netsnmpAgent(object):
 
 				def value(self):
 					val = self._cvar.value
-					if val <= sys.maxint:
+
+					if isnum(val):
+						# Python 2.x will automatically switch from the "int"
+						# type to the "long" type, if necessary. Python 3.x
+						# has no limits on the "int" type anymore.
 						val = int(val)
+					else:
+						val = u(val)
+
 					return val
 
-				def cref(self):
+				def cref(self, **kwargs):
 					return ctypes.byref(self._cvar) if self._flags == WATCHER_FIXED_SIZE \
 					                                else self._cvar
 
@@ -497,8 +529,7 @@ class netsnmpAgent(object):
 								"Value passed to update() truncated: {0} > {1} "
 								"bytes!".format(len(val), self._max_size)
 							)
-						self._cvar.value = val
-						self._data_size  = self._watcher.contents.data_size = len(val)
+						self._data_size = self._watcher.contents.data_size = len(val)
 
 				if props["asntype"] in [ASN_COUNTER, ASN_COUNTER64]:
 					def increment(self, count=1):
@@ -590,13 +621,17 @@ class netsnmpAgent(object):
 
 		class IpAddress(object):
 			def __init__(self):
-				self._cvar = ctypes.c_uint(0)
+				self._flags     = WATCHER_FIXED_SIZE
+				self._asntype   = ASN_IPADDRESS
+				self._cvar      = ctypes.c_uint(0)
+				self._data_size = ctypes.sizeof(self._cvar)
+				self._max_size  = self._data_size
 				self.update(initval)
-				
+
 				if oidstr:
 					# Prepare the netsnmp_handler_registration structure.
 					handler_reginfo = agent._prepareRegistration(oidstr, writable)
-					handler_reginfo.contents.contextName = context
+					handler_reginfo.contents.contextName = b(context)
 
 					# Create the netsnmp_watcher_info structure.
 					watcher = libnsX.netsnmp_create_watcher_info(
@@ -620,14 +655,26 @@ class netsnmpAgent(object):
 					agent._objs[context][oidstr] = self
 
 			def value(self):
+				# Get string representation of IP address.
 				return socket.inet_ntoa(
 					struct.pack("I", self._cvar.value)
 				)
 
-			def cref(self):
-				return ctypes.byref(self._cvar)
+			def cref(self, **kwargs):
+				# Due to an unfixed Net-SNMP issue (see
+				# https://sourceforge.net/p/net-snmp/bugs/2136/) we have
+				# to convert the value to host byte order if it shall be
+				# used as table index.
+				if kwargs.get("is_table_index", False) == False:
+					return ctypes.byref(self._cvar)
+				else:
+					_cidx = ctypes.c_uint(0)
+					_cidx.value = struct.unpack("I", struct.pack("!I", self._cvar.value))[0]
+					return ctypes.byref(_cidx)
 
 			def update(self, val):
+				# Convert dotted decimal IP address string to ctypes
+				# unsigned int in network byte order.
 				self._cvar.value = struct.unpack(
 					"I",
 					socket.inet_aton(val)
@@ -646,7 +693,7 @@ class netsnmpAgent(object):
 				# the table definition and the data stored inside it. We use the
 				# oidstr as table name.
 				self._dataset = libnsX.netsnmp_create_table_data_set(
-					ctypes.c_char_p(oidstr)
+					ctypes.c_char_p(b(oidstr))
 				)
 
 				# Define the table row's indexes
@@ -682,7 +729,7 @@ class netsnmpAgent(object):
 					oidstr,
 					extendable
 				)
-				self._handler_reginfo.contents.contextName = context
+				self._handler_reginfo.contents.contextName = b(context)
 				result = libnsX.netsnmp_register_table_data_set(
 					self._handler_reginfo,
 					self._dataset,
@@ -723,7 +770,7 @@ class netsnmpAgent(object):
 								None,
 								0,
 								idxobj._asntype,
-								idxobj.cref(),
+								idxobj.cref(is_table_index=True),
 								idxobj._data_size
 							)
 							if result == None:
@@ -778,7 +825,13 @@ class netsnmpAgent(object):
 					retdict[0][int(col.contents.column)]["type"] = asntypes[col.contents.type]
 					if bool(col.contents.data):
 						if col.contents.type == ASN_OCTET_STR:
-							retdict[0][int(col.contents.column)]["value"] = ctypes.string_at(col.contents.data.string, col.contents.data_len)
+							retdict[0][int(col.contents.column)]["value"] = u(ctypes.string_at(col.contents.data.string, col.contents.data_len))
+						elif col.contents.type == ASN_IPADDRESS:
+							uint_value = ctypes.cast(
+								(ctypes.c_int*1)(col.contents.data.integer.contents.value),
+								ctypes.POINTER(ctypes.c_uint)
+							).contents.value
+							retdict[0][int(col.contents.column)]["value"] = socket.inet_ntoa(struct.pack("I", uint_value))
 						else:
 							retdict[0][int(col.contents.column)]["value"] = col.contents.data.integer.contents.value
 					col = col.contents.next
@@ -809,7 +862,7 @@ class netsnmpAgent(object):
 
 					# Registered OID
 					rootoidlen = self._handler_reginfo.contents.rootoid_len
-					for i in range(0,rootoidlen):
+					for i in range(0, rootoidlen):
 						fulloid[i] = self._handler_reginfo.contents.rootoid[i]
 
 					# Entry
@@ -818,15 +871,15 @@ class netsnmpAgent(object):
 					# Fake the column number. Unlike the table_data and
 					# table_data_set handlers, we do not have one here. No
 					# biggie, using a fixed value will do for our purposes as
-					# we'll do away with anything left of the last dot below.
-					fulloid[rootoidlen+1] = 2
+					# we'll do away with anything left of the first dot below.
+					fulloid[rootoidlen + 1] = 2
 
 					# Index data
 					indexoidlen = row.contents.index_oid_len
-					for i in range(0,indexoidlen):
-						fulloid[rootoidlen+2+i] = row.contents.index_oid[i]
+					for i in range(0, indexoidlen):
+						fulloid[rootoidlen + 2 + i] = row.contents.index_oid[i]
 
-					# Convert the full oid to its string representation
+					# Convert the full OID to its string representation
 					oidcstr = ctypes.create_string_buffer(MAX_OID_LEN)
 					libnsa.snprint_objid(
 						oidcstr,
@@ -835,15 +888,16 @@ class netsnmpAgent(object):
 						rootoidlen + 2 + indexoidlen
 					)
 
-					# And finally do away with anything left of the last dot
-					indices = oidcstr.value.split(".")[-1].replace('"', '')
+					# And finally do away with anything left of the first dot
+					# so we keep the row index only
+					indices = oidcstr.value.split(b".", 1)[1]
 
 					# If it's a string, remove the double quotes. If it's a
 					# string containing an integer, make it one
 					try:
 						indices = int(indices)
 					except ValueError:
-						indices = indices.replace('"', '')
+						indices = u(indices.replace(b'"', b''))
 
 					# Finally, iterate over all columns for this row and add
 					# stored data, if present
@@ -852,9 +906,15 @@ class netsnmpAgent(object):
 					while bool(data):
 						if bool(data.contents.data):
 							if data.contents.type == ASN_OCTET_STR:
-								retdict[indices][int(data.contents.column)] = ctypes.string_at(data.contents.data.string, data.contents.data_len)
+								retdict[indices][int(data.contents.column)] = u(ctypes.string_at(data.contents.data.string, data.contents.data_len))
 							elif data.contents.type == ASN_COUNTER64:
 								retdict[indices][int(data.contents.column)] = data.contents.data.counter64.contents.value
+							elif data.contents.type == ASN_IPADDRESS:
+								uint_value = ctypes.cast((ctypes.c_int*1)(
+									data.contents.data.integer.contents.value),
+									ctypes.POINTER(ctypes.c_uint)
+									).contents.value
+								retdict[indices][int(data.contents.column)] = socket.inet_ntoa(struct.pack("I", uint_value))
 							else:
 								retdict[indices][int(data.contents.column)] = data.contents.data.integer.contents.value
 						else:
@@ -891,7 +951,13 @@ class netsnmpAgent(object):
 		    Returned is a dictionary objects for the specified "context",
 		    which defaults to the default context. """
 		myobjs = {}
-		for oidstr, snmpobj in self._objs[context].iteritems():
+		try:
+			# Python 2.x
+			objs_iterator = self._objs[context].iteritems()
+		except AttributeError:
+			# Python 3.x
+			objs_iterator = self._objs[context].items()
+		for oidstr, snmpobj in objs_iterator:
 			myobjs[oidstr] = {
 				"type": type(snmpobj).__name__,
 				"value": snmpobj.value()
@@ -904,7 +970,7 @@ class netsnmpAgent(object):
 		if  self._status != netsnmpAgentStatus.CONNECTED \
 		and self._status != netsnmpAgentStatus.RECONNECTING:
 			self._status = netsnmpAgentStatus.FIRSTCONNECT
-			libnsa.init_snmp(self.AgentName)
+			libnsa.init_snmp(b(self.AgentName))
 			if self._status == netsnmpAgentStatus.CONNECTFAILED:
 				msg = "Error connecting to snmpd instance at \"{0}\" -- " \
 				      "incorrect \"MasterSocket\" or snmpd not running?"
@@ -918,7 +984,7 @@ class netsnmpAgent(object):
 		return libnsa.agent_check_and_process(int(bool(block)))
 
 	def shutdown(self):
-		libnsa.snmp_shutdown(self.AgentName)
+		libnsa.snmp_shutdown(b(self.AgentName))
 
 		# Unfortunately we can't safely call shutdown_agent() for the time
 		# being. All net-snmp versions up to and including 5.7.3 are unable

@@ -1,7 +1,7 @@
 #
 # python-netsnmpagent module
-# Copyright (c) 2013 Pieter Hollants <pieter@hollants.com>
-# Licensed under the GNU Public License (GPL) version 3
+# Copyright (c) 2013-2016 Pieter Hollants <pieter@hollants.com>
+# Licensed under the GNU Lesser Public License (LGPL) version 3
 #
 # net-snmp C API abstraction module
 #

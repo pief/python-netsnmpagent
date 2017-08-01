@@ -2,8 +2,8 @@
 # encoding: utf-8
 #
 # python-netsnmpagent module
-# Copyright (c) 2013 Pieter Hollants <pieter@hollants.com>
-# Licensed under the GNU Public License (GPL) version 3
+# Copyright (c) 2013-2016 Pieter Hollants <pieter@hollants.com>
+# Licensed under the GNU Lesser Public License (LGPL) version 3
 #
 # net-snmp test environment module
 #
@@ -13,7 +13,7 @@
 This module allows to run net-snmp instances with user privileges that do not
 interfere with any system-wide running net-snmp instance. """
 
-import sys, os, tempfile, subprocess, re, inspect, signal, time, shutil
+import sys, os, atexit, tempfile, subprocess, locale, re, inspect, signal, time, shutil
 
 class netsnmpTestEnv(object):
 	""" Implements a net-snmp test environment. """
@@ -21,12 +21,16 @@ class netsnmpTestEnv(object):
 	def __init__(self, **args):
 		""" Initializes a new net-snmp test environment. """
 
+		# Currently hardcoded. Doesn't really allow parallel runs :/
 		self.agentport  = 6555
 		self.informport = 6556
 		self.smuxport   = 6557
 
+		# Ensure we get a chance to clean up after ourselves
+		atexit.register(self.shutdown)
+
 		# Create a temporary directory to hold the snmpd files
-		self.tmpdir = tempfile.mkdtemp(os.path.basename(sys.argv[0]))
+		self.tmpdir = tempfile.mkdtemp("netsnmptestenv")
 
 		# Compose paths to files inside the temp dir
 		conffile          = os.path.join(self.tmpdir, "snmpd.conf")
@@ -58,11 +62,6 @@ class netsnmpTestEnv(object):
 		subprocess.check_call(cmd, shell=True)
 
 	def shutdown(self):
-		# Explicitly import used Python modules once more because they may
-		# have been __del__'d before us and then we'd hit AttributeError
-		# exceptions due to "os" being None
-		import os, time
-
 		def kill_process(pid):
 			def is_running(pid):
 				return os.path.exists("/proc/{0}".format(pid))
@@ -83,7 +82,7 @@ class netsnmpTestEnv(object):
 				time.sleep(0.25)
 
 		# Check for existance of snmpd's PID file
-		if os.access(self.pidfile, os.R_OK):
+		if hasattr(self, "pidfile") and os.access(self.pidfile, os.R_OK):
 			# Read the PID
 			with open(self.pidfile, "r") as f:
 				pid = int(f.read())
@@ -92,11 +91,8 @@ class netsnmpTestEnv(object):
 			kill_process(pid)
 
 		# Recursively remove the temporary directory
-		if os.access(self.tmpdir, os.R_OK):
+		if hasattr(self, "tmpdir") and os.access(self.tmpdir, os.R_OK):
 			shutil.rmtree(self.tmpdir)
-
-	def __del__(self):
-		self.shutdown()
 
 	class SNMPTimeoutError(Exception):
 		pass
@@ -137,6 +133,11 @@ class netsnmpTestEnv(object):
 			stdout=subprocess.PIPE, stderr=subprocess.STDOUT
 		)
 		output = proc.communicate()[0].strip()
+
+		# Python 3's "str" strings are Unicode strings, not byte strings
+		if not isinstance("Test", bytes):
+			output = output.decode(locale.getpreferredencoding())
+
 		rc = proc.poll()
 		if rc == 0:
 			if re.search(" = No Such Object available on this agent at this OID", output):

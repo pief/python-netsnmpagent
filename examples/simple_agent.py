@@ -2,8 +2,8 @@
 #
 # python-netsnmpagent simple example agent
 #
-# Copyright (c) 2013 Pieter Hollants <pieter@hollants.com>
-# Licensed under the GNU Public License (GPL) version 3
+# Copyright (c) 2013-2016 Pieter Hollants <pieter@hollants.com>
+# Licensed under the GNU Lesser Public License (LGPL) version 3
 #
 
 #
@@ -67,7 +67,7 @@ parser.add_option(
 (options, args) = parser.parse_args()
 
 # Get terminal width for usage with pprint
-rows,columns = os.popen("stty size", "r").read().split()
+rows, columns = os.popen("stty size", "r").read().split()
 
 # First, create an instance of the netsnmpAgent class. We specify the
 # fully-qualified path to SIMPLE-MIB.txt ourselves here, so that you
@@ -81,64 +81,64 @@ try:
 		                   "/SIMPLE-MIB.txt" ]
 	)
 except netsnmpagent.netsnmpAgentException as e:
-	print "{0}: {1}".format(prgname, e)
+	print("{0}: {1}".format(prgname, e))
 	sys.exit(1)
 
 # Then we create all SNMP scalar variables we're willing to serve.
 simpleInteger = agent.Integer32(
-	oidstr = "SIMPLE-MIB::simpleInteger"
+	oidstr   = "SIMPLE-MIB::simpleInteger"
 )
 simpleIntegerContext1 = agent.Integer32(
-	oidstr = "SIMPLE-MIB::simpleInteger",
-	context = "context1",
-	initval = 200,
+	oidstr   = "SIMPLE-MIB::simpleInteger",
+	context  = "context1",
+	initval  = 200,
 )
 simpleIntegerRO = agent.Integer32(
 	oidstr   = "SIMPLE-MIB::simpleIntegerRO",
 	writable = False
 )
 simpleUnsigned = agent.Unsigned32(
-	oidstr = "SIMPLE-MIB::simpleUnsigned"
+	oidstr   = "SIMPLE-MIB::simpleUnsigned"
 )
 simpleUnsignedRO = agent.Unsigned32(
 	oidstr   = "SIMPLE-MIB::simpleUnsignedRO",
 	writable = False
 )
 simpleCounter32 = agent.Counter32(
-	oidstr = "SIMPLE-MIB::simpleCounter32"
+	oidstr   = "SIMPLE-MIB::simpleCounter32"
 )
 simpleCounter32Context2 = agent.Counter32(
-	oidstr = "SIMPLE-MIB::simpleCounter32",
-	context = "context2",
-	initval = pow(2,32) - 10, # To rule out endianness bugs
+	oidstr   = "SIMPLE-MIB::simpleCounter32",
+	context  = "context2",
+	initval  = pow(2,32) - 10, # To rule out endianness bugs
 )
 simpleCounter64 = agent.Counter64(
-	oidstr = "SIMPLE-MIB::simpleCounter64"
+	oidstr   = "SIMPLE-MIB::simpleCounter64"
 )
 simpleCounter64Context2 = agent.Counter64(
-	oidstr = "SIMPLE-MIB::simpleCounter64",
-	context = "context2",
-	initval = pow(2,64) - 10, # To rule out endianness bugs
+	oidstr   = "SIMPLE-MIB::simpleCounter64",
+	context  = "context2",
+	initval  = pow(2,64) - 10, # To rule out endianness bugs
 )
 simpleTimeTicks = agent.TimeTicks(
-	oidstr = "SIMPLE-MIB::simpleTimeTicks"
+	oidstr   = "SIMPLE-MIB::simpleTimeTicks"
 )
 simpleIpAddress = agent.IpAddress(
-	oidstr = "SIMPLE-MIB::simpleIpAddress",
-	initval="127.0.0.1"
+	oidstr   = "SIMPLE-MIB::simpleIpAddress",
+	initval  = "127.0.0.1"
 )
 simpleOctetString = agent.OctetString(
-	oidstr  = "SIMPLE-MIB::simpleOctetString",
-	initval = "Hello World"
+	oidstr   = "SIMPLE-MIB::simpleOctetString",
+	initval  = "Hello World"
 )
 simpleDisplayString = agent.DisplayString(
-	oidstr  = "SIMPLE-MIB::simpleDisplayString",
-	initval = "Nice to meet you"
+	oidstr   = "SIMPLE-MIB::simpleDisplayString",
+	initval  = "Nice to meet you"
 )
 
 # Create the first table
 firstTable = agent.Table(
-	oidstr = "SIMPLE-MIB::firstTable",
+	oidstr  = "SIMPLE-MIB::firstTable",
 	indexes = [
 		agent.DisplayString()
 	],
@@ -167,7 +167,7 @@ firstTableRow3.setRowCell(3, agent.Integer32(18))
 
 # Create the second table
 secondTable = agent.Table(
-	oidstr = "SIMPLE-MIB::secondTable",
+	oidstr  = "SIMPLE-MIB::secondTable",
 	indexes = [
 		agent.Integer32()
 	],
@@ -190,20 +190,48 @@ secondTableRow2 = secondTable.addRow([agent.Integer32(2)])
 secondTableRow2.setRowCell(2, agent.DisplayString("foo1"))
 secondTableRow2.setRowCell(3, agent.Unsigned32(12842))
 
+# Create the third table
+thirdTable = agent.Table(
+	oidstr     = "SIMPLE-MIB::thirdTable",
+	indexes    = [
+		agent.IpAddress()
+	],
+	columns    = [
+		(2, agent.DisplayString("Broadcast")),
+		(3, agent.IpAddress("192.168.0.255"))
+	],
+	counterobj = agent.Unsigned32(
+		oidstr = "SIMPLE-MIB::thirdTableNumber"
+	)
+)
+
+# Add the first table row
+thirdTableRow1 = thirdTable.addRow([agent.IpAddress("192.168.0.1")])
+thirdTableRow1.setRowCell(2, agent.DisplayString("Host 1"))
+thirdTableRow1.setRowCell(3, agent.IpAddress("192.168.0.1"))
+
+# Add the second table row
+thirdTableRow2 = thirdTable.addRow([agent.IpAddress("192.168.0.2")])
+thirdTableRow2.setRowCell(2, agent.DisplayString("Host 2"))
+thirdTableRow2.setRowCell(3, agent.IpAddress("192.168.0.2"))
+
+# Add the third table row
+thirdTableRow3 = thirdTable.addRow([agent.IpAddress("192.168.0.3")])
+
 # Finally, we tell the agent to "start". This actually connects the
 # agent to the master agent.
 try:
 	agent.start()
 except netsnmpagent.netsnmpAgentException as e:
-	print "{0}: {1}".format(prgname, e)
+	print("{0}: {1}".format(prgname, e))
 	sys.exit(1)
 
-print "{0}: AgentX connection to snmpd established.".format(prgname)
+print("{0}: AgentX connection to snmpd established.".format(prgname))
 
 # Helper function that dumps the state of all registered SNMP variables
 def DumpRegistered():
 	for context in agent.getContexts():
-		print "{0}: Registered SNMP objects in Context \"{1}\": ".format(prgname, context)
+		print("{0}: Registered SNMP objects in Context \"{1}\": ".format(prgname, context))
 		vars = agent.getRegistered(context)
 		pprint.pprint(vars, width=columns)
 		print
@@ -225,7 +253,7 @@ signal.signal(signal.SIGHUP, HupHandler)
 
 # The simple agent's main loop. We loop endlessly until our signal
 # handler above changes the "loop" variable.
-print "{0}: Serving SNMP requests, send SIGHUP to dump SNMP object state, press ^C to terminate...".format(prgname)
+print("{0}: Serving SNMP requests, send SIGHUP to dump SNMP object state, press ^C to terminate...".format(prgname))
 
 loop = True
 while (loop):
@@ -243,5 +271,5 @@ while (loop):
 	simpleCounter32Context2.increment() # By 1
 	simpleCounter64Context2.increment(5) # By 5
 
-print "{0}: Terminating.".format(prgname)
+print("{0}: Terminating.".format(prgname))
 agent.shutdown()

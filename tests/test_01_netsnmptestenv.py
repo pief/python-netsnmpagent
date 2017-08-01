@@ -2,8 +2,8 @@
 # encoding: utf-8
 #
 # python-netsnmpagent module
-# Copyright (c) 2013 Pieter Hollants <pieter@hollants.com>
-# Licensed under the GNU Public License (GPL) version 3
+# Copyright (c) 2013-2016 Pieter Hollants <pieter@hollants.com>
+# Licensed under the GNU Lesser Public License (LGPL) version 3
 #
 # Integration tests for the netsnmptestenv helper module
 #
@@ -29,9 +29,11 @@ def test_Instantiation():
 	# Try creating the instance without raising exceptions
 	testenv = netsnmpTestEnv()
 
-	# Remember the PID file the tmpdir the instance uses
+	# Wait for snmpd to have started
 	while not os.path.exists(testenv.pidfile):
 		time.sleep(.1)
+
+	# Remember the PID file and the tmpdir the instance uses
 	with open(testenv.pidfile, "r") as f:
 		pid = int(f.read())
 	tmpdir = testenv.tmpdir
@@ -101,9 +103,9 @@ def test_TmpdirRemoved():
 	global tmpdir
 
 	# List the tempdir's name and its contents if the assert fails
-	print tmpdir
+	print(tmpdir)
 	try:
-		print os.listdir(tmpdir)
+		print(os.listdir(tmpdir))
 	except OSError:
 		pass
 	ok_(os.path.exists(tmpdir) == False)

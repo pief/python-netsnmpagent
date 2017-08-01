@@ -1,7 +1,7 @@
 
                         python-netsnmpagent Module
-         Copyright (c) 2013 Pieter Hollants <pieter@hollants.com>
-           Licensed under the GNU Public License (GPL) version 3
+       Copyright (c) 2013-2016 Pieter Hollants <pieter@hollants.com>
+       Licensed under the GNU Lesser Public License (LGPL) version 3
 
 
 WHAT IS IT?
@@ -9,7 +9,7 @@ WHAT IS IT?
 python-netsnmpagent is a Python module that facilitates writing Net-SNMP
 subagents in Python. Subagents connect to a locally running Master agent
 (snmpd) over a Unix domain socket (eg. "/var/run/agentx/master") and using the
-AgentX protocol (RFC2747). They implement custom Management Information Base
+AgentX protocol (RFC2741). They implement custom Management Information Base
 (MIB) modules that extend the local node's MIB tree. Usually, this requires
 writing a MIB as well, ie. a text file that specifies the structure, names
 and data types of the information within the MIB module.
@@ -42,6 +42,19 @@ openSUSE 12.3). While the intent is to support both net-snmp 5.4.x and 5.7.x
 versions at least for the near future, I want to avoid double code paths
 whereever possible. I therefore have to stick to the net-snmp 5.4.x way of
 things at certain places indicated by code comments.
+
+python-netsnmpagent has been tested and is compatible with:
+- Python 2.6
+- Python 2.7
+- Python 3.5 (since November 1st, 2016)
+
+
+LICENSE
+
+Version older than May 28th, 2016 were licensed under the GNU General Public
+License (GPL), version 3. Since May 28th, 2016, python-netsnmpagent is being
+licensed under the GNU Lesser General Public License (LGPL), version 3. See
+http://www.gnu.org/licenses/lgpl-3.0.txt or the included file LICENSE.
 
 
 DOWNLOAD
@@ -109,5 +122,8 @@ Hiscocks <steven@hiscocks.me.uk>.
 The bug that DisplayStrings/OctetStrings got truncated when trying to update
 them with a string larger that the original InitVal was hunted down and fixed
 by Max "mk23" Kalika <max.kalika+projects@gmail.com>.
+
+Tobias Deiminger <tobias.deiminger@gmail.com> contributed fixes related to
+using IpAddress objects as table indices.
 
 Additional smaller bugfixes were done by Anton Todorov <a.todorov@storpool.com>.

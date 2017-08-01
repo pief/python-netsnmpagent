@@ -2,13 +2,13 @@
 # encoding: utf-8
 #
 # python-netsnmpagent module
-# Copyright (c) 2013 Pieter Hollants <pieter@hollants.com>
-# Licensed under the GNU Public License (GPL) version 3
+# Copyright (c) 2013-2016 Pieter Hollants <pieter@hollants.com>
+# Licensed under the GNU Lesser Public License (LGPL) version 3
 #
 # Integration tests for the netsnmpagent module (init behavior)
 #
 
-import sys, os, re, subprocess, threading, signal, time
+import sys, os, re, locale, time
 from nose.tools import *
 sys.path.insert(1, "..")
 from netsnmptestenv import netsnmpTestEnv
@@ -33,7 +33,7 @@ def tearDown(self):
 def test_FirstGetFails():
 	""" Instance not created yet, MIB unvailable """
 
-	print netsnmpTestEnv.snmpget("TEST-MIB::testUnsigned32NoInitval.0")
+	print(netsnmpTestEnv.snmpget("TEST-MIB::testUnsigned32NoInitval.0"))
 
 @timed(1)
 def test_Instantiation():
@@ -53,12 +53,12 @@ def test_Instantiation():
 		logbuf.append({
 			"time": time.clock(),
 			"prio": msgprio,
-			"text": msgtext,
+			"text": msgtext
 		})
 
 		# Also print them out to stdout as the default log handler would, nose
 		# will capture the output and display it if a test fails
-		print "[{0}] {1}".format(msgprio, msgtext)
+		print("[{0}] {1}".format(msgprio, msgtext))
 
 	# Create a new netsnmpAgent instance which
 	# - connects to the net-snmp test environment's snmpd instance

@@ -2,8 +2,8 @@ SIMPLE-MIB DEFINITIONS ::= BEGIN
 
 ------------------------------------------------------------------------
 -- Simple example MIB for python-netsnmpagent
--- Copyright (c) 2012 Pieter Hollants <pieter@hollants.com>
--- Licensed under the GNU Public License (GPL) version 3
+-- Copyright (c) 2012-2016 Pieter Hollants <pieter@hollants.com>
+-- Licensed under the GNU Lesser Public License (LGPL) version 3
 ------------------------------------------------------------------------
 
 -- Imports
@@ -221,7 +221,7 @@ secondTable OBJECT-TYPE
     MAX-ACCESS  not-accessible
     STATUS      current
     DESCRIPTION
-        "The first simple table"
+        "The second simple table"
     ::= { simpleTables 4 }
 
 SecondTableEntry ::=
@@ -265,6 +265,63 @@ secondTableEntryValue OBJECT-TYPE
         "An secondTableEntry's value."
     ::= { secondTableEntry 3 }
 
+thirdTableNumber OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "The number of entries in thirdTable."
+    ::= { simpleTables 5 }
+
+thirdTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF FirstTableEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "The third simple table"
+    ::= { simpleTables 6 }
+
+FirstTableEntry ::=
+    SEQUENCE {
+        thirdTableEntryIndex  IpAddress,
+        thirdTableEntryDesc   DisplayString,
+        thirdTableEntryValue  Integer32
+    }
+
+thirdTableEntry OBJECT-TYPE
+    SYNTAX      FirstTableEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "A particular thirdTable row."
+    INDEX { thirdTableEntryIndex }
+    ::= { thirdTable 1 }
+
+thirdTableEntryIndex OBJECT-TYPE
+    SYNTAX      IpAddress
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "The index column used to generate IpAddress indices into
+        thirdTable."
+    ::= { thirdTableEntry 1 }
+
+thirdTableEntryDesc OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "A thirdTableEntry's description."
+    ::= { thirdTableEntry 2 }
+
+thirdTableEntryValue OBJECT-TYPE
+    SYNTAX      IpAddress
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "A thirdTableEntry's value."
+    ::= { thirdTableEntry 3 }
+
 ------------------------------------------------------------------------
 -- Notifications
 ------------------------------------------------------------------------
@@ -278,7 +335,7 @@ simpleUnsignedROChange NOTIFICATION-TYPE
     }
     STATUS  current
     DESCRIPTION
-        "An simpleScalarsChange notification signifies that there has
+        "A simpleScalarsChange notification signifies that there has
         been a change to the value of simpleUnsignedRO."
     ::= { events 1 }
 
@@ -288,7 +345,7 @@ firstTableChange NOTIFICATION-TYPE
     }
     STATUS  current
     DESCRIPTION
-        "An firstTableChange notification signifies that there has
+        "A firstTableChange notification signifies that there has
         been a change to an firstTableEntry."
     ::= { events 2 }
 

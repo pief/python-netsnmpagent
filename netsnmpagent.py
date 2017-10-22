@@ -506,8 +506,10 @@ class netsnmpAgent(object):
 				def update(self, val):
 					if self._asntype == ASN_COUNTER and val >> 32:
 						val = val & 0xFFFFFFFF
-					if self._asntype == ASN_COUNTER64 and val >> 64:
+					elif self._asntype == ASN_COUNTER64 and val >> 64:
 						val = val & 0xFFFFFFFFFFFFFFFF
+					elif self.__class__.__name__ == 'Gauge32' and val >> 32:
+						val = 0xFFFFFFFF
 					self._cvar.value = val
 					if props["flags"] == WATCHER_MAX_SIZE:
 						if len(val) > self._max_size:
@@ -547,6 +549,15 @@ class netsnmpAgent(object):
 		}
 
 	@VarTypeClass
+	def Gauge32(self, initval = None, oidstr = None, writable = True, context = ""):
+		return {
+			"ctype"         : ctypes.c_ulong,
+			"flags"         : WATCHER_FIXED_SIZE,
+			"initval"       : 0,
+			"asntype"       : ASN_GAUGE
+		}
+
+	@VarTypeClass
 	def Counter32(self, initval = None, oidstr = None, writable = True, context = ""):
 		return {
 			"ctype"         : ctypes.c_ulong,
@@ -571,6 +582,24 @@ class netsnmpAgent(object):
 			"flags"         : WATCHER_FIXED_SIZE,
 			"initval"       : 0,
 			"asntype"       : ASN_TIMETICKS
+		}
+
+	@VarTypeClass
+	def Float(self, initval = None, oidstr = None, writable = True, context = ""):
+		return {
+			"ctype"         : ctypes.c_float,
+			"flags"         : WATCHER_FIXED_SIZE,
+			"initval"       : 0,
+			"asntype"       : ASN_OPAQUE_FLOAT
+		}
+
+	@VarTypeClass
+	def Double(self, initval = None, oidstr = None, writable = True, context = ""):
+		return {
+			"ctype"         : ctypes.c_double,
+			"flags"         : WATCHER_FIXED_SIZE,
+			"initval"       : 0,
+			"asntype"       : ASN_OPAQUE_DOUBLE
 		}
 
 	# Note we can't use ctypes.c_char_p here since that creates an immutable
@@ -668,6 +697,63 @@ class netsnmpAgent(object):
 
 		# Return an instance of the just-defined class to the agent
 		return IpAddress()
+
+	# TruthValues are stored as integers, but the Python interface
+	# should use bool, so we need a special class.
+	def TruthValue(self, initval = False, oidstr = None, writable = True, context = ""):
+		agent = self
+
+		class TruthValue(object):
+			def __init__(self):
+				self._flags     = WATCHER_FIXED_SIZE
+				self._asntype   = ASN_INTEGER
+				self._cvar      = ctypes.c_int(0)
+				self._data_size = ctypes.sizeof(self._cvar)
+				self._max_size  = self._data_size
+				self.update(initval)
+
+				if oidstr:
+					# Prepare the netsnmp_handler_registration structure.
+					handler_reginfo = agent._prepareRegistration(oidstr, writable)
+					handler_reginfo.contents.contextName = b(context)
+
+					# Create the netsnmp_watcher_info structure.
+					watcher = libnsX.netsnmp_create_watcher_info(
+						self.cref(),
+						ctypes.sizeof(self._cvar),
+						ASN_INTEGER,
+						WATCHER_FIXED_SIZE
+					)
+					watcher._maxsize = ctypes.sizeof(self._cvar)
+
+					# Register handler and watcher with net-snmp.
+					result = libnsX.netsnmp_register_watched_instance(
+						handler_reginfo,
+						watcher
+					)
+					if result != 0:
+						raise netsnmpAgentException("Error registering variable with net-snmp!")
+
+					# Finally, we keep track of all registered SNMP objects for the
+					# getRegistered() method.
+					agent._objs[context][oidstr] = self
+
+			def value(self):
+				# Get boolean representation of TruthValue.
+				return True if self._cvar.value == TV_TRUE else False
+
+			def cref(self, **kwargs):
+				return ctypes.byref(self._cvar)
+
+			def update(self, val):
+				# Convert boolean to corresponding integer values
+				if isinstance(val, bool):
+					self._cvar.value = TV_TRUE if val == True else TV_FALSE
+				else:
+					raise netsnmpAgentException("TruthValue must be True or False")
+
+		# Return an instance of the just-defined class to the agent
+		return TruthValue()
 
 	def Table(self, oidstr, indexes, columns, counterobj = None, extendable = False, context = ""):
 		agent = self

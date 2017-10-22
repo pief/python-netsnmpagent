@@ -204,7 +204,11 @@ for f in [ libnsa.netsnmp_create_handler_registration ]:
 # include/net-snmp/library/asn1.h
 ASN_INTEGER                             = 0x02
 ASN_OCTET_STR                           = 0x04
+ASN_OPAQUE_TAG2                         = 0x30
 ASN_APPLICATION                         = 0x40
+# opaque special types
+ASN_OPAQUE_FLOAT                        = ASN_OPAQUE_TAG2 + (ASN_APPLICATION | 8)
+ASN_OPAQUE_DOUBLE                       = ASN_OPAQUE_TAG2 + (ASN_APPLICATION | 9)
 
 # counter64 requires some extra work because it can't be reliably represented
 # by a single C data type
@@ -231,6 +235,7 @@ counter64._fields_ = [
 ASN_IPADDRESS                           = ASN_APPLICATION | 0
 ASN_COUNTER                             = ASN_APPLICATION | 1
 ASN_UNSIGNED                            = ASN_APPLICATION | 2
+ASN_GAUGE                               = ASN_APPLICATION | 2
 ASN_TIMETICKS                           = ASN_APPLICATION | 3
 ASN_COUNTER64                           = ASN_APPLICATION | 6
 
@@ -415,3 +420,7 @@ for f in [ libnsa.agent_check_and_process ]:
 		ctypes.c_int                    # int block
 	]
 	f.restype = ctypes.c_int
+
+# include/net-snmp/agent/snmp-tc.h
+TV_TRUE                                 = 1
+TV_FALSE                                = 2

@@ -81,6 +81,27 @@ snmp_log_message._fields_ = [
 	("msg",                 ctypes.c_char_p)
 ]
 
+# counter64 requires some extra work because it can't be reliably represented
+# by a single C data type
+class counter64(ctypes.Structure):
+	@property
+	def value(self):
+		return self.high << 32 | self.low
+
+	@value.setter
+	def value(self, val):
+		self.high = val >> 32
+		self.low  = val & 0xFFFFFFFF
+
+	def __init__(self, initval=0):
+		ctypes.Structure.__init__(self, 0, 0)
+		self.value = initval
+counter64_p = ctypes.POINTER(counter64)
+counter64._fields_ = [
+	("high",                ctypes.c_ulong),
+	("low",                 ctypes.c_ulong)
+]
+
 # include/net-snmp/library/snmp_api.h
 SNMPERR_SUCCESS                         = 0
 
@@ -111,6 +132,16 @@ NETSNMP_DS_AGENT_X_SOCKET               = 1
 
 # include/net-snmp/library/snmp.h
 SNMP_ERR_NOERROR                        = 0
+SNMP_ERR_TOO_BIG                        = 1
+SNMP_ERR_NOSUCHNAME                     = 2
+SNMP_ERR_BADVALUE                       = 3
+SNMP_ERR_READONLY                       = 4
+SNMP_ERR_GENERR                         = 5
+SNMP_ERR_NOACCESS                       = 6
+SNMP_ERR_WRONGTYPE                      = 7
+SNMP_ERR_RESOURCEUNAVAILABLE            = 13
+SNMP_ERR_COMMITFAILED                   = 14
+SNMP_ERR_UNDOFAILED                     = 15
 
 for f in [ libnsa.init_snmp ]:
 	f.argtypes = [
@@ -191,15 +222,89 @@ netsnmp_handler_registration._fields_ = [
 	("my_reg_void",         ctypes.c_void_p)
 ]
 
+class netsnmp_agent_request_info(ctypes.Structure): pass
+netsnmp_agent_request_info_p = ctypes.POINTER(netsnmp_agent_request_info)
+netsnmp_agent_request_info._fields_ = [
+	("mode",                ctypes.c_int),
+	("asp",                 ctypes.c_void_p),
+	("agent_data",          ctypes.c_void_p)
+]
+
+# include/net-snmp/types.h
+class netsnmp_vardata(ctypes.Union): pass
+netsnmp_vardata._fields_ = [
+	("integer",				ctypes.POINTER(ctypes.c_long)),
+	("string",				ctypes.c_char_p),
+	("objid",				c_oid_p),
+	("bitstring",			ctypes.POINTER(ctypes.c_ubyte)),
+	("counter64",			ctypes.POINTER(counter64)),
+	("floatVal",			ctypes.POINTER(ctypes.c_float)),
+	("doubleVal",			ctypes.POINTER(ctypes.c_double))
+]
+
+class netsnmp_variable_list(ctypes.Structure): pass
+netsnmp_variable_list_p = ctypes.POINTER(netsnmp_variable_list)
+netsnmp_variable_list_p_p = ctypes.POINTER(netsnmp_variable_list_p)
+netsnmp_variable_list._fields_ = [
+    ("next_variable",       netsnmp_variable_list_p),
+    ("name",                c_oid_p),
+    ("name_length",         ctypes.c_size_t),
+    ("type",                ctypes.c_ubyte),
+    ("val",                 netsnmp_vardata),
+    ("val_len",             ctypes.c_size_t),
+    ("name_loc",            c_oid * MAX_OID_LEN),
+    ("buf",                 ctypes.c_byte * 40),
+    ("data",                ctypes.c_void_p),
+    ("dataFreeHook",        ctypes.c_void_p),
+    ("index",               ctypes.c_int)
+]
+
+class netsnmp_request_info(ctypes.Structure): pass
+netsnmp_request_info_p = ctypes.POINTER(netsnmp_request_info)
+netsnmp_request_info._fields_ = [
+	("requestvb",           netsnmp_variable_list_p),
+	("parent_data",         ctypes.c_void_p),
+	("agent_req_info",      ctypes.c_void_p),
+	("range_end",           c_oid_p),
+	("range_end_len",       ctypes.c_size_t),
+	("delegated",           ctypes.c_int),
+	("processed",           ctypes.c_int),
+	("inclusive",           ctypes.c_int),
+	("status",              ctypes.c_int),
+	("index",               ctypes.c_int),
+	("repeat",              ctypes.c_int),
+	("orig_repeat",         ctypes.c_int),
+	("requestvb_start",     ctypes.c_void_p),
+	("next",                ctypes.c_void_p),
+	("prev",                ctypes.c_void_p),
+	("subtree",             ctypes.c_void_p)
+]
+
+SNMPCallback2 = ctypes.CFUNCTYPE(
+    ctypes.c_int,                       # return type
+	netsnmp_mib_handler_p,              # netsnmp_mib_handler *handler
+	netsnmp_handler_registration_p,     # netsnmp_handler_registration *reginfo
+	netsnmp_agent_request_info_p,       # netsnmp_agent_request_info *reginfo
+	netsnmp_request_info_p              # netsnmp_request_info *requests
+)
+
 for f in [ libnsa.netsnmp_create_handler_registration ]:
 	f.argtypes = [
 		ctypes.c_char_p,                # const char *name
+		#SNMPCallback2,                  # Netsnmp_Node_Handler *handler_access_method
 		ctypes.c_void_p,                # Netsnmp_Node_Handler *handler_access_method
 		c_oid_p,                        # const oid *reg_oid
 		ctypes.c_size_t,                # size_t reg_oid_len
 		ctypes.c_int                    # int modes
 	]
 	f.restype = netsnmp_handler_registration_p
+
+for f in [ libnsa.netsnmp_request_set_error ]:
+    f.argtypes = [
+        netsnmp_request_info_p,         # netsnmp_request_info *request
+        ctypes.c_int                    # int error number
+    ]
+    f.restype = ctypes.c_int
 
 # include/net-snmp/library/asn1.h
 ASN_INTEGER                             = 0x02
@@ -210,27 +315,6 @@ ASN_APPLICATION                         = 0x40
 ASN_OPAQUE_FLOAT                        = ASN_OPAQUE_TAG2 + (ASN_APPLICATION | 8)
 ASN_OPAQUE_DOUBLE                       = ASN_OPAQUE_TAG2 + (ASN_APPLICATION | 9)
 
-# counter64 requires some extra work because it can't be reliably represented
-# by a single C data type
-class counter64(ctypes.Structure):
-	@property
-	def value(self):
-		return self.high << 32 | self.low
-
-	@value.setter
-	def value(self, val):
-		self.high = val >> 32
-		self.low  = val & 0xFFFFFFFF
-
-	def __init__(self, initval=0):
-		ctypes.Structure.__init__(self, 0, 0)
-		self.value = initval
-counter64_p = ctypes.POINTER(counter64)
-counter64._fields_ = [
-	("high",                ctypes.c_ulong),
-	("low",                 ctypes.c_ulong)
-]
-
 # include/net-snmp/library/snmp_impl.h
 ASN_IPADDRESS                           = ASN_APPLICATION | 0
 ASN_COUNTER                             = ASN_APPLICATION | 1
@@ -238,6 +322,9 @@ ASN_UNSIGNED                            = ASN_APPLICATION | 2
 ASN_GAUGE                               = ASN_APPLICATION | 2
 ASN_TIMETICKS                           = ASN_APPLICATION | 3
 ASN_COUNTER64                           = ASN_APPLICATION | 6
+# opaque special types
+ASN_FLOAT                               = ASN_APPLICATION | 8
+ASN_DOUBLE                              = ASN_APPLICATION | 9
 
 # include/net-snmp/agent/watcher.h
 WATCHER_FIXED_SIZE                      = 0x01
@@ -277,11 +364,6 @@ for f in [ libnsX.netsnmp_register_watched_scalar ]:
 		netsnmp_watcher_info_p          # netsnmp_watcher_info *winfo
 	]
 	f.restype = ctypes.c_int
-
-# include/net-snmp/types.h
-class netsnmp_variable_list(ctypes.Structure): pass
-netsnmp_variable_list_p = ctypes.POINTER(netsnmp_variable_list)
-netsnmp_variable_list_p_p = ctypes.POINTER(netsnmp_variable_list_p)
 
 # include/net-snmp/varbind_api.h
 for f in [ libnsa.snmp_varlist_add_variable ]:
@@ -420,6 +502,16 @@ for f in [ libnsa.agent_check_and_process ]:
 		ctypes.c_int                    # int block
 	]
 	f.restype = ctypes.c_int
+
+MODE_GET                                = 160 # SNMP_MSG_GET
+MODE_GET_NEXT                           = 161 # SNMP_MSG_GET_NEXT
+MODE_SET_BEGIN                          = -1  # SNMP_MSG_INTERNAL_SET_BEGIN
+MODE_SET_RESERVE1                       = 0   # SNMP_MSG_INTERNAL_SET_RESERVE1
+MODE_SET_RESERVE2                       = 1   # SNMP_MSG_INTERNAL_SET_RESERVE2
+MODE_SET_ACTION                         = 2   # SNMP_MSG_INTERNAL_SET_ACTION
+MODE_SET_COMMIT                         = 3   # SNMP_MSG_INTERNAL_SET_COMMIT
+MODE_SET_FREE                           = 4   # SNMP_MSG_INTERNAL_SET_FREE
+MODE_SET_UNDO                           = 5   # SNMP_MSG_INTERNAL_SET_UNDO
 
 # include/net-snmp/agent/snmp-tc.h
 TV_TRUE                                 = 1

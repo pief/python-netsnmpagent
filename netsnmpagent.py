@@ -338,7 +338,7 @@ class netsnmpAgent(object):
 		# Initialize our SNMP object registry
 		self._objs = defaultdict(dict)
 
-	def _prepareRegistration(self, oidstr, writable = True):
+	def _prepareRegistration(self, oidstr, writable = True, callback_handler = None):
 		""" Prepares the registration of an SNMP object.
 
 		    "oidstr" is the OID to register the object at.
@@ -383,7 +383,7 @@ class netsnmpAgent(object):
 		# left to net-snmp.
 		handler_reginfo = libnsa.netsnmp_create_handler_registration(
 			b(oidstr),
-			None,
+			callback_handler,
 			oid,
 			oid_len,
 			handler_modes
@@ -411,12 +411,14 @@ class netsnmpAgent(object):
 		                          from an ASN.1 perspective, eg. ASN_INTEGER.
 		    - "context"         : A string defining the context name for the
 		                          SNMP variable
+		    - "callback"        : An optional function that is called when a
+		                          SNMP variable is retrieved or set
 		
 		    The class instance returned will have no association with net-snmp
 		    yet. Use the Register() method to associate it with an OID. """
 
 		# This is the replacement function, the "decoration"
-		def create_vartype_class(self, initval = None, oidstr = None, writable = True, context = ""):
+		def create_vartype_class(self, initval = None, oidstr = None, writable = True, context = "", callback = None):
 			agent = self
 
 			# Call the original property_func to retrieve this variable type's
@@ -457,7 +459,15 @@ class netsnmpAgent(object):
 
 					if oidstr:
 						# Prepare the netsnmp_handler_registration structure.
-						handler_reginfo = agent._prepareRegistration(oidstr, writable)
+						self._callback_handler = None
+						if callback != None:
+							# We defined a Python function that needs a ctypes conversion so it can
+							# be called by C code such as net-snmp. That's what SNMPCallback2() is
+							# used for. However we also need to store the reference in "self" as it
+							# will otherwise be lost at the exit of this function so that net-snmp's
+							# attempt to call it would end in nirvana...
+							self._callback_handler = SNMPCallback2(callback)
+						handler_reginfo = agent._prepareRegistration(oidstr, writable, self._callback_handler)
 						handler_reginfo.contents.contextName = b(context)
 
 						# Create the netsnmp_watcher_info structure.
@@ -489,13 +499,14 @@ class netsnmpAgent(object):
 				def value(self):
 					val = self._cvar.value
 
-					if isnum(val):
-						# Python 2.x will automatically switch from the "int"
-						# type to the "long" type, if necessary. Python 3.x
-						# has no limits on the "int" type anymore.
-						val = int(val)
-					else:
-						val = u(val)
+					if self._asntype != ASN_OPAQUE_FLOAT and self._asntype != ASN_OPAQUE_DOUBLE:
+						if isnum(val):
+							# Python 2.x will automatically switch from the "int"
+							# type to the "long" type, if necessary. Python 3.x
+							# has no limits on the "int" type anymore.
+							val = int(val)
+						else:
+							val = u(val)
 
 					return val
 
@@ -531,7 +542,7 @@ class netsnmpAgent(object):
 		return create_vartype_class
 
 	@VarTypeClass
-	def Integer32(self, initval = None, oidstr = None, writable = True, context = ""):
+	def Integer32(self, initval = None, oidstr = None, writable = True, context = "", callback = None):
 		return {
 			"ctype"         : ctypes.c_long,
 			"flags"         : WATCHER_FIXED_SIZE,
@@ -540,7 +551,7 @@ class netsnmpAgent(object):
 		}
 
 	@VarTypeClass
-	def Unsigned32(self, initval = None, oidstr = None, writable = True, context = ""):
+	def Unsigned32(self, initval = None, oidstr = None, writable = True, context = "", callback = None):
 		return {
 			"ctype"         : ctypes.c_ulong,
 			"flags"         : WATCHER_FIXED_SIZE,
@@ -549,7 +560,7 @@ class netsnmpAgent(object):
 		}
 
 	@VarTypeClass
-	def Gauge32(self, initval = None, oidstr = None, writable = True, context = ""):
+	def Gauge32(self, initval = None, oidstr = None, writable = True, context = "", callback = None):
 		return {
 			"ctype"         : ctypes.c_ulong,
 			"flags"         : WATCHER_FIXED_SIZE,
@@ -558,7 +569,7 @@ class netsnmpAgent(object):
 		}
 
 	@VarTypeClass
-	def Counter32(self, initval = None, oidstr = None, writable = True, context = ""):
+	def Counter32(self, initval = None, oidstr = None, writable = True, context = "", callback = None):
 		return {
 			"ctype"         : ctypes.c_ulong,
 			"flags"         : WATCHER_FIXED_SIZE,
@@ -567,7 +578,7 @@ class netsnmpAgent(object):
 		}
 
 	@VarTypeClass
-	def Counter64(self, initval = None, oidstr = None, writable = True, context = ""):
+	def Counter64(self, initval = None, oidstr = None, writable = True, context = "", callback = None):
 		return {
 			"ctype"         : counter64,
 			"flags"         : WATCHER_FIXED_SIZE,
@@ -576,7 +587,7 @@ class netsnmpAgent(object):
 		}
 
 	@VarTypeClass
-	def TimeTicks(self, initval = None, oidstr = None, writable = True, context = ""):
+	def TimeTicks(self, initval = None, oidstr = None, writable = True, context = "", callback = None):
 		return {
 			"ctype"         : ctypes.c_ulong,
 			"flags"         : WATCHER_FIXED_SIZE,
@@ -585,7 +596,7 @@ class netsnmpAgent(object):
 		}
 
 	@VarTypeClass
-	def Float(self, initval = None, oidstr = None, writable = True, context = ""):
+	def Float(self, initval = None, oidstr = None, writable = True, context = "", callback = None):
 		return {
 			"ctype"         : ctypes.c_float,
 			"flags"         : WATCHER_FIXED_SIZE,
@@ -594,7 +605,7 @@ class netsnmpAgent(object):
 		}
 
 	@VarTypeClass
-	def Double(self, initval = None, oidstr = None, writable = True, context = ""):
+	def Double(self, initval = None, oidstr = None, writable = True, context = "", callback = None):
 		return {
 			"ctype"         : ctypes.c_double,
 			"flags"         : WATCHER_FIXED_SIZE,
@@ -608,7 +619,7 @@ class netsnmpAgent(object):
 	# we have to stick to WATCHER_MAX_SIZE for now to support net-snmp 5.4.x
 	# (used eg. in SLES 11 SP2 and Ubuntu 12.04 LTS).
 	@VarTypeClass
-	def OctetString(self, initval = None, oidstr = None, writable = True, context = ""):
+	def OctetString(self, initval = None, oidstr = None, writable = True, context = "", callback = None):
 		return {
 			"ctype"         : ctypes.create_string_buffer,
 			"flags"         : WATCHER_MAX_SIZE,
@@ -620,7 +631,7 @@ class netsnmpAgent(object):
 	# Whereas an OctetString can contain UTF-8 encoded characters, a
 	# DisplayString is restricted to ASCII characters only.
 	@VarTypeClass
-	def DisplayString(self, initval = None, oidstr = None, writable = True, context = ""):
+	def DisplayString(self, initval = None, oidstr = None, writable = True, context = "", callback = None):
 		return {
 			"ctype"         : ctypes.create_string_buffer,
 			"flags"         : WATCHER_MAX_SIZE,
@@ -631,7 +642,7 @@ class netsnmpAgent(object):
 
 	# IP addresses are stored as unsigned integers, but the Python interface
 	# should use strings. So we need a special class.
-	def IpAddress(self, initval = "0.0.0.0", oidstr = None, writable = True, context = ""):
+	def IpAddress(self, initval = "0.0.0.0", oidstr = None, writable = True, context = "", callback = None):
 		agent = self
 
 		class IpAddress(object):
@@ -645,7 +656,15 @@ class netsnmpAgent(object):
 
 				if oidstr:
 					# Prepare the netsnmp_handler_registration structure.
-					handler_reginfo = agent._prepareRegistration(oidstr, writable)
+					self._callback_handler = None
+					if callback != None:
+						# We defined a Python function that needs a ctypes conversion so it can
+						# be called by C code such as net-snmp. That's what SNMPCallback2() is
+						# used for. However we also need to store the reference in "self" as it
+						# will otherwise be lost at the exit of this function so that net-snmp's
+						# attempt to call it would end in nirvana...
+						self._callback_handler = SNMPCallback2(callback)
+					handler_reginfo = agent._prepareRegistration(oidstr, writable, self._callback_handler)
 					handler_reginfo.contents.contextName = b(context)
 
 					# Create the netsnmp_watcher_info structure.
@@ -700,7 +719,7 @@ class netsnmpAgent(object):
 
 	# TruthValues are stored as integers, but the Python interface
 	# should use bool, so we need a special class.
-	def TruthValue(self, initval = False, oidstr = None, writable = True, context = ""):
+	def TruthValue(self, initval = False, oidstr = None, writable = True, context = "", callback = None):
 		agent = self
 
 		class TruthValue(object):
@@ -714,7 +733,15 @@ class netsnmpAgent(object):
 
 				if oidstr:
 					# Prepare the netsnmp_handler_registration structure.
-					handler_reginfo = agent._prepareRegistration(oidstr, writable)
+					self._callback_handler = None
+					if callback != None:
+						# We defined a Python function that needs a ctypes conversion so it can
+						# be called by C code such as net-snmp. That's what SNMPCallback2() is
+						# used for. However we also need to store the reference in "self" as it
+						# will otherwise be lost at the exit of this function so that net-snmp's
+						# attempt to call it would end in nirvana...
+						self._callback_handler = SNMPCallback2(callback)
+					handler_reginfo = agent._prepareRegistration(oidstr, writable, self._callback_handler)
 					handler_reginfo.contents.contextName = b(context)
 
 					# Create the netsnmp_watcher_info structure.
@@ -755,7 +782,7 @@ class netsnmpAgent(object):
 		# Return an instance of the just-defined class to the agent
 		return TruthValue()
 
-	def Table(self, oidstr, indexes, columns, counterobj = None, extendable = False, context = ""):
+	def Table(self, oidstr, indexes, columns, counterobj = None, extendable = False, context = "", callback = None):
 		agent = self
 
 		# Define a Python class to provide access to the table.
@@ -799,7 +826,8 @@ class netsnmpAgent(object):
 				# Register handler and table_data_set with net-snmp.
 				self._handler_reginfo = agent._prepareRegistration(
 					oidstr,
-					extendable
+					extendable,
+					callback
 				)
 				self._handler_reginfo.contents.contextName = b(context)
 				result = libnsX.netsnmp_register_table_data_set(

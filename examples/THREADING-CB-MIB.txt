@@ -1,0 +1,141 @@
+THREADING-CB-MIB DEFINITIONS ::= BEGIN
+
+------------------------------------------------------------------------
+-- MIB for python-netsnmpagent's example threading_agent.py
+-- Copyright (c) 2012-2016 Pieter Hollants <pieter@hollants.com>
+-- Licensed under the GNU Lesser Public License (LGPL) version 3
+------------------------------------------------------------------------
+
+-- Imports
+IMPORTS
+    MODULE-IDENTITY, OBJECT-TYPE, NOTIFICATION-TYPE,
+    Integer32, Unsigned32, Counter32, Counter64, TimeTicks, IpAddress,
+    enterprises
+        FROM SNMPv2-SMI
+    TEXTUAL-CONVENTION, DisplayString
+        FROM SNMPv2-TC
+    MODULE-COMPLIANCE, OBJECT-GROUP, NOTIFICATION-GROUP
+        FROM SNMPv2-CONF
+    agentxObjects
+        FROM AGENTX-MIB;
+
+-- Description and update information                                                                                                            
+threadingCBMIB MODULE-IDENTITY
+    LAST-UPDATED "201710230412Z"
+    ORGANIZATION "N/A"
+    CONTACT-INFO
+        "Editor:
+        Pieter Hollants
+        EMail: <pieter@hollants.com>"
+    DESCRIPTION
+        "A MIB for python-netsnmpagent's example threading_cb_agent.py"
+
+    REVISION    "201710230412Z"
+    DESCRIPTION
+        "First version."
+
+    ::= { agentxObjects 101 }
+
+-- Definition of a generic ThreadingNotificationStatus type
+ThreadingNotificationStatus ::= TEXTUAL-CONVENTION
+    STATUS current
+    DESCRIPTION
+        "Indicates the enabling or disabling of a particular class of
+        notifications."
+    SYNTAX INTEGER {
+        disabled (0),   -- This class of notifications is disabled
+        enabled  (1)    -- This class of notifications is enabled
+}
+
+-- Definition of MIB's root nodes
+
+threadingCBMIBObjects         OBJECT IDENTIFIER ::= { threadingCBMIB 1 }
+threadingCBMIBNotifications   OBJECT IDENTIFIER ::= { threadingCBMIB 2 }
+threadingCBMIBConformance     OBJECT IDENTIFIER ::= { threadingCBMIB 3 }
+
+threadingScalars              OBJECT IDENTIFIER ::= { threadingCBMIBObjects 1 }
+
+------------------------------------------------------------------------
+-- Scalars
+------------------------------------------------------------------------
+
+threadingString OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "A string. Curious about its contents?"
+    ::= { threadingScalars 1 }
+
+threadingCBInteger OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "A read-write, 32-bits integer value."
+    ::= { threadingScalars 2 }
+
+threadingCBString OBJECT-TYPE
+    SYNTAX      OctetString
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "A read-write string."
+    ::= { threadingScalars 3 }
+
+
+------------------------------------------------------------------------
+-- Notifications
+------------------------------------------------------------------------
+
+events      OBJECT IDENTIFIER ::= { threadingCBMIBNotifications 0 }
+operation   OBJECT IDENTIFIER ::= { threadingCBMIBNotifications 1 }
+
+threadingStringChange NOTIFICATION-TYPE
+    OBJECTS {
+        threadingString
+    }
+    STATUS  current
+    DESCRIPTION
+        "A threadingStringChange notification signifies that there has
+        been a change to the value of threadingString."
+    ::= { events 1 }
+
+threadingStringChangeNotificationsEnabled OBJECT-TYPE
+    SYNTAX      ThreadingNotificationStatus
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Controls whether threadingStringChange notifications are
+        enabled or disabled."
+    ::= { operation 1 }
+
+------------------------------------------------------------------------
+-- Conformance
+------------------------------------------------------------------------
+
+threadingMIBGroups      OBJECT IDENTIFIER ::= { threadingCBMIBConformance 1 }
+
+threadingMIBScalarsGroup OBJECT-GROUP
+    OBJECTS {
+        threadingString,
+        threadingCBInteger,
+        threadingCBString,
+        threadingStringChangeNotificationsEnabled
+    }
+    STATUS  current
+    DESCRIPTION
+        "A collection of objects related to threadingScalars."
+    ::= { threadingMIBGroups 1 }
+
+threadingMIBScalarsNotificationsGroup NOTIFICATION-GROUP
+    NOTIFICATIONS {
+        threadingStringChange
+    }
+    STATUS  current
+    DESCRIPTION
+        "The notifications which indicate specific changes in
+        threadingScalars."
+    ::= { threadingMIBGroups 2 }
+
+END

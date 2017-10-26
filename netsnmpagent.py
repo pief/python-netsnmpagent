@@ -50,10 +50,10 @@ class netsnmpAgent(object):
 
 	def __init__(self, **args):
 		"""Initializes a new netsnmpAgent instance.
-		
+
 		"args" is a dictionary that can contain the following
 		optional parameters:
-		
+
 		- AgentName     : The agent's name used for registration with net-snmp.
 		- MasterSocket  : The transport specification of the AgentX socket of
 		                  the running snmpd instance to connect to (see the
@@ -383,7 +383,7 @@ class netsnmpAgent(object):
 
 		return _cls_wrapper
 
-	def _prepareRegistration(self, oidstr, writable = True):
+	def _prepareRegistration(self, oidstr, writable = True, callback_handler = None):
 		# Make sure the agent has not been start()ed yet
 		if self._status != netsnmpAgentStatus.REGISTRATION:
 			raise netsnmpAgentException("Attempt to register SNMP object " \
@@ -423,7 +423,7 @@ class netsnmpAgent(object):
 		# left to net-snmp.
 		handler_reginfo = libnsa.netsnmp_create_handler_registration(
 			b(oidstr),
-			None,
+			callback_handler,
 			oid,
 			oid_len,
 			handler_modes
@@ -475,7 +475,8 @@ class netsnmpAgent(object):
 				# Register handler and table_data_set with net-snmp.
 				self._handler_reginfo = agent._prepareRegistration(
 					oidstr,
-					extendable
+					extendable,
+					callback
 				)
 				self._handler_reginfo.contents.contextName = b(context)
 				result = libnsX.netsnmp_register_table_data_set(

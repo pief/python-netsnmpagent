@@ -147,12 +147,13 @@ firstTable = agent.Table(
 		agent.DisplayString()
 	],
 	columns = [
-		(2, agent.DisplayString("Unknown place")),
-		(3, agent.Integer32(0))
+		(2, agent.DisplayString("Unknown place"), True),
+		(3, agent.Integer32(0), True)
 	],
 	counterobj = agent.Unsigned32(
 		oidstr = "SIMPLE-MIB::firstTableNumber"
-	)
+	),
+	extendable = True
 )
 
 # Add the first table row

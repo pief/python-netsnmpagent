@@ -274,22 +274,22 @@ thirdTableNumber OBJECT-TYPE
     ::= { simpleTables 5 }
 
 thirdTable OBJECT-TYPE
-    SYNTAX      SEQUENCE OF FirstTableEntry
+    SYNTAX      SEQUENCE OF ThirdTableEntry
     MAX-ACCESS  not-accessible
     STATUS      current
     DESCRIPTION
         "The third simple table"
     ::= { simpleTables 6 }
 
-FirstTableEntry ::=
+ThirdTableEntry ::=
     SEQUENCE {
         thirdTableEntryIndex  IpAddress,
         thirdTableEntryDesc   DisplayString,
-        thirdTableEntryValue  Integer32
+        thirdTableEntryValue  IpAddress
     }
 
 thirdTableEntry OBJECT-TYPE
-    SYNTAX      FirstTableEntry
+    SYNTAX      ThirdTableEntry
     MAX-ACCESS  not-accessible
     STATUS      current
     DESCRIPTION
@@ -395,7 +395,9 @@ simpleMIBTablesGroup OBJECT-GROUP
         firstTableEntryDesc, firstTableEntryValue,
         firstTableChangeNotificationsEnabled,
         secondTableNumber,
-        secondTableEntryDesc, secondTableEntryValue
+        secondTableEntryDesc, secondTableEntryValue,
+        thirdTableNumber,
+        thirdTableEntryDesc, thirdTableEntryValue
     }
     STATUS  current
     DESCRIPTION

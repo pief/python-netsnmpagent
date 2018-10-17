@@ -156,171 +156,171 @@ firstTableNumber OBJECT-TYPE
     MAX-ACCESS  read-only
     STATUS      current
     DESCRIPTION
-        "The number of entries in firstTable."
+        "The number of rows in firstTable."
     ::= { simpleTables 1 }
 
 firstTable OBJECT-TYPE
-    SYNTAX      SEQUENCE OF FirstTableEntry
+    SYNTAX      SEQUENCE OF FirstTableRow
     MAX-ACCESS  not-accessible
     STATUS      current
     DESCRIPTION
         "The first simple table"
     ::= { simpleTables 2 }
 
-FirstTableEntry ::=
-    SEQUENCE {
-        firstTableEntryIndex  DisplayString,
-        firstTableEntryDesc   DisplayString,
-        firstTableEntryValue  Integer32
-    }
-
-firstTableEntry OBJECT-TYPE
-    SYNTAX      FirstTableEntry
+firstTableRow OBJECT-TYPE
+    SYNTAX      FirstTableRow
     MAX-ACCESS  not-accessible
     STATUS      current
     DESCRIPTION
         "A particular firstTable row."
-    INDEX { firstTableEntryIndex }
+    INDEX { firstTableRowIndex }
     ::= { firstTable 1 }
 
-firstTableEntryIndex OBJECT-TYPE
+FirstTableRow ::=
+    SEQUENCE {
+        firstTableRowIndex  DisplayString,
+        firstTableRowDesc   DisplayString,
+        firstTableRowValue  Integer32
+    }
+
+firstTableRowIndex OBJECT-TYPE
     SYNTAX      DisplayString
     MAX-ACCESS  not-accessible
     STATUS      current
     DESCRIPTION
         "The index column used to generate string indices into
         firstTable."
-    ::= { firstTableEntry 1 }
+    ::= { firstTableRow 1 }
 
-firstTableEntryDesc OBJECT-TYPE
+firstTableRowDesc OBJECT-TYPE
     SYNTAX      DisplayString
     MAX-ACCESS  read-only
     STATUS      current
     DESCRIPTION
-        "A firstTableEntry's description."
-    ::= { firstTableEntry 2 }
+        "A firstTableRow's description."
+    ::= { firstTableRow 2 }
 
-firstTableEntryValue OBJECT-TYPE
+firstTableRowValue OBJECT-TYPE
     SYNTAX      Integer32
     MAX-ACCESS  read-only
     STATUS      current
     DESCRIPTION
-        "A firstTableEntry's value."
-    ::= { firstTableEntry 3 }
+        "A firstTableRow's value."
+    ::= { firstTableRow 3 }
 
 secondTableNumber OBJECT-TYPE
     SYNTAX      Unsigned32
     MAX-ACCESS  read-only
     STATUS      current
     DESCRIPTION
-        "The number of entries in secondTable."
+        "The number of rows in secondTable."
     ::= { simpleTables 3 }
 
 secondTable OBJECT-TYPE
-    SYNTAX      SEQUENCE OF SecondTableEntry
+    SYNTAX      SEQUENCE OF SecondTableRow
     MAX-ACCESS  not-accessible
     STATUS      current
     DESCRIPTION
         "The second simple table"
     ::= { simpleTables 4 }
 
-SecondTableEntry ::=
-    SEQUENCE {
-        secondTableEntryIndex  Integer32,
-        secondTableEntryDesc   DisplayString,
-        secondTableEntryValue  Unsigned32
-    }
-
-secondTableEntry OBJECT-TYPE
-    SYNTAX      SecondTableEntry
+secondTableRow OBJECT-TYPE
+    SYNTAX      SecondTableRow
     MAX-ACCESS  not-accessible
     STATUS      current
     DESCRIPTION
         "A particular secondTable row."
-    INDEX { secondTableEntryIndex }
+    INDEX { secondTableRowIndex }
     ::= { secondTable 1 }
 
-secondTableEntryIndex OBJECT-TYPE
+SecondTableRow ::=
+    SEQUENCE {
+        secondTableRowIndex  Integer32,
+        secondTableRowDesc   DisplayString,
+        secondTableRowValue  Unsigned32
+    }
+
+secondTableRowIndex OBJECT-TYPE
     SYNTAX      Integer32 (0..2147483647)
     MAX-ACCESS  not-accessible
     STATUS      current
     DESCRIPTION
         "The index column used to generate numerical indices into
         secondTable."
-    ::= { secondTableEntry 1 }
+    ::= { secondTableRow 1 }
 
-secondTableEntryDesc OBJECT-TYPE
+secondTableRowDesc OBJECT-TYPE
     SYNTAX      DisplayString
     MAX-ACCESS  read-only
     STATUS      current
     DESCRIPTION
-        "An secondTableEntry's description."
-    ::= { secondTableEntry 2 }
+        "An secondTableRow's description."
+    ::= { secondTableRow 2 }
 
-secondTableEntryValue OBJECT-TYPE
+secondTableRowValue OBJECT-TYPE
     SYNTAX      Unsigned32
     MAX-ACCESS  read-only
     STATUS      current
     DESCRIPTION
-        "An secondTableEntry's value."
-    ::= { secondTableEntry 3 }
+        "An secondTableRow's value."
+    ::= { secondTableRow 3 }
 
 thirdTableNumber OBJECT-TYPE
     SYNTAX      Unsigned32
     MAX-ACCESS  read-only
     STATUS      current
     DESCRIPTION
-        "The number of entries in thirdTable."
+        "The number of rows in thirdTable."
     ::= { simpleTables 5 }
 
 thirdTable OBJECT-TYPE
-    SYNTAX      SEQUENCE OF ThirdTableEntry
+    SYNTAX      SEQUENCE OF ThirdTableRow
     MAX-ACCESS  not-accessible
     STATUS      current
     DESCRIPTION
         "The third simple table"
     ::= { simpleTables 6 }
 
-ThirdTableEntry ::=
-    SEQUENCE {
-        thirdTableEntryIndex  IpAddress,
-        thirdTableEntryDesc   DisplayString,
-        thirdTableEntryValue  IpAddress
-    }
-
-thirdTableEntry OBJECT-TYPE
-    SYNTAX      ThirdTableEntry
+thirdTableRow OBJECT-TYPE
+    SYNTAX      ThirdTableRow
     MAX-ACCESS  not-accessible
     STATUS      current
     DESCRIPTION
         "A particular thirdTable row."
-    INDEX { thirdTableEntryIndex }
+    INDEX { thirdTableRowIndex }
     ::= { thirdTable 1 }
 
-thirdTableEntryIndex OBJECT-TYPE
+ThirdTableRow ::=
+    SEQUENCE {
+        thirdTableRowIndex  IpAddress,
+        thirdTableRowDesc   DisplayString,
+        thirdTableRowValue  IpAddress
+    }
+
+thirdTableRowIndex OBJECT-TYPE
     SYNTAX      IpAddress
     MAX-ACCESS  not-accessible
     STATUS      current
     DESCRIPTION
         "The index column used to generate IpAddress indices into
         thirdTable."
-    ::= { thirdTableEntry 1 }
+    ::= { thirdTableRow 1 }
 
-thirdTableEntryDesc OBJECT-TYPE
+thirdTableRowDesc OBJECT-TYPE
     SYNTAX      DisplayString
     MAX-ACCESS  read-only
     STATUS      current
     DESCRIPTION
-        "A thirdTableEntry's description."
-    ::= { thirdTableEntry 2 }
+        "A thirdTableRow's description."
+    ::= { thirdTableRow 2 }
 
-thirdTableEntryValue OBJECT-TYPE
+thirdTableRowValue OBJECT-TYPE
     SYNTAX      IpAddress
     MAX-ACCESS  read-only
     STATUS      current
     DESCRIPTION
-        "A thirdTableEntry's value."
-    ::= { thirdTableEntry 3 }
+        "A thirdTableRow's value."
+    ::= { thirdTableRow 3 }
 
 ------------------------------------------------------------------------
 -- Notifications
@@ -341,12 +341,12 @@ simpleUnsignedROChange NOTIFICATION-TYPE
 
 firstTableChange NOTIFICATION-TYPE
     OBJECTS {
-        firstTableEntryDesc, firstTableEntryValue
+        firstTableRowDesc, firstTableRowValue
     }
     STATUS  current
     DESCRIPTION
         "A firstTableChange notification signifies that there has
-        been a change to an firstTableEntry."
+        been a change to an firstTableRow."
     ::= { events 2 }
 
 simpleUnsignedROChangeNotificationsEnabled OBJECT-TYPE
@@ -392,12 +392,12 @@ simpleMIBScalarsGroup OBJECT-GROUP
 simpleMIBTablesGroup OBJECT-GROUP
     OBJECTS {
         firstTableNumber,
-        firstTableEntryDesc, firstTableEntryValue,
+        firstTableRowDesc, firstTableRowValue,
         firstTableChangeNotificationsEnabled,
         secondTableNumber,
-        secondTableEntryDesc, secondTableEntryValue,
+        secondTableRowDesc, secondTableRowValue,
         thirdTableNumber,
-        thirdTableEntryDesc, thirdTableEntryValue
+        thirdTableRowDesc, thirdTableRowValue
     }
     STATUS  current
     DESCRIPTION

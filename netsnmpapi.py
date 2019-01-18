@@ -204,7 +204,9 @@ for f in [ libnsa.netsnmp_create_handler_registration ]:
 # include/net-snmp/library/asn1.h
 ASN_INTEGER                             = 0x02
 ASN_OCTET_STR                           = 0x04
+ASN_CONSTRUCTOR                         = 0x20
 ASN_APPLICATION                         = 0x40
+ASN_CONTEXT                             = 0x80
 
 # counter64 requires some extra work because it can't be reliably represented
 # by a single C data type
@@ -415,3 +417,111 @@ for f in [ libnsa.agent_check_and_process ]:
 		ctypes.c_int                    # int block
 	]
 	f.restype = ctypes.c_int
+
+# include/net-snmp/agent/agent_trap.h
+# void            send_easy_trap(int trap, int specific);
+for f in [ libnsa.send_easy_trap ]:
+	f.argtypes = [
+		ctypes.c_int,                  # int trap
+		ctypes.c_int                   # int specific
+	]
+	f.restype = None                   # void
+# void            send_v2trap(netsnmp_variable_list *vars);
+for f in [ libnsa.send_v2trap ]:
+	f.argtypes = [
+		netsnmp_variable_list_p        # netsnmp_variable_list *vars
+	]
+	f.restype = None                   # void
+# void            send_v3trap(netsnmp_variable_list *vars, char *context);
+for f in [ libnsa.send_v3trap ]:
+	f.argtypes = [
+		netsnmp_variable_list_p,       # netsnmp_variable_list *vars
+		ctypes.c_char_p                # char *context
+	]
+	f.restype = None                   # void
+
+# pdu definition
+c_ipaddr = (ctypes.c_ubyte * 4)
+c_ubyte_p = ctypes.POINTER(ctypes.c_ubyte)
+
+# include/net-snmp/types.h
+class netsnmp_pdu(ctypes.Structure): pass
+netsnmp_pdu_p = ctypes.POINTER(netsnmp_pdu)
+netsnmp_pdu._fields_ = [
+	("version",               ctypes.c_long), # snmp version
+	("command",               ctypes.c_int), # Type of this PDU
+	("reqid",                 ctypes.c_long), # Request id
+	("msgid",                 ctypes.c_long), # Message id for V3 messages
+	("transid",               ctypes.c_long), # Unique ID for incoming transactions
+	("sessid",                ctypes.c_long), # Session id for AgentX messages
+	("errstat",               ctypes.c_long), # Error status
+	("errindex",              ctypes.c_long), # Error index
+	("time",                  ctypes.c_ulong), # uptime
+	("flags",                 ctypes.c_ulong), #
+	("securityModel",         ctypes.c_int), #
+	# noAuthNoPriv, authNoPriv, authPriv
+	("securityLevel",         ctypes.c_int), #
+	("msgParseModel",         ctypes.c_int), #
+	# Transport-specific opaque data.  This replaces the IP-centric address
+	("transport_data",        ctypes.c_void_p ), #
+	("transport_data_length", ctypes.c_int ), #
+	# The actual transport domain.  This SHOULD NOT BE FREE()D.
+	("tDomain",               c_oid_p), #
+	("tDomainLen",            ctypes.c_size_t ), #
+	("variables",             netsnmp_variable_list_p ), #
+	# SNMPv1 & SNMPv2c fields
+	("community",             c_ubyte_p ), # community for outgoing requests.
+	("community_len",         ctypes.c_size_t ), #
+	# Trap information
+	("enterprise",            c_oid_p), # System OID
+	("enterprise_length",     ctypes.c_size_t ), #
+	("trap_type",             ctypes.c_long ), # trap type
+	("specific_type",         ctypes.c_long ), # specific type
+	("agent address",         c_ipaddr ), # This is ONLY used for v1 TRAPs
+	# SNMPv3 fields
+	("contextEngineID",       c_ubyte_p ), # context snmpEngineID
+	("contextEngineIDLen",    ctypes.c_size_t ), # Length of contextEngineID
+	("contextName",           ctypes.c_char_p), # authoritative contextName
+	("contextNameLen",        ctypes.c_size_t ), # Length of contextName
+	("securityEngineID",      c_ubyte_p ), # authoritative snmpEngineID for security
+	("securityEngineIDLen",   ctypes.c_size_t ), # Length of securityEngineID
+	("securityName",          ctypes.c_char_p ), # on behalf of this principal
+	("securityNameLen",       ctypes.c_size_t ), # Length of securityName
+	# AgentX fields (also uses SNMPv1 community field)
+	("priority",              ctypes.c_int ), #
+	("range_subid",           ctypes.c_int ), #
+	("securityStateRef",      ctypes.c_void_p), #
+]
+
+# include/net-snmp/snmp.h
+SNMP_MSG_TRAP                           = ASN_CONTEXT | ASN_CONSTRUCTOR | 0x4
+SNMP_MSG_TRAP2                          = ASN_CONTEXT | ASN_CONSTRUCTOR | 0x7
+
+# include/net-snmp/pdu_api.h
+#netsnmp_pdu    *snmp_pdu_create(int type);
+for f in [ libnsX.snmp_pdu_create ]:
+	f.argtypes = [
+		ctypes.c_int
+	]
+	f.restype = netsnmp_pdu_p
+
+#void            snmp_free_pdu( netsnmp_pdu *pdu);
+for f in [ libnsX.snmp_free_pdu ]:
+	f.argumets = [
+		netsnmp_pdu_p
+	]
+	f.restype = None
+
+# int snmp_add_var(netsnmp_pdu *pdu,
+#                  const oid * name, size_t name_length, char type, const char *value)
+for f in [ libnsX.snmp_add_var ]:
+	f.arguments = [
+		netsnmp_pdu_p,   # netsnmp_pdu *pdu
+		c_oid_p,         # const oid *name
+		ctypes.c_size_t, # size_t name_length
+		ctypes.c_char,   # char type('=' to get type from OID tree)
+		ctypes.c_char_p  # const char *value
+		
+	]
+	f.restype = ctypes.c_int
+

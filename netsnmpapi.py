@@ -299,8 +299,8 @@ SNMPNodeHandler = ctypes.CFUNCTYPE(
 
 for f in [ libnsa.netsnmp_create_handler ]:
 	f.argtypes = [
-		ctypes.c_char_p,				# const char *name,
-		SNMPNodeHandler,				# Netsnmp_Node_Handler * handler_access_method);
+		ctypes.c_char_p,                # const char *name,
+		SNMPNodeHandler                 # Netsnmp_Node_Handler * handler_access_method);
 	]
 	f.restype = netsnmp_mib_handler_p
 
@@ -313,10 +313,10 @@ for f in [ libnsa.netsnmp_inject_handler ]:
 
 for f in [ libnsa.netsnmp_call_next_handler ]:
 	f.argtypes = [
-		netsnmp_mib_handler_p,			# netsnmp_mib_handler *current,
-        netsnmp_handler_registration_p,	# netsnmp_handler_registration *reginfo,
-        netsnmp_agent_request_info_p,	# netsnmp_agent_request_info *reqinfo,
-        netsnmp_request_info_p,			# netsnmp_request_info *requests);
+		netsnmp_mib_handler_p,          # netsnmp_mib_handler *current,
+		netsnmp_handler_registration_p, # netsnmp_handler_registration *reginfo,
+		netsnmp_agent_request_info_p,   # netsnmp_agent_request_info *reqinfo,
+		netsnmp_request_info_p,         # netsnmp_request_info *requests);
 	]
 	f.restype = ctypes.c_int
 

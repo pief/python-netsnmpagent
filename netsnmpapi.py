@@ -37,11 +37,11 @@ except AttributeError:
 
 # include/net-snmp/library/callback.h
 
-# Callback major types 
+# Callback major types
 SNMP_CALLBACK_LIBRARY                   = 0
 SNMP_CALLBACK_APPLICATION               = 1
 
-# SNMP_CALLBACK_LIBRARY minor types 
+# SNMP_CALLBACK_LIBRARY minor types
 SNMP_CALLBACK_LOGGING                   = 4
 
 SNMPCallback = ctypes.CFUNCTYPE(
@@ -204,6 +204,15 @@ HANDLER_CAN_RWRITE                      = (HANDLER_CAN_GETANDGETNEXT | \
 
 class netsnmp_mib_handler(ctypes.Structure): pass
 netsnmp_mib_handler_p = ctypes.POINTER(netsnmp_mib_handler)
+netsnmp_mib_handler._fields_ = [
+	("handler_name",	ctypes.c_char_p),
+	("myvoid", 			ctypes.c_void_p),
+	("flags", 			ctypes.c_int),
+	("access_method", 	ctypes.c_void_p),
+	("data_free", 		ctypes.c_void_p),
+	("next", 			netsnmp_mib_handler_p),
+	("prev", 			netsnmp_mib_handler_p),
+]
 
 class netsnmp_handler_registration(ctypes.Structure): pass
 netsnmp_handler_registration_p = ctypes.POINTER(netsnmp_handler_registration)
@@ -280,18 +289,40 @@ netsnmp_request_info._fields_ = [
 	("subtree",             ctypes.c_void_p)
 ]
 
-SNMPCallback2 = ctypes.CFUNCTYPE(
+SNMPNodeHandler = ctypes.CFUNCTYPE(
     ctypes.c_int,                       # return type
 	netsnmp_mib_handler_p,              # netsnmp_mib_handler *handler
 	netsnmp_handler_registration_p,     # netsnmp_handler_registration *reginfo
-	netsnmp_agent_request_info_p,       # netsnmp_agent_request_info *reginfo
-	netsnmp_request_info_p              # netsnmp_request_info *requests
+	netsnmp_agent_request_info_p,       # netsnmp_agent_request_info *reqinfo
+	netsnmp_request_info_p,             # netsnmp_request_info *requests
 )
+
+for f in [ libnsa.netsnmp_create_handler ]:
+	f.argtypes = [
+		ctypes.c_char_p,				# const char *name,
+		SNMPNodeHandler,				# Netsnmp_Node_Handler * handler_access_method);
+	]
+	f.restype = netsnmp_mib_handler_p
+
+for f in [ libnsa.netsnmp_inject_handler ]:
+	f.argtypes = [
+		netsnmp_handler_registration_p, # netsnmp_handler_registration *reginfo
+		netsnmp_mib_handler_p,          # netsnmp_mib_handler *handler
+	]
+	f.restype = ctypes.c_int
+
+for f in [ libnsa.netsnmp_call_next_handler ]:
+	f.argtypes = [
+		netsnmp_mib_handler_p,			# netsnmp_mib_handler *current,
+        netsnmp_handler_registration_p,	# netsnmp_handler_registration *reginfo,
+        netsnmp_agent_request_info_p,	# netsnmp_agent_request_info *reqinfo,
+        netsnmp_request_info_p,			# netsnmp_request_info *requests);
+	]
+	f.restype = ctypes.c_int
 
 for f in [ libnsa.netsnmp_create_handler_registration ]:
 	f.argtypes = [
 		ctypes.c_char_p,                # const char *name
-		#SNMPCallback2,                  # Netsnmp_Node_Handler *handler_access_method
 		ctypes.c_void_p,                # Netsnmp_Node_Handler *handler_access_method
 		c_oid_p,                        # const oid *reg_oid
 		ctypes.c_size_t,                # size_t reg_oid_len
@@ -340,7 +371,7 @@ netsnmp_watcher_info._fields_ = [
 	("flags",               ctypes.c_int)
 	# net-snmp 5.7.x knows data_size_p here as well but we ignore it for
 	# backwards compatibility with net-snmp 5.4.x.
-] 
+]
 
 for f in [ libnsX.netsnmp_create_watcher_info ]:
 	f.argtypes = [

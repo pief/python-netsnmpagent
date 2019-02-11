@@ -1,12 +1,12 @@
 #
-# python-netsnmpagent example agent with threading and callback
+# python-netsnmpagent example agent with a custom callback handler
 #
 # Copyright (c) 2013-2016 Pieter Hollants <pieter@hollants.com>
 # Licensed under the GNU Lesser Public License (LGPL) version 3
 #
 
 #
-# This script makes running threading_agent.py easier for you because it takes
+# This script makes running callback_agent.py easier for you because it takes
 # care of setting everything up so that the example agent can be run
 # successfully.
 #
@@ -53,7 +53,7 @@ trap cleanup EXIT QUIT TERM INT HUP
 echo "* Preparing snmpd environment..."
 
 # Create a temporary directory
-TMPDIR="$(mktemp --directory --tmpdir threading_agent.XXXXXXXXXX)"
+TMPDIR="$(mktemp --directory --tmpdir callback_agent.XXXXXXXXXX)"
 SNMPD_CONFFILE=$TMPDIR/snmpd.conf
 SNMPD_PIDFILE=$TMPDIR/snmpd.pid
 
@@ -61,7 +61,7 @@ SNMPD_PIDFILE=$TMPDIR/snmpd.pid
 cat <<EOF >>$SNMPD_CONFFILE
 [snmpd]
 rocommunity public 127.0.0.1
-rwcommunity simple 127.0.0.1
+rwcommunity callback 127.0.0.1
 agentaddress localhost:5555
 informsink localhost:5556
 smuxsocket localhost:5557
@@ -82,19 +82,16 @@ echo "* Our snmpd instance is now listening on localhost, port 5555."
 echo "  From a second console, use the net-snmp command line utilities like this:"
 echo ""
 echo "    cd `pwd`"
-echo "    snmpwalk -v 2c -c public -M+. localhost:5555 THREADING-CB-MIB::threadingMIB"
-echo "    snmpget -v 2c -c public -M+. localhost:5555 THREADING-CB-MIB::threadingString.0"
-echo "  To test the callbacks, read and write them:"
-echo "    snmpget -v 2c -c public -M+. localhost:5555 THREADING-CB-MIB::threadingCBString.0"
-echo "    snmpset -v 2c -c simple -M+. localhost:5555 THREADING-CB-MIB::threadingCBString.0 s \"test string\""
-echo "    snmpget -v 2c -c public -M+. localhost:5555 THREADING-CB-MIB::threadingCBInteger.0"
-echo "    snmpset -v 2c -c simple -M+. localhost:5555 THREADING-CB-MIB::threadingCBInteger.0 i 123456"
+echo "    snmpwalk -v 2c -c public -M+. localhost:5555 SIMPLE-MIB::simpleMIB"
+echo "    snmptable -v 2c -c public -M+. -Ci localhost:5555 SIMPLE-MIB::firstTable"
+echo "    snmpget -v 2c -c public -M+. localhost:5555 SIMPLE-MIB::simpleInteger.0"
+echo "    snmpset -v 2c -c callback -M+. localhost:5555 SIMPLE-MIB::simpleInteger.0 i 123"
 echo ""
 
 # Workaround to have CTRL-C not generate any visual feedback (we don't do any
 # input anyway)
 stty -echo
 
-# Now start the threading agent
-echo "* Starting the threading agent..."
-python threading_cb_agent.py -m $TMPDIR/snmpd-agentx.sock -p $TMPDIR/
+# Now start the callback example agent
+echo "* Starting the callback example agent..."
+python callback_agent.py -m $TMPDIR/snmpd-agentx.sock -p $TMPDIR/

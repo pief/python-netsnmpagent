@@ -9,7 +9,9 @@ This directory contains two example agents together with associated MIBs:
 - "threading_agent.py" should be looked at next. It registers just a
   single DisplayString SNMP variable but demonstrates how to use Python's
   threading module to separate the data update process from the SNMP request
-  processing so that both can execute independently. 
+  processing so that both can execute independently.
+- "callback_agent.py" registers a custom callback to handle requests before the
+  result is sent back to the client.
 
 For both examples, shell scripts are included that should make it a waltz to
 play with the agents. The scripts take care of everything required to set up a
@@ -20,7 +22,8 @@ separate from any system-wide running snmpd:
 - "run_simple_agent_over_tcpsocket.sh" runs the same example, "simple_agent.py",
   but uses a TCP port instead of a Unix domain socket for the AgentX
   communication.
-- "run_threading_agent.py" runs "threading_agent.py" (doh!).
+- "run_threading_agent.sh" runs "threading_agent.py" (doh!).
+- "run_callback_agent.sh" runs with the agent defined in "callback_agent.py"
 
 If instead you want to run the example agents (or later on your own agents)
 against your system-wide snmpd instance, your /etc/snmp/snmpd.conf (the path

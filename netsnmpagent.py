@@ -629,7 +629,7 @@ class netsnmpAgent(object):
 					watcher._maxsize = ctypes.sizeof(self._cvar)
 
 					# Register handler and watcher with net-snmp.
-					result = libnsX.netsnmp_register_watched_instance(
+					result = libnsX.netsnmp_register_watched_scalar(
 						handler_reginfo,
 						watcher
 					)

@@ -339,11 +339,6 @@ class netsnmpAgent(object):
 		self._objs = defaultdict(dict)
 
 	def _prepareRegistration(self, oidstr, writable = True):
-		""" Prepares the registration of an SNMP object.
-
-		    "oidstr" is the OID to register the object at.
-		    "writable" indicates whether "snmpset" is allowed. """
-
 		# Make sure the agent has not been start()ed yet
 		if self._status != netsnmpAgentStatus.REGISTRATION:
 			raise netsnmpAgentException("Attempt to register SNMP object " \

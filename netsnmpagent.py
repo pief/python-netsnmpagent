@@ -442,13 +442,19 @@ class netsnmpAgent(object):
 					# has no fixed size, pass the maximum size as second
 					# argument to the constructor.
 					if props["flags"] == WATCHER_FIXED_SIZE:
-						self._cvar      = props["ctype"](initval if isnum(initval) else b(initval))
+						if self._asntype == ASN_IPADDRESS:
+							self._cvar = props["ctype"](0)
+						else:
+							self._cvar = props["ctype"](initval if isnum(initval) else b(initval))
 						self._data_size = ctypes.sizeof(self._cvar)
 						self._max_size  = self._data_size
 					else:
 						self._cvar      = props["ctype"](initval if isnum(initval) else b(initval), props["max_size"])
 						self._data_size = len(self._cvar.value)
 						self._max_size  = max(self._data_size, props["max_size"])
+
+					if self._asntype == ASN_IPADDRESS:
+						self.update(initval)
 
 					if oidstr:
 						# Prepare the netsnmp_handler_registration structure.
@@ -482,35 +488,60 @@ class netsnmpAgent(object):
 						agent._objs[context][oidstr] = self
 
 				def value(self):
-					val = self._cvar.value
-
-					if isnum(val):
-						# Python 2.x will automatically switch from the "int"
-						# type to the "long" type, if necessary. Python 3.x
-						# has no limits on the "int" type anymore.
-						val = int(val)
+					if self._asntype == ASN_IPADDRESS:
+						return socket.inet_ntoa(
+							struct.pack("I", self._cvar.value)
+						)
 					else:
-						val = u(val)
+						val = self._cvar.value
 
-					return val
+						if isnum(val):
+							# Python 2.x will automatically switch from the "int"
+							# type to the "long" type, if necessary. Python 3.x
+							# has no limits on the "int" type anymore.
+							val = int(val)
+						else:
+							val = u(val)
+
+						return val
 
 				def cref(self, **kwargs):
-					return ctypes.byref(self._cvar) if self._flags == WATCHER_FIXED_SIZE \
-					                                else self._cvar
+					if self._asntype == ASN_IPADDRESS:
+						# Due to an unfixed Net-SNMP issue (see
+						# https://sourceforge.net/p/net-snmp/bugs/2136/) we have
+						# to convert the value to host byte order if it shall be
+						# used as table index.
+						if kwargs.get("is_table_index", False) == False:
+							return ctypes.byref(self._cvar)
+						else:
+							_cidx = ctypes.c_uint(0)
+							_cidx.value = struct.unpack("I", struct.pack("!I", self._cvar.value))[0]
+							return ctypes.byref(_cidx)
+					else:
+						return ctypes.byref(self._cvar) if self._flags == WATCHER_FIXED_SIZE \
+														else self._cvar
 
 				def update(self, val):
-					if self._asntype == ASN_COUNTER and val >> 32:
-						val = val & 0xFFFFFFFF
-					if self._asntype == ASN_COUNTER64 and val >> 64:
-						val = val & 0xFFFFFFFFFFFFFFFF
-					self._cvar.value = val
-					if props["flags"] == WATCHER_MAX_SIZE:
-						if len(val) > self._max_size:
-							raise netsnmpAgentException(
-								"Value passed to update() truncated: {0} > {1} "
-								"bytes!".format(len(val), self._max_size)
-							)
-						self._data_size = self._watcher.contents.data_size = len(val)
+					if self._asntype == ASN_IPADDRESS:
+						# Convert dotted decimal IP address string to ctypes
+						# unsigned int in network byte order.
+						self._cvar.value = struct.unpack(
+							"I",
+							socket.inet_aton(val if val else "0.0.0.0")
+						)[0]
+					else:
+						if self._asntype == ASN_COUNTER and val >> 32:
+							val = val & 0xFFFFFFFF
+						if self._asntype == ASN_COUNTER64 and val >> 64:
+							val = val & 0xFFFFFFFFFFFFFFFF
+						self._cvar.value = val
+						if props["flags"] == WATCHER_MAX_SIZE:
+							if len(val) > self._max_size:
+								raise netsnmpAgentException(
+									"Value passed to update() truncated: {0} > {1} "
+									"bytes!".format(len(val), self._max_size)
+								)
+							self._data_size = self._watcher.contents.data_size = len(val)
 
 				if props["asntype"] in [ASN_COUNTER, ASN_COUNTER64]:
 					def increment(self, count=1):
@@ -596,73 +627,15 @@ class netsnmpAgent(object):
 		}
 
 	# IP addresses are stored as unsigned integers, but the Python interface
-	# should use strings. So we need a special class.
+	# should use strings.
+	@VarTypeClass
 	def IpAddress(self, initval = "0.0.0.0", oidstr = None, writable = True, context = ""):
-		agent = self
-
-		class IpAddress(object):
-			def __init__(self):
-				self._flags     = WATCHER_FIXED_SIZE
-				self._asntype   = ASN_IPADDRESS
-				self._cvar      = ctypes.c_uint(0)
-				self._data_size = ctypes.sizeof(self._cvar)
-				self._max_size  = self._data_size
-				self.update(initval)
-
-				if oidstr:
-					# Prepare the netsnmp_handler_registration structure.
-					handler_reginfo = agent._prepareRegistration(oidstr, writable)
-					handler_reginfo.contents.contextName = b(context)
-
-					# Create the netsnmp_watcher_info structure.
-					watcher = libnsX.netsnmp_create_watcher_info(
-						self.cref(),
-						ctypes.sizeof(self._cvar),
-						ASN_IPADDRESS,
-						WATCHER_FIXED_SIZE
-					)
-					watcher._maxsize = ctypes.sizeof(self._cvar)
-
-					# Register handler and watcher with net-snmp.
-					result = libnsX.netsnmp_register_watched_scalar(
-						handler_reginfo,
-						watcher
-					)
-					if result != 0:
-						raise netsnmpAgentException("Error registering variable with net-snmp!")
-
-					# Finally, we keep track of all registered SNMP objects for the
-					# getRegistered() method.
-					agent._objs[context][oidstr] = self
-
-			def value(self):
-				# Get string representation of IP address.
-				return socket.inet_ntoa(
-					struct.pack("I", self._cvar.value)
-				)
-
-			def cref(self, **kwargs):
-				# Due to an unfixed Net-SNMP issue (see
-				# https://sourceforge.net/p/net-snmp/bugs/2136/) we have
-				# to convert the value to host byte order if it shall be
-				# used as table index.
-				if kwargs.get("is_table_index", False) == False:
-					return ctypes.byref(self._cvar)
-				else:
-					_cidx = ctypes.c_uint(0)
-					_cidx.value = struct.unpack("I", struct.pack("!I", self._cvar.value))[0]
-					return ctypes.byref(_cidx)
-
-			def update(self, val):
-				# Convert dotted decimal IP address string to ctypes
-				# unsigned int in network byte order.
-				self._cvar.value = struct.unpack(
-					"I",
-					socket.inet_aton(val if val else "0.0.0.0")
-				)[0]
-
-		# Return an instance of the just-defined class to the agent
-		return IpAddress()
+		return {
+			"ctype"         : ctypes.c_uint,
+			"flags"         : WATCHER_FIXED_SIZE,
+			"initval"       : 0,
+			"asntype"       : ASN_IPADDRESS
+		}
 
 	def Table(self, oidstr, indexes, columns, counterobj = None, extendable = False, context = ""):
 		agent = self

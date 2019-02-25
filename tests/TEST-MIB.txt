@@ -51,8 +51,9 @@ testUnsigned32     OBJECT IDENTIFIER ::= { testScalars 2 }
 testCounter32      OBJECT IDENTIFIER ::= { testScalars 3 }
 testCounter64      OBJECT IDENTIFIER ::= { testScalars 4 }
 testTimeTicks      OBJECT IDENTIFIER ::= { testScalars 5 }
-testOctetString    OBJECT IDENTIFIER ::= { testScalars 6 }
-testDisplayString  OBJECT IDENTIFIER ::= { testScalars 7 }
+testIpAddress      OBJECT IDENTIFIER ::= { testScalars 6 }
+testOctetString    OBJECT IDENTIFIER ::= { testScalars 7 }
+testDisplayString  OBJECT IDENTIFIER ::= { testScalars 8 }
 
 -- Test OIDs for the Integer32 scalar type
 testInteger32NoInitval OBJECT-TYPE
@@ -368,6 +369,31 @@ testTimeTicksReadOnly OBJECT-TYPE
     DESCRIPTION
         "A read-only, unsigned, 32-bits integer value, with no initval."
     ::= { testTimeTicks 7 }
+
+-- Test OIDs for the IpAddress scalar type
+testIpAddressNoInitval OBJECT-TYPE
+    SYNTAX      IpAddress
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "A read-write IpAddress with no initval."
+    ::= { testIpAddress 1 }
+
+testIpAddressEmptyInitval OBJECT-TYPE
+    SYNTAX      IpAddress
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "A read-write IpAddress with an empty string as initval."
+    ::= { testIpAddress 2 }
+
+testIpAddress1234Initval OBJECT-TYPE
+    SYNTAX      IpAddress
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "A read-write IpAddress with an '1.2.3.4' string as initval."
+    ::= { testIpAddress 3 }
 
 -- Test OIDs for the OctetString scalar type
 testOctetStringNoInitval OBJECT-TYPE

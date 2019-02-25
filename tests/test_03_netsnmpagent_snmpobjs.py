@@ -209,6 +209,21 @@ def setUp(self):
 		writable = False,
 	)
 
+	# Test OIDs for IpAddress scalar type
+	settableIpAddress = agent.IpAddress(
+		oidstr = "TEST-MIB::testIpAddressNoInitval",
+	)
+
+	agent.IpAddress(
+		oidstr = "TEST-MIB::testIpAddressEmptyInitval",
+		initval = ""
+	)
+
+	agent.IpAddress(
+		oidstr = "TEST-MIB::testIpAddress1234Initval",
+		initval = "1.2.3.4"
+	)
+
 	# Test OIDs for OctetString scalar type
 	settableOctetString = agent.OctetString(
 		oidstr = "TEST-MIB::testOctetStringNoInitval",
@@ -875,6 +890,48 @@ def test_SET_TimeTicksReadOnly_42_raises_Exception():
 	global testenv
 
 	testenv.snmpset("TEST-MIB::testTimeTicksReadOnly.0", 42, "t")
+
+@timed(1)
+def test_GET_IpAddressWithoutInitval_eq_0_0_0_0():
+	""" GET(IpAddress()) == "0.0.0.0"
+
+	This tests that the instantiation of an IpAddress SNMP object without
+	specifying an initval resulted in a snmpget'able scalar variable of type
+	IpAddress and the IP address "0.0.0.0" as value. """
+
+	global testenv
+
+	(data, datatype) = testenv.snmpget("TEST-MIB::testIpAddressNoInitval")
+	eq_(datatype, "IpAddress")
+	eq_(data, "0.0.0.0")
+
+@timed(1)
+def test_GET_IpAddressEmptyInitval_eq_0_0_0_0():
+	""" GET(IpAddress(initval="")) == "0.0.0.0"
+
+	This tests that the instantiation of an IpAddress SNMP object with an
+	empty string as initval resulted in a snmpget'able scalar variable of type
+	IpAddress and the IP address "0.0.0.0" as value. """
+
+	global testenv
+
+	(data, datatype) = testenv.snmpget("TEST-MIB::testIpAddressEmptyInitval")
+	eq_(datatype, "IpAddress")
+	eq_(data, "0.0.0.0")
+
+@timed(1)
+def test_GET_IpAddress1234Initval_eq_1_2_3_4():
+	""" GET(IpAddress(initval="1.2.3.4")) == "1.2.3.4"
+
+	This tests that the instantiation of an IpAddress SNMP object with the
+	string "1.2.3.4" as initval resulted in a snmpget'able scalar variable of
+	type IpAddress and the IP address '1.2.3.4' as value. """
+
+	global testenv
+
+	(data, datatype) = testenv.snmpget("TEST-MIB::testIpAddress1234Initval")
+	eq_(datatype, "IpAddress")
+	eq_(data, "1.2.3.4")
 
 @timed(1)
 def test_GET_OctetStringWithoutInitval_eq_Empty():

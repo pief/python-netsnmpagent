@@ -6,7 +6,22 @@
 # net-snmp C API abstraction module
 #
 
-import ctypes, ctypes.util
+import ctypes, ctypes.util, locale
+
+# Helper functions to deal with converting between byte strings (required by
+# ctypes) and Unicode strings (possibly used by the Python version in use)
+#
+# Not really net-snmp stuff but I prefer to avoid introducing yet another
+# Python module for the Python 2/3 compatibility stuff.
+def b(s):
+	""" Encodes Unicode strings to byte strings, if necessary. """
+
+	return s if isinstance(s, bytes) else s.encode(locale.getpreferredencoding())
+
+def u(s):
+	""" Decodes byte strings to Unicode strings, if necessary. """
+
+	return s if isinstance("Test", bytes) else s.decode(locale.getpreferredencoding())
 
 c_sizet_p = ctypes.POINTER(ctypes.c_size_t)
 

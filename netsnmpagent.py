@@ -18,12 +18,10 @@ actually takes care of in its API's helpers.
 This module, by contrast, concentrates on wrapping the net-snmp C API
 for SNMP subagents in an easy manner. """
 
-import sys, os, socket, struct, re, locale
+import sys, os, re, inspect, ctypes, socket, struct
 from collections import defaultdict
 from netsnmpapi import *
-
-# Maximum string size supported by python-netsnmpagent
-MAX_STRING_SIZE = 1024
+import netsnmpvartypes
 
 # Helper function courtesy of Alec Thomas and taken from
 # http://stackoverflow.com/questions/36932/how-can-i-represent-an-enum-in-python
@@ -38,18 +36,6 @@ def enum(*sequential, **named):
 	enums["Names"] = dict((value,key) for key, value in enums_iterator)
 	return type("Enum", (), enums)
 
-# Helper functions to deal with converting between byte strings (required by
-# ctypes) and Unicode strings (possibly used by the Python version in use)
-def b(s):
-	""" Encodes Unicode strings to byte strings, if necessary. """
-
-	return s if isinstance(s, bytes) else s.encode(locale.getpreferredencoding())
-
-def u(s):
-	""" Decodes byte strings to Unicode strings, if necessary. """
-
-	return s if isinstance("Test", bytes) else s.decode(locale.getpreferredencoding())
-
 # Indicates the status of a netsnmpAgent object
 netsnmpAgentStatus = enum(
 	"REGISTRATION",     # Unconnected, SNMP object registrations possible
@@ -58,14 +44,6 @@ netsnmpAgentStatus = enum(
 	"CONNECTED",        # Connected to a running snmpd instance
 	"RECONNECTING",     # Got disconnected, trying to reconnect
 )
-
-# Helper function to determine if "x" is a num
-def isnum(x):
-	try:
-		x + 1
-		return True
-	except TypeError:
-		return False
 
 class netsnmpAgent(object):
 	""" Implements an SNMP agent using the net-snmp libraries. """
@@ -338,6 +316,73 @@ class netsnmpAgent(object):
 		# Initialize our SNMP object registry
 		self._objs = defaultdict(dict)
 
+		# For each non-private VarType-inheriting class in the netsnmpvartypes
+		# module we dynamically define a class wrapper method in our
+		# netsnmpAgent class which, besides instantiation, sets up a Net-SNMP
+		# watcher for the instance and registers it within our object registry.
+		for vartype_cls in [
+			m[1]
+			for m
+			in inspect.getmembers(sys.modules["netsnmpvartypes"])
+			if not m[0].startswith("_")
+			and inspect.isclass(m[1])
+			and issubclass(m[1], netsnmpvartypes._VarType)
+		]:
+			# Parse the argument specification for the class's __init__ method
+			# to get its default for "initval"
+			argspec = inspect.getargspec(vartype_cls.__init__)
+			default_initval = argspec[3][list(filter(lambda e: e != "self", argspec[0])).index("initval")]
+
+			# Make class wrapper method available in our netsnmpAgent
+			# module under the name of the VarType class
+			cls_wrapper = self._generateVarTypeClassWrapper(vartype_cls, default_initval)
+			setattr(self, vartype_cls.__name__, cls_wrapper)
+
+	def _generateVarTypeClassWrapper(self, vartype_cls, default_initval):
+		def _cls_wrapper(initval = default_initval, oidstr = None, writable = True, context = ""):
+			# Get instance of VarType-inheriting class
+			cls_inst = vartype_cls(initval)
+
+			# If an oidstr has been provided, this is a standalone scalar
+			# variable, i.e. it is not used inside a table.
+			if oidstr:
+				# Prepare the netsnmp_handler_registration structure.
+				handler_reginfo = self._prepareRegistration(oidstr, writable)
+				handler_reginfo.contents.contextName = b(context)
+
+				# Create the netsnmp_watcher_info structure.
+				cls_inst._watcher = libnsX.netsnmp_create_watcher_info(
+					cls_inst.cref(),
+					cls_inst._data_size,
+					cls_inst._asntype,
+					cls_inst._watcher_flags
+				)
+
+				# Explicitly set netsnmp_watcher_info structure's
+				# max_size parameter. netsnmp_create_watcher_info6 would
+				# have done that for us but that function was not yet
+				# available in net-snmp 5.4.x.
+				cls_inst._watcher.contents.max_size = cls_inst._max_size
+
+				# Register handler and watcher with net-snmp.
+				result = libnsX.netsnmp_register_watched_scalar(
+					handler_reginfo,
+					cls_inst._watcher
+				)
+				if result != 0:
+					raise netsnmpAgentException("Error registering variable with net-snmp!")
+
+				# Finally, we keep track of all registered SNMP objects for the
+				# getRegistered() method.
+				self._objs[context][oidstr] = cls_inst
+
+			return cls_inst
+
+		_cls_wrapper.__name__         = vartype_cls.__name__
+		_cls_wrapper.__doc__          = vartype_cls.__doc__
+
+		return _cls_wrapper
+
 	def _prepareRegistration(self, oidstr, writable = True):
 		# Make sure the agent has not been start()ed yet
 		if self._status != netsnmpAgentStatus.REGISTRATION:
@@ -385,257 +430,6 @@ class netsnmpAgent(object):
 		)
 
 		return handler_reginfo
-
-	def VarTypeClass(property_func):
-		""" Decorator that transforms a simple property_func into a class
-		    factory returning instances of a class for the particular SNMP
-		    variable type. property_func is supposed to return a dictionary with
-		    the following elements:
-		    - "ctype"           : A reference to the ctypes constructor method
-		                          yielding the appropriate C representation of
-		                          the SNMP variable, eg. ctypes.c_long or
-		                          ctypes.create_string_buffer.
-		    - "flags"           : A net-snmp constant describing the C data
-		                          type's storage behavior, currently either
-		                          WATCHER_FIXED_SIZE or WATCHER_MAX_SIZE.
-		    - "max_size"        : The maximum allowed string size if "flags"
-		                          has been set to WATCHER_MAX_SIZE.
-		    - "initval"         : The value to initialize the C data type with,
-		                          eg. 0 or "".
-		    - "asntype"         : A constant defining the SNMP variable type
-		                          from an ASN.1 perspective, eg. ASN_INTEGER.
-		    - "context"         : A string defining the context name for the
-		                          SNMP variable
-		
-		    The class instance returned will have no association with net-snmp
-		    yet. Use the Register() method to associate it with an OID. """
-
-		# This is the replacement function, the "decoration"
-		def create_vartype_class(self, initval = None, oidstr = None, writable = True, context = ""):
-			agent = self
-
-			# Call the original property_func to retrieve this variable type's
-			# properties. Passing "initval" to property_func may seem pretty
-			# useless as it won't have any effect and we use it ourselves below.
-			# However we must supply it nevertheless since it's part of
-			# property_func's function signature which THIS function shares.
-			# That's how Python's decorators work.
-			props = property_func(self, initval)
-
-			# Use variable type's default initval if we weren't given one
-			if initval == None:
-				initval = props["initval"]
-
-			# Create a class to wrap ctypes' access semantics and enable
-			# Register() to do class-specific registration work.
-			#
-			# Since the part behind the "class" keyword can't be a variable, we
-			# use the proxy name "cls" and overwrite its __name__ property
-			# after class creation.
-			class cls(object):
-				def __init__(self):
-					for prop in ["flags", "asntype"]:
-						setattr(self, "_{0}".format(prop), props[prop])
-
-					# Create the ctypes class instance representing the variable
-					# to be handled by the net-snmp C API. If this variable type
-					# has no fixed size, pass the maximum size as second
-					# argument to the constructor.
-					if props["flags"] == WATCHER_FIXED_SIZE:
-						if self._asntype == ASN_IPADDRESS:
-							self._cvar = props["ctype"](0)
-						else:
-							self._cvar = props["ctype"](initval if isnum(initval) else b(initval))
-						self._data_size = ctypes.sizeof(self._cvar)
-						self._max_size  = self._data_size
-					else:
-						self._cvar      = props["ctype"](initval if isnum(initval) else b(initval), props["max_size"])
-						self._data_size = len(self._cvar.value)
-						self._max_size  = max(self._data_size, props["max_size"])
-
-					if self._asntype == ASN_IPADDRESS:
-						self.update(initval)
-
-					if oidstr:
-						# Prepare the netsnmp_handler_registration structure.
-						handler_reginfo = agent._prepareRegistration(oidstr, writable)
-						handler_reginfo.contents.contextName = b(context)
-
-						# Create the netsnmp_watcher_info structure.
-						self._watcher = libnsX.netsnmp_create_watcher_info(
-							self.cref(),
-							self._data_size,
-							self._asntype,
-							self._flags
-						)
-
-						# Explicitly set netsnmp_watcher_info structure's
-						# max_size parameter. netsnmp_create_watcher_info6 would
-						# have done that for us but that function was not yet
-						# available in net-snmp 5.4.x.
-						self._watcher.contents.max_size = self._max_size
-
-						# Register handler and watcher with net-snmp.
-						result = libnsX.netsnmp_register_watched_scalar(
-							handler_reginfo,
-							self._watcher
-						)
-						if result != 0:
-							raise netsnmpAgentException("Error registering variable with net-snmp!")
-
-						# Finally, we keep track of all registered SNMP objects for the
-						# getRegistered() method.
-						agent._objs[context][oidstr] = self
-
-				def value(self):
-					if self._asntype == ASN_IPADDRESS:
-						return socket.inet_ntoa(
-							struct.pack("I", self._cvar.value)
-						)
-					else:
-						val = self._cvar.value
-
-						if isnum(val):
-							# Python 2.x will automatically switch from the "int"
-							# type to the "long" type, if necessary. Python 3.x
-							# has no limits on the "int" type anymore.
-							val = int(val)
-						else:
-							val = u(val)
-
-						return val
-
-				def cref(self, **kwargs):
-					if self._asntype == ASN_IPADDRESS:
-						# Due to an unfixed Net-SNMP issue (see
-						# https://sourceforge.net/p/net-snmp/bugs/2136/) we have
-						# to convert the value to host byte order if it shall be
-						# used as table index.
-						if kwargs.get("is_table_index", False) == False:
-							return ctypes.byref(self._cvar)
-						else:
-							_cidx = ctypes.c_uint(0)
-							_cidx.value = struct.unpack("I", struct.pack("!I", self._cvar.value))[0]
-							return ctypes.byref(_cidx)
-					else:
-						return ctypes.byref(self._cvar) if self._flags == WATCHER_FIXED_SIZE \
-														else self._cvar
-
-				def update(self, val):
-					if self._asntype == ASN_IPADDRESS:
-						# Convert dotted decimal IP address string to ctypes
-						# unsigned int in network byte order.
-						self._cvar.value = struct.unpack(
-							"I",
-							socket.inet_aton(val if val else "0.0.0.0")
-						)[0]
-					else:
-						if self._asntype == ASN_COUNTER and val >> 32:
-							val = val & 0xFFFFFFFF
-						if self._asntype == ASN_COUNTER64 and val >> 64:
-							val = val & 0xFFFFFFFFFFFFFFFF
-						self._cvar.value = val
-						if props["flags"] == WATCHER_MAX_SIZE:
-							if len(val) > self._max_size:
-								raise netsnmpAgentException(
-									"Value passed to update() truncated: {0} > {1} "
-									"bytes!".format(len(val), self._max_size)
-								)
-							self._data_size = self._watcher.contents.data_size = len(val)
-
-				if props["asntype"] in [ASN_COUNTER, ASN_COUNTER64]:
-					def increment(self, count=1):
-						self.update(self.value() + count)
-
-			cls.__name__ = property_func.__name__
-
-			# Return an instance of the just-defined class to the agent
-			return cls()
-
-		return create_vartype_class
-
-	@VarTypeClass
-	def Integer32(self, initval = None, oidstr = None, writable = True, context = ""):
-		return {
-			"ctype"         : ctypes.c_long,
-			"flags"         : WATCHER_FIXED_SIZE,
-			"initval"       : 0,
-			"asntype"       : ASN_INTEGER
-		}
-
-	@VarTypeClass
-	def Unsigned32(self, initval = None, oidstr = None, writable = True, context = ""):
-		return {
-			"ctype"         : ctypes.c_ulong,
-			"flags"         : WATCHER_FIXED_SIZE,
-			"initval"       : 0,
-			"asntype"       : ASN_UNSIGNED
-		}
-
-	@VarTypeClass
-	def Counter32(self, initval = None, oidstr = None, writable = True, context = ""):
-		return {
-			"ctype"         : ctypes.c_ulong,
-			"flags"         : WATCHER_FIXED_SIZE,
-			"initval"       : 0,
-			"asntype"       : ASN_COUNTER
-		}
-
-	@VarTypeClass
-	def Counter64(self, initval = None, oidstr = None, writable = True, context = ""):
-		return {
-			"ctype"         : counter64,
-			"flags"         : WATCHER_FIXED_SIZE,
-			"initval"       : 0,
-			"asntype"       : ASN_COUNTER64
-		}
-
-	@VarTypeClass
-	def TimeTicks(self, initval = None, oidstr = None, writable = True, context = ""):
-		return {
-			"ctype"         : ctypes.c_ulong,
-			"flags"         : WATCHER_FIXED_SIZE,
-			"initval"       : 0,
-			"asntype"       : ASN_TIMETICKS
-		}
-
-	# Note we can't use ctypes.c_char_p here since that creates an immutable
-	# type and net-snmp _can_ modify the buffer (unless writable is False).
-	# Also note that while net-snmp 5.5 introduced a WATCHER_SIZE_STRLEN flag,
-	# we have to stick to WATCHER_MAX_SIZE for now to support net-snmp 5.4.x
-	# (used eg. in SLES 11 SP2 and Ubuntu 12.04 LTS).
-	@VarTypeClass
-	def OctetString(self, initval = None, oidstr = None, writable = True, context = ""):
-		return {
-			"ctype"         : ctypes.create_string_buffer,
-			"flags"         : WATCHER_MAX_SIZE,
-			"max_size"      : MAX_STRING_SIZE,
-			"initval"       : "",
-			"asntype"       : ASN_OCTET_STR
-		}
-
-	# Whereas an OctetString can contain UTF-8 encoded characters, a
-	# DisplayString is restricted to ASCII characters only.
-	@VarTypeClass
-	def DisplayString(self, initval = None, oidstr = None, writable = True, context = ""):
-		return {
-			"ctype"         : ctypes.create_string_buffer,
-			"flags"         : WATCHER_MAX_SIZE,
-			"max_size"      : MAX_STRING_SIZE,
-			"initval"       : "",
-			"asntype"       : ASN_OCTET_STR
-		}
-
-	# IP addresses are stored as unsigned integers, but the Python interface
-	# should use strings.
-	@VarTypeClass
-	def IpAddress(self, initval = "0.0.0.0", oidstr = None, writable = True, context = ""):
-		return {
-			"ctype"         : ctypes.c_uint,
-			"flags"         : WATCHER_FIXED_SIZE,
-			"initval"       : 0,
-			"asntype"       : ASN_IPADDRESS
-		}
 
 	def Table(self, oidstr, indexes, columns, counterobj = None, extendable = False, context = ""):
 		agent = self

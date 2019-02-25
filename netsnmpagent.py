@@ -663,7 +663,7 @@ class netsnmpAgent(object):
 				# unsigned int in network byte order.
 				self._cvar.value = struct.unpack(
 					"I",
-					socket.inet_aton(val)
+					socket.inet_aton(val if val else "0.0.0.0")
 				)[0]
 
 		# Return an instance of the just-defined class to the agent

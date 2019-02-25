@@ -901,7 +901,7 @@ def test_GET_IpAddressWithoutInitval_eq_0_0_0_0():
 
 	global testenv
 
-	(data, datatype) = testenv.snmpget("TEST-MIB::testIpAddressNoInitval")
+	(data, datatype) = testenv.snmpget("TEST-MIB::testIpAddressNoInitval.0")
 	eq_(datatype, "IpAddress")
 	eq_(data, "0.0.0.0")
 
@@ -915,7 +915,7 @@ def test_GET_IpAddressEmptyInitval_eq_0_0_0_0():
 
 	global testenv
 
-	(data, datatype) = testenv.snmpget("TEST-MIB::testIpAddressEmptyInitval")
+	(data, datatype) = testenv.snmpget("TEST-MIB::testIpAddressEmptyInitval.0")
 	eq_(datatype, "IpAddress")
 	eq_(data, "0.0.0.0")
 
@@ -929,7 +929,7 @@ def test_GET_IpAddress1234Initval_eq_1_2_3_4():
 
 	global testenv
 
-	(data, datatype) = testenv.snmpget("TEST-MIB::testIpAddress1234Initval")
+	(data, datatype) = testenv.snmpget("TEST-MIB::testIpAddress1234Initval.0")
 	eq_(datatype, "IpAddress")
 	eq_(data, "1.2.3.4")
 

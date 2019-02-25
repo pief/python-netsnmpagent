@@ -2,7 +2,7 @@
 # encoding: utf-8
 #
 # python-netsnmpagent module
-# Copyright (c) 2013-2016 Pieter Hollants <pieter@hollants.com>
+# Copyright (c) 2013-2019 Pieter Hollants <pieter@hollants.com>
 # Licensed under the GNU Lesser Public License (LGPL) version 3
 #
 # net-snmp test environment module

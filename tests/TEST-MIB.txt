@@ -46,12 +46,13 @@ testScalars     OBJECT IDENTIFIER ::= { testMIBObjects 1 }
 -- Scalars
 ------------------------------------------------------------------------
 
-testInteger32    OBJECT IDENTIFIER ::= { testScalars 1 }
-testUnsigned32   OBJECT IDENTIFIER ::= { testScalars 2 }
-testCounter32    OBJECT IDENTIFIER ::= { testScalars 3 }
-testCounter64    OBJECT IDENTIFIER ::= { testScalars 4 }
-testTimeTicks    OBJECT IDENTIFIER ::= { testScalars 5 }
-testOctetString  OBJECT IDENTIFIER ::= { testScalars 6 }
+testInteger32      OBJECT IDENTIFIER ::= { testScalars 1 }
+testUnsigned32     OBJECT IDENTIFIER ::= { testScalars 2 }
+testCounter32      OBJECT IDENTIFIER ::= { testScalars 3 }
+testCounter64      OBJECT IDENTIFIER ::= { testScalars 4 }
+testTimeTicks      OBJECT IDENTIFIER ::= { testScalars 5 }
+testOctetString    OBJECT IDENTIFIER ::= { testScalars 6 }
+testDisplayString  OBJECT IDENTIFIER ::= { testScalars 7 }
 
 -- Test OIDs for the Integer32 scalar type
 testInteger32NoInitval OBJECT-TYPE
@@ -438,5 +439,49 @@ testOctetString256UTF8CharsInitval OBJECT-TYPE
         "A read-write OctetString with a string consisting of 256 UTF8
         characters as initval."
     ::= { testOctetString 8 }
+
+-- Test OIDs for the DisplayString scalar type
+testDisplayStringNoInitval OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "A read-write DisplayString with no initval."
+    ::= { testDisplayString 1 }
+
+testDisplayStringEmptyInitval OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "A read-write DisplayString with an empty string as initval."
+    ::= { testDisplayString 2 }
+
+testDisplayStringOneASCIICharInitval OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "A read-write DisplayString with a string consisting of a single
+        ASCII character as initval."
+    ::= { testDisplayString 3 }
+
+testDisplayString255ASCIICharsInitval OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "A read-write DisplayString with a string consisting of 255 ASCII
+        characters as initval."
+    ::= { testDisplayString 4 }
+
+testDisplayString256ASCIICharsInitval OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "A read-write DisplayString with a string consisting of 256 ASCII
+        characters as initval."
+    ::= { testDisplayString 5 }
 
 END

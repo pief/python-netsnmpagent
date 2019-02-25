@@ -17,7 +17,7 @@ import netsnmpagent
 def setUp(self):
 	global testenv, agent
 	global settableInteger32, settableUnsigned32, settableTimeTicks
-	global settableOctetString
+	global settableOctetString, settableDisplayString
 
 	testenv = netsnmpTestEnv()
 
@@ -247,6 +247,31 @@ def setUp(self):
 	agent.OctetString(
 		oidstr  = "TEST-MIB::testOctetString256UTF8CharsInitval",
 		initval = "Ä" * 256,
+	)
+
+	# Test OIDs for DisplayString scalar type
+	settableDisplayString = agent.DisplayString(
+		oidstr = "TEST-MIB::testDisplayStringNoInitval",
+	)
+
+	agent.DisplayString(
+		oidstr  = "TEST-MIB::testDisplayStringEmptyInitval",
+		initval = "",
+	)
+
+	agent.DisplayString(
+		oidstr  = "TEST-MIB::testDisplayStringOneASCIICharInitval",
+		initval = "A",
+	)
+
+	agent.DisplayString(
+		oidstr  = "TEST-MIB::testDisplayString255ASCIICharsInitval",
+		initval = "A" * 255,
+	)
+
+	agent.DisplayString(
+		oidstr  = "TEST-MIB::testDisplayString256ASCIICharsInitval",
+		initval = "A" * 256,
 	)
 
 	# Connect to master snmpd instance
@@ -998,5 +1023,107 @@ def test_GET_SET_OctetStringWithoutInterval_abcdef_eq_abcdef():
 	global testenv
 
 	(data, datatype) = testenv.snmpget("TEST-MIB::testOctetStringNoInitval.0")
+	eq_(datatype, "STRING")
+	eq_(data, "abcdef")
+
+@timed(1)
+def test_GET_DisplayStringWithoutInitval_eq_Empty():
+	""" GET(DisplayString()) == ""
+
+	This tests that the instantiation of a DisplayString SNMP object without
+	specifying an initval resulted in a snmpget'able scalar variable of type
+	STRING and an empty string as value. """
+
+	global testenv
+
+	(data, datatype) = testenv.snmpget("TEST-MIB::testDisplayStringNoInitval.0")
+	eq_(datatype, "STRING")
+	eq_(data, "")
+
+@timed(1)
+def test_GET_DisplayStringEmptyInitval_eq_Empty():
+	""" GET(DisplayString(initval="")) == ""
+
+	This tests that the instantiation of a DisplayString SNMP object with an
+	empty string as initval resulted in a snmpget'able scalar variable of type
+	STRING and an empty string as value. """
+
+	global testenv
+
+	(data, datatype) = testenv.snmpget("TEST-MIB::testDisplayStringEmptyInitval.0")
+	eq_(datatype, "STRING")
+	eq_(data, "")
+
+@timed(1)
+def test_GET_DisplayStringOneASCIICharInitval_eq_ASCIIChar():
+	""" GET(DisplayString(initval="A")) == "A"
+
+	This tests that the instantiation of a DisplayString SNMP object with a
+	string consisting of a single ASCII character 'A' as initval resulted in a
+	snmpget'able scalar variable of type STRING and the single ASCII character
+	'A' as value. """
+
+	global testenv
+
+	(data, datatype) = testenv.snmpget("TEST-MIB::testDisplayStringOneASCIICharInitval.0")
+	eq_(datatype, "STRING")
+	eq_(data, "A")
+
+@timed(1)
+def test_GET_DisplayString255ASCIICharsInitval_eq_255ASCIIChars():
+	""" GET(DisplayString(initval="AAA..." [n=255])) == "AAA..." [n=255]
+
+	This tests that the instantiation of a DisplayString SNMP object with a
+	string consisting of 255 ASCII characters as initval resulted in a
+	snmpget'able scalar variable of type STRING and the 255 ASCII characters
+	as value. """
+
+	global testenv
+
+	(data, datatype) = testenv.snmpget("TEST-MIB::testDisplayString255ASCIICharsInitval.0")
+	eq_(datatype, "STRING")
+	eq_(data, "A" * 255)
+
+@timed(1)
+def test_GET_DisplayString256ASCIICharsInitval_eq_256ASCIIChars():
+	""" GET(DisplayString(initval="AAA..." [n=256])) == "AAA..." [n=256]
+
+	This tests that the instantiation of a DisplayString SNMP object with a
+	string consisting of 256 ASCII characters as initval resulted in a
+	snmpget'able scalar variable of type STRING and 256 ASCII characters
+	as value. """
+
+	global testenv
+
+	(data, datatype) = testenv.snmpget("TEST-MIB::testDisplayString256ASCIICharsInitval.0")
+	eq_(datatype, "STRING")
+	eq_(data, "A" * 256)
+
+@timed(1)
+def test_SET_DisplayStringWithoutInterval_abcdef_eq_abcdef():
+	""" SET(DisplayString(), abcdef) == abcdef
+
+	This tests that calling snmpset on a previously instantiated scalar
+	variable of type DisplayString and the empty string "" as value (this was
+	confirmed by an earlier test) with the new value "abcdef" results in the
+	netsnmpagent SNMP object returning "abcdef" as its value, too. """
+
+	global testenv, settableDisplayString
+
+	print(testenv.snmpset("TEST-MIB::testDisplayStringNoInitval.0", "abcdef", "s"))
+
+	eq_(settableDisplayString.value(), "abcdef")
+
+@timed(1)
+def test_GET_SET_DisplayStringWithoutInterval_abcdef_eq_abcdef():
+	""" GET(SET(DisplayString(), abcdef)) == abcdef
+
+	This tests that calling snmpget on the previously instantiated scalar
+	variable of type DisplayString that has just been set to "abcdef" also
+	returns this new variable when accessed through snmpget. """
+
+	global testenv
+
+	(data, datatype) = testenv.snmpget("TEST-MIB::testDisplayStringNoInitval.0")
 	eq_(datatype, "STRING")
 	eq_(data, "abcdef")

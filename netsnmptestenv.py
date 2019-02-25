@@ -142,6 +142,8 @@ class netsnmpTestEnv(object):
 		if rc == 0:
 			if re.search(" = No Such Object available on this agent at this OID", output):
 				raise netsnmpTestEnv.MIBUnavailableError(oid)
+			if re.search("= No Such Instance currently exists at this OID", output):
+				raise netsnmpTestEnv.UnknownOIDError(oid)
 			return output
 
 		if re.search(": Unknown Object Identifier", output):

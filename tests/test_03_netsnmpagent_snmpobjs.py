@@ -665,7 +665,7 @@ def test_GET_Counter32MaxInitval_eq_max():
 def test_GET_Counter32MaxPlusOneInitval_eq_zero():
 	""" GET(Counter32(initval=4294967296)) == 0
 
-	This tests that the instantiation of an Counter32 SNMP object with an
+	This tests that the instantiation of a Counter32 SNMP object with an
 	initval of 4294967296 resulted in a snmpget'able scalar variable of type
 	Counter32 and value 0. """
 
@@ -675,7 +675,7 @@ def test_GET_Counter32MaxPlusOneInitval_eq_zero():
 	eq_(datatype, "Counter32")
 	eq_(int(data), 0)
 
-# No way to test SETting a Counter64 because snmpset does not support it
+# No way to test SETting a Counter32 because snmpset does not support it
 # (see http://sourceforge.net/p/net-snmp/feature-requests/4/ and RFC2578
 # Section 7.1.6)
 
@@ -753,7 +753,7 @@ def test_GET_Counter64MaxInitval_eq_max():
 def test_GET_Counter64MaxPlusOneInitval_eq_zero():
 	""" GET(Counter64(initval=18446744073709551616)) == 0
 
-	This tests that the instantiation of an Counter64 SNMP object with an
+	This tests that the instantiation of a Counter64 SNMP object with an
 	initval of 18446744073709551617 resulted in a snmpget'able scalar variable
 	of type Counter64 and value 0. """
 

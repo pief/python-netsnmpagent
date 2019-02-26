@@ -97,6 +97,20 @@ class Counter64(_FixedSizeVarType):
 			val = val & 0xFFFFFFFFFFFFFFFF
 		super(Counter64, self).update(val)
 
+	def increment(self, count=1):
+		self.update(self.value() + count)
+
+class Gauge32(_FixedSizeVarType):
+	def __init__(self, initval = 0):
+		self._asntype = ASN_GAUGE
+		self._ctype   = ctypes.c_ulong
+		super(Gauge32, self).__init__(initval)
+
+	def update(self, val):
+		# Restrict values larger than 32 bits to ULONG_MAX
+		if val >> 32:
+			val = 0xFFFFFFFF
+		super(Gauge32, self).update(val)
 
 	def increment(self, count=1):
 		self.update(self.value() + count)

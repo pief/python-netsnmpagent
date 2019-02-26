@@ -9,8 +9,8 @@ TEST-MIB DEFINITIONS ::= BEGIN
 -- Imports
 IMPORTS
     MODULE-IDENTITY, OBJECT-TYPE, NOTIFICATION-TYPE,
-    Integer32, Unsigned32, Counter32, Counter64, TimeTicks, IpAddress,
-    enterprises
+    Integer32, Unsigned32, Counter32, Counter64, Gauge32, TimeTicks,
+    IpAddress, enterprises
         FROM SNMPv2-SMI
     TEXTUAL-CONVENTION, DisplayString
         FROM SNMPv2-TC
@@ -50,10 +50,11 @@ testInteger32      OBJECT IDENTIFIER ::= { testScalars 1 }
 testUnsigned32     OBJECT IDENTIFIER ::= { testScalars 2 }
 testCounter32      OBJECT IDENTIFIER ::= { testScalars 3 }
 testCounter64      OBJECT IDENTIFIER ::= { testScalars 4 }
-testTimeTicks      OBJECT IDENTIFIER ::= { testScalars 5 }
-testIpAddress      OBJECT IDENTIFIER ::= { testScalars 6 }
-testOctetString    OBJECT IDENTIFIER ::= { testScalars 7 }
-testDisplayString  OBJECT IDENTIFIER ::= { testScalars 8 }
+testGauge32        OBJECT IDENTIFIER ::= { testScalars 5 }
+testTimeTicks      OBJECT IDENTIFIER ::= { testScalars 6 }
+testIpAddress      OBJECT IDENTIFIER ::= { testScalars 7 }
+testOctetString    OBJECT IDENTIFIER ::= { testScalars 8 }
+testDisplayString  OBJECT IDENTIFIER ::= { testScalars 9 }
 
 -- Test OIDs for the Integer32 scalar type
 testInteger32NoInitval OBJECT-TYPE
@@ -307,6 +308,61 @@ testCounter64MaxPlusOneInitval OBJECT-TYPE
         value, with an initval of the maximum value (18446744073709551615)
         plus one."
     ::= { testCounter64 6 }
+
+-- Test OIDs for the Gauge32 scalar type
+testGauge32NoInitval OBJECT-TYPE
+    SYNTAX      Gauge32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "A read-write, unsigned, 32-bits, monotonically increasing integer
+        value, with no initval."
+    ::= { testGauge32 1 }
+
+testGauge32ZeroInitval OBJECT-TYPE
+    SYNTAX      Gauge32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "A read-write, unsigned, 32-bits, monotonically increasing integer
+        value, with an initval of zero."
+    ::= { testGauge32 2 }
+
+testGauge32MinusOneInitval OBJECT-TYPE
+    SYNTAX      Gauge32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "A read-write, unsigned, 32-bits, monotonically increasing integer
+        value, with an initval of minus one."
+    ::= { testGauge32 3 }
+
+testGauge32OneInitval OBJECT-TYPE
+    SYNTAX      Gauge32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "A read-write, unsigned, 32-bits, monotonically increasing integer
+        value, with an initval of one."
+    ::= { testGauge32 4 }
+
+testGauge32MaxInitval OBJECT-TYPE
+    SYNTAX      Gauge32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "A read-write, unsigned, 32-bits, monotonically increasing integer
+        value, with an initval of the maximum value (4294967295)."
+    ::= { testGauge32 5 }
+
+testGauge32MaxPlusOneInitval OBJECT-TYPE
+    SYNTAX      Gauge32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "A read-write, unsigned, 32-bits, monotonically increasing integer
+        value, with an initval of the maximum value (4294967295) plus one."
+    ::= { testGauge32 6 }
 
 -- Test OIDs for the TimeTicks scalar type
 testTimeTicksNoInitval OBJECT-TYPE

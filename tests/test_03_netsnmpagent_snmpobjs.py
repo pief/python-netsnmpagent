@@ -174,6 +174,36 @@ def setUp(self):
 		initval = 18446744073709551616,
 	)
 
+	# Test OIDs for Gauge32 scalar type
+	agent.Gauge32(
+		oidstr = "TEST-MIB::testGauge32NoInitval",
+	)
+
+	agent.Gauge32(
+		oidstr  = "TEST-MIB::testGauge32ZeroInitval",
+		initval = 0,
+	)
+
+	agent.Gauge32(
+		oidstr  = "TEST-MIB::testGauge32MinusOneInitval",
+		initval = -1,
+	)
+
+	agent.Gauge32(
+		oidstr  = "TEST-MIB::testGauge32OneInitval",
+		initval = 1,
+	)
+
+	agent.Gauge32(
+		oidstr  = "TEST-MIB::testGauge32MaxInitval",
+		initval = 4294967295,
+	)
+
+	agent.Gauge32(
+		oidstr  = "TEST-MIB::testGauge32MaxPlusOneInitval",
+		initval = 4294967296,
+	)
+
 	# Test OIDs for TimeTicks scalar type
 	settableTimeTicks = agent.TimeTicks(
 		oidstr = "TEST-MIB::testTimeTicksNoInitval",
@@ -766,6 +796,90 @@ def test_GET_Counter64MaxPlusOneInitval_eq_zero():
 # No way to test SETting a Counter64 because snmpset does not support it
 # (see http://sourceforge.net/p/net-snmp/feature-requests/4/ and RFC2578
 # Section 7.1.10)
+
+@timed(1)
+def test_GET_Gauge32WithoutInitval_eq_Zero():
+	""" GET(Gauge32()) == 0
+
+	This tests that the instantiation of a Gauge32 SNMP object without
+	specifying an initval resulted in a snmpget'able scalar variable of type
+	Gauge32 and value 0. """
+
+	global testenv
+
+	(data, datatype) = testenv.snmpget("TEST-MIB::testGauge32NoInitval.0")
+	eq_(datatype, "Gauge32")
+	eq_(int(data), 0)
+
+@timed(1)
+def test_GET_Gauge32ZeroInitval_eq_Zero():
+	""" GET(Gauge32(initval=0)) == 0
+
+	This tests that the instantiation of a Gauge32 SNMP object with an
+	initval of 0 resulted in a snmpget'able scalar variable of type Gauge32
+	and value 0. """
+
+	global testenv
+
+	(data, datatype) = testenv.snmpget("TEST-MIB::testGauge32ZeroInitval.0")
+	eq_(datatype, "Gauge32")
+	eq_(int(data), 0)
+
+@timed(1)
+def test_GET_Gauge32MinusOneInitval_eq_Max():
+	""" GET(Gauge32(initval=-1)) == 4294967295
+
+	This tests that the instantiation of a Gauge32 SNMP object with an
+	initval of -1 resulted in a snmpget'able scalar variable of type Gauge32
+	and value 4294967295. """
+
+	global testenv
+
+	(data, datatype) = testenv.snmpget("TEST-MIB::testGauge32MinusOneInitval.0")
+	eq_(datatype, "Gauge32")
+	eq_(int(data), 4294967295)
+
+@timed(1)
+def test_GET_Gauge32OneInitval_eq_One():
+	""" GET(Gauge32(initval=1)) == 1
+
+	This tests that the instantiation of a Gauge32 SNMP object with an
+	initval of 1 resulted in a snmpget'able scalar variable of type Gauge32
+	and value 1. """
+
+	global testenv
+
+	(data, datatype) = testenv.snmpget("TEST-MIB::testGauge32OneInitval.0")
+	eq_(datatype, "Gauge32")
+	eq_(int(data), 1)
+
+@timed(1)
+def test_GET_Gauge32MaxInitval_eq_max():
+	""" GET(Gauge32(initval=4294967295)) == 4294967295
+
+	This tests that the instantiation of a Gauge32 SNMP object with an
+	initval of 4294967295 resulted in a snmpget'able scalar variable of type
+	Gauge32 and value 4294967295. """
+
+	global testenv
+
+	(data, datatype) = testenv.snmpget("TEST-MIB::testGauge32MaxInitval.0")
+	eq_(datatype, "Gauge32")
+	eq_(int(data), 4294967295)
+
+@timed(1)
+def test_GET_Gauge32MaxPlusOneInitval_eq_zero():
+	""" GET(Gauge32(initval=4294967296)) == 0
+
+	This tests that the instantiation of a Gauge32 SNMP object with an
+	initval of 4294967296 resulted in a snmpget'able scalar variable of type
+	Gauge32 and value 0. """
+
+	global testenv
+
+	(data, datatype) = testenv.snmpget("TEST-MIB::testGauge32MaxPlusOneInitval.0")
+	eq_(datatype, "Gauge32")
+	eq_(int(data), 0)
 
 @timed(1)
 def test_GET_TimeTicksWithoutInitval_eq_Zero():

@@ -246,6 +246,7 @@ counter64._fields_ = [
 ASN_IPADDRESS                           = ASN_APPLICATION | 0
 ASN_COUNTER                             = ASN_APPLICATION | 1
 ASN_UNSIGNED                            = ASN_APPLICATION | 2
+ASN_GAUGE                               = ASN_APPLICATION | 2
 ASN_TIMETICKS                           = ASN_APPLICATION | 3
 ASN_COUNTER64                           = ASN_APPLICATION | 6
 

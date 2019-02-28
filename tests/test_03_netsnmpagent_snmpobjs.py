@@ -254,6 +254,36 @@ def setUp(self):
 		initval = "1.2.3.4"
 	)
 
+	# Test OIDs for Float scalar type
+	settableFloat = agent.Float(
+		oidstr = "TEST-MIB::testFloatNoInitval",
+	)
+
+	agent.Float(
+		oidstr  = "TEST-MIB::testFloatZeroPointZeroInitval",
+		initval = 0.0,
+	)
+
+	agent.Float(
+		oidstr  = "TEST-MIB::testFloatZeroPointOneInitval",
+		initval = 0.1,
+	)
+
+	agent.Float(
+		oidstr  = "TEST-MIB::testFloatOnePointTwoInitval",
+		initval = 1.2,
+	)
+
+	agent.Float(
+		oidstr  = "TEST-MIB::testFloatMinusZeroPointOneInitval",
+		initval = -0.1,
+	)
+
+	agent.Float(
+		oidstr  = "TEST-MIB::testFloatMinusOnePointTwoInitval",
+		initval = -1.2,
+	)
+
 	# Test OIDs for OctetString scalar type
 	settableOctetString = agent.OctetString(
 		oidstr = "TEST-MIB::testOctetStringNoInitval",
@@ -1046,6 +1076,90 @@ def test_GET_IpAddress1234Initval_eq_1_2_3_4():
 	(data, datatype) = testenv.snmpget("TEST-MIB::testIpAddress1234Initval.0")
 	eq_(datatype, "IpAddress")
 	eq_(data, "1.2.3.4")
+
+@timed(1)
+def test_GET_FloatWithoutInitval_eq_ZeroPointZero():
+	""" GET(Float()) == 0.0
+
+	This tests that the instantiation of a Float SNMP object without
+	specifying an initval resulted in a snmpget'able scalar variable of type
+	"Opaque: Float" and value 0.0. """
+
+	global testenv
+
+	(data, datatype) = testenv.snmpget("TEST-MIB::testFloatNoInitval.0")
+	eq_(datatype, "Opaque: Float")
+	eq_(float(data), 0.0)
+
+@timed(1)
+def test_GET_FloatZeroPointZeroInitval_eq_ZeroPointZero():
+	""" GET(Float(initval=0.0)) == 0.0
+
+	This tests that the instantiation of a Float SNMP object with an
+	initval of 0.0 resulted in a snmpget'able scalar variable of type
+	"Opaque: Float" and value 0.0. """
+
+	global testenv
+
+	(data, datatype) = testenv.snmpget("TEST-MIB::testFloatZeroPointZeroInitval.0")
+	eq_(datatype, "Opaque: Float")
+	eq_(float(data), 0.0)
+
+@timed(1)
+def test_GET_FloatZeroPointOneInitval_eq_ZeroPointOne():
+	""" GET(Float(initval=0.1)) == 0.1
+
+	This tests that the instantiation of a Float SNMP object with an
+	initval of 0.1 resulted in a snmpget'able scalar variable of type
+	"Opaque: Float" and value 0.1. """
+
+	global testenv
+
+	(data, datatype) = testenv.snmpget("TEST-MIB::testFloatZeroPointOneInitval.0")
+	eq_(datatype, "Opaque: Float")
+	eq_(float(data), 0.1)
+
+@timed(1)
+def test_GET_FloatOnePointTwoInitval_eq_OnePointTwo():
+	""" GET(Float(initval=1.2)) == 1.2
+
+	This tests that the instantiation of a Float SNMP object with an
+	initval of 1.2 resulted in a snmpget'able scalar variable of type
+	"Opaque: Float" and value 1.2. """
+
+	global testenv
+
+	(data, datatype) = testenv.snmpget("TEST-MIB::testFloatOnePointTwoInitval.0")
+	eq_(datatype, "Opaque: Float")
+	eq_(float(data), 1.2)
+
+@timed(1)
+def test_GET_FloatMinusZeroPointOneInitval_eq_MinusZeroPointOne():
+	""" GET(Float(initval=-0.1)) == -0.1
+
+	This tests that the instantiation of a Float SNMP object with an
+	initval of -0.1 resulted in a snmpget'able scalar variable of type
+	"Opaque: Float" and value -0.1. """
+
+	global testenv
+
+	(data, datatype) = testenv.snmpget("TEST-MIB::testFloatMinusZeroPointOneInitval.0")
+	eq_(datatype, "Opaque: Float")
+	eq_(float(data), -0.1)
+
+@timed(1)
+def test_GET_FloatMinusOnePointTwoInitval_eq_MinusOnePointTwo():
+	""" GET(Float(initval=-1.2)) == -1.2
+
+	This tests that the instantiation of a Float SNMP object with an
+	initval of -1.2 resulted in a snmpget'able scalar variable of type
+	"Opaque: Float" and value -1.2. """
+
+	global testenv
+
+	(data, datatype) = testenv.snmpget("TEST-MIB::testFloatMinusOnePointTwoInitval.0")
+	eq_(datatype, "Opaque: Float")
+	eq_(float(data), -1.2)
 
 @timed(1)
 def test_GET_OctetStringWithoutInitval_eq_Empty():

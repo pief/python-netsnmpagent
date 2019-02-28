@@ -127,6 +127,10 @@ simpleIpAddress = agent.IpAddress(
 	oidstr   = "SIMPLE-MIB::simpleIpAddress",
 	initval  = "127.0.0.1"
 )
+simpleFloat = agent.Float(
+	oidstr   = "SIMPLE-MIB::simpleFloat",
+	initval  = 3.4000000953674316
+)
 simpleOctetString = agent.OctetString(
 	oidstr   = "SIMPLE-MIB::simpleOctetString",
 	initval  = "Hello World"

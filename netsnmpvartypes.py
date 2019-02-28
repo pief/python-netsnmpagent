@@ -27,10 +27,11 @@ class _VarType(object):
 		val = self._cvar.value
 
 		if isnum(val):
-			# Python 2.x will automatically switch from the "int"
-			# type to the "long" type, if necessary. Python 3.x
-			# has no limits on the "int" type anymore.
-			val = int(val)
+			if not isinstance(val, float):
+				# Python 2.x will automatically switch from the "int"
+				# type to the "long" type, if necessary. Python 3.x
+				# has no limits on the "int" type anymore.
+				val = int(val)
 		else:
 			val = u(val)
 
@@ -120,6 +121,12 @@ class TimeTicks(_FixedSizeVarType):
 		self._asntype = ASN_TIMETICKS
 		self._ctype   = ctypes.c_ulong
 		super(TimeTicks, self).__init__(initval)
+
+class Float(_FixedSizeVarType):
+	def __init__(self, initval = 0.0):
+		self._asntype = ASN_OPAQUE_FLOAT
+		self._ctype   = ctypes.c_float
+		super(Float, self).__init__(initval)
 
 # IP v4 addresses are stored as unsigned integers but we want the Python
 # interface to use strings.

@@ -12,6 +12,8 @@ IMPORTS
     Integer32, Unsigned32, Counter32, Counter64, Gauge32, TimeTicks,
     IpAddress, enterprises
         FROM SNMPv2-SMI
+    Float
+        FROM NET-SNMP-TC
     TEXTUAL-CONVENTION, DisplayString
         FROM SNMPv2-TC
     MODULE-COMPLIANCE, OBJECT-GROUP, NOTIFICATION-GROUP
@@ -53,8 +55,9 @@ testCounter64      OBJECT IDENTIFIER ::= { testScalars 4 }
 testGauge32        OBJECT IDENTIFIER ::= { testScalars 5 }
 testTimeTicks      OBJECT IDENTIFIER ::= { testScalars 6 }
 testIpAddress      OBJECT IDENTIFIER ::= { testScalars 7 }
-testOctetString    OBJECT IDENTIFIER ::= { testScalars 8 }
-testDisplayString  OBJECT IDENTIFIER ::= { testScalars 9 }
+testFloat          OBJECT IDENTIFIER ::= { testScalars 8 }
+testOctetString    OBJECT IDENTIFIER ::= { testScalars 9 }
+testDisplayString  OBJECT IDENTIFIER ::= { testScalars 10 }
 
 -- Test OIDs for the Integer32 scalar type
 testInteger32NoInitval OBJECT-TYPE
@@ -450,6 +453,60 @@ testIpAddress1234Initval OBJECT-TYPE
     DESCRIPTION
         "A read-write IpAddress with an '1.2.3.4' string as initval."
     ::= { testIpAddress 3 }
+
+-- Test OIDs for the Float scalar type
+testFloatNoInitval OBJECT-TYPE
+    SYNTAX      Float
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "A read-write, signed, 32-bits IEEE 754 float value, with no initval."
+    ::= { testFloat 1 }
+
+testFloatZeroPointZeroInitval OBJECT-TYPE
+    SYNTAX      Float
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "A read-write, signed, 32-bits IEEE 754 float value, with an initval of
+        0.0."
+    ::= { testFloat 2 }
+
+testFloatZeroPointOneInitval OBJECT-TYPE
+    SYNTAX      Float
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "A read-write, signed, 32-bits IEEE 754 float value, with an initval of
+        0.1."
+    ::= { testFloat 3 }
+
+testFloatOnePointTwoInitval OBJECT-TYPE
+    SYNTAX      Float
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "A read-write, signed, 32-bits IEEE 754 float value, with an initval of
+        1.2."
+    ::= { testFloat 4 }
+
+testFloatMinusZeroPointOneInitval OBJECT-TYPE
+    SYNTAX      Float
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "A read-write, signed, 32-bits IEEE 754 float value, with an initval of
+        -0.1"
+    ::= { testFloat 5 }
+
+testFloatMinusOnePointTwoInitval OBJECT-TYPE
+    SYNTAX      Float
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "A read-write, signed, 32-bits IEEE 754 float value, with an initval of
+        -1.2"
+    ::= { testFloat 6 }
 
 -- Test OIDs for the OctetString scalar type
 testOctetStringNoInitval OBJECT-TYPE

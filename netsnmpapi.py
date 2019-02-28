@@ -219,7 +219,10 @@ for f in [ libnsa.netsnmp_create_handler_registration ]:
 # include/net-snmp/library/asn1.h
 ASN_INTEGER                             = 0x02
 ASN_OCTET_STR                           = 0x04
+ASN_OPAQUE_TAG2                         = 0x30
 ASN_APPLICATION                         = 0x40
+
+ASN_OPAQUE_FLOAT                        = ASN_OPAQUE_TAG2 + (ASN_APPLICATION | 8)
 
 # counter64 requires some extra work because it can't be reliably represented
 # by a single C data type

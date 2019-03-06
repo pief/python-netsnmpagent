@@ -122,6 +122,23 @@ class TimeTicks(_FixedSizeVarType):
 		self._ctype   = ctypes.c_ulong
 		super(TimeTicks, self).__init__(initval)
 
+# RFC 2579 TruthValues should offer a bool interface to Python but
+# are stored as Integers using the special constants TV_TRUE and TV_FALSE
+class TruthValue(_FixedSizeVarType):
+	def __init__(self, initval = False):
+		self._asntype = ASN_INTEGER
+		self._ctype   = ctypes.c_int
+		super(TruthValue, self).__init__(TV_TRUE if initval else TV_FALSE)
+
+	def value(self):
+		return True if self._cvar.value == TV_TRUE else False
+
+	def update(self, val):
+		if isinstance(val, bool):
+			self._cvar.value = TV_TRUE if val == True else TV_FALSE
+		else:
+			raise netsnmpAgentException("TruthValue must be True or False")
+
 class Float(_FixedSizeVarType):
 	def __init__(self, initval = 0.0):
 		self._asntype = ASN_OPAQUE_FLOAT

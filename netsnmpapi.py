@@ -253,6 +253,10 @@ ASN_GAUGE                               = ASN_APPLICATION | 2
 ASN_TIMETICKS                           = ASN_APPLICATION | 3
 ASN_COUNTER64                           = ASN_APPLICATION | 6
 
+# include/net-snmp/library/snmp-tc.h
+TV_TRUE                                 = 1
+TV_FALSE                                = 2
+
 # include/net-snmp/agent/watcher.h
 WATCHER_FIXED_SIZE                      = 0x01
 WATCHER_MAX_SIZE                        = 0x02

@@ -14,7 +14,7 @@ IMPORTS
         FROM SNMPv2-SMI
     Float
         FROM NET-SNMP-TC
-    TEXTUAL-CONVENTION, DisplayString
+    TEXTUAL-CONVENTION, DisplayString, TruthValue
         FROM SNMPv2-TC
     MODULE-COMPLIANCE, OBJECT-GROUP, NOTIFICATION-GROUP
         FROM SNMPv2-CONF
@@ -55,9 +55,10 @@ testCounter64      OBJECT IDENTIFIER ::= { testScalars 4 }
 testGauge32        OBJECT IDENTIFIER ::= { testScalars 5 }
 testTimeTicks      OBJECT IDENTIFIER ::= { testScalars 6 }
 testIpAddress      OBJECT IDENTIFIER ::= { testScalars 7 }
-testFloat          OBJECT IDENTIFIER ::= { testScalars 8 }
-testOctetString    OBJECT IDENTIFIER ::= { testScalars 9 }
-testDisplayString  OBJECT IDENTIFIER ::= { testScalars 10 }
+testTruthValue     OBJECT IDENTIFIER ::= { testScalars 8 }
+testFloat          OBJECT IDENTIFIER ::= { testScalars 9 }
+testOctetString    OBJECT IDENTIFIER ::= { testScalars 10 }
+testDisplayString  OBJECT IDENTIFIER ::= { testScalars 11 }
 
 -- Test OIDs for the Integer32 scalar type
 testInteger32NoInitval OBJECT-TYPE
@@ -453,6 +454,31 @@ testIpAddress1234Initval OBJECT-TYPE
     DESCRIPTION
         "A read-write IpAddress with an '1.2.3.4' string as initval."
     ::= { testIpAddress 3 }
+
+-- Test OIDs for the TruthValue scalar type
+testTruthValueNoInitval OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "A TruthValue with no initval."
+    ::= { testTruthValue 1 }
+
+testTruthValueTrueInitval OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "A TruthValue with an initval of True."
+    ::= { testTruthValue 2 }
+
+testTruthValueFalseInitval OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "A TruthValue with an initval of False."
+    ::= { testTruthValue 3 }
 
 -- Test OIDs for the Float scalar type
 testFloatNoInitval OBJECT-TYPE

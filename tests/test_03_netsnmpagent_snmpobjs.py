@@ -254,6 +254,21 @@ def setUp(self):
 		initval = "1.2.3.4"
 	)
 
+	# Test OIDs for TruthValue scalar type
+	settableTruthValue = agent.TruthValue(
+		oidstr = "TEST-MIB::testTruthValueNoInitval",
+	)
+
+	agent.TruthValue(
+		oidstr  = "TEST-MIB::testTruthValueFalseInitval",
+		initval = False,
+	)
+
+	agent.TruthValue(
+		oidstr  = "TEST-MIB::testTruthValueTrueInitval",
+		initval = True,
+	)
+
 	# Test OIDs for Float scalar type
 	settableFloat = agent.Float(
 		oidstr = "TEST-MIB::testFloatNoInitval",
@@ -1076,6 +1091,48 @@ def test_GET_IpAddress1234Initval_eq_1_2_3_4():
 	(data, datatype) = testenv.snmpget("TEST-MIB::testIpAddress1234Initval.0")
 	eq_(datatype, "IpAddress")
 	eq_(data, "1.2.3.4")
+
+@timed(1)
+def test_GET_TruthValueWithoutInitval_eq_False():
+	""" GET(TruthValue()) == false(2)
+
+	This tests that the instantiation of a TruthValue SNMP object without
+	specifying an initval resulted in a snmpget'able scalar variable of type
+	INTEGER and value false(2). """
+
+	global testenv
+
+	(data, datatype) = testenv.snmpget("TEST-MIB::testTruthValueNoInitval.0")
+	eq_(datatype, "INTEGER")
+	eq_(data, "false(2)")
+
+@timed(1)
+def test_GET_TruthValueFalseInitval_eq_False():
+	""" GET(TruthValue(initval=False)) == false(2)
+
+	This tests that the instantiation of a TruthValue SNMP object with an
+	initval of False resulted in a snmpget'able scalar variable of type INTEGER
+	and value false(2). """
+
+	global testenv
+
+	(data, datatype) = testenv.snmpget("TEST-MIB::testTruthValueFalseInitval.0")
+	eq_(datatype, "INTEGER")
+	eq_(data, "false(2)")
+
+@timed(1)
+def test_GET_TruthValueTrueInitval_eq_True():
+	""" GET(TruthValue(initval=True)) == true(1)
+
+	This tests that the instantiation of a TruthValue SNMP object with an
+	initval of True resulted in a snmpget'able scalar variable of type INTEGER
+	and value true(1). """
+
+	global testenv
+
+	(data, datatype) = testenv.snmpget("TEST-MIB::testTruthValueTrueInitval.0")
+	eq_(datatype, "INTEGER")
+	eq_(data, "true(1)")
 
 @timed(1)
 def test_GET_FloatWithoutInitval_eq_ZeroPointZero():

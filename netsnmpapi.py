@@ -6,7 +6,22 @@
 # net-snmp C API abstraction module
 #
 
-import ctypes, ctypes.util
+import ctypes, ctypes.util, locale
+
+# Helper functions to deal with converting between byte strings (required by
+# ctypes) and Unicode strings (possibly used by the Python version in use)
+#
+# Not really net-snmp stuff but I prefer to avoid introducing yet another
+# Python module for the Python 2/3 compatibility stuff.
+def b(s):
+	""" Encodes Unicode strings to byte strings, if necessary. """
+
+	return s if isinstance(s, bytes) else s.encode(locale.getpreferredencoding())
+
+def u(s):
+	""" Decodes byte strings to Unicode strings, if necessary. """
+
+	return s if isinstance("Test", bytes) else s.decode(locale.getpreferredencoding())
 
 c_sizet_p = ctypes.POINTER(ctypes.c_size_t)
 
@@ -204,7 +219,10 @@ for f in [ libnsa.netsnmp_create_handler_registration ]:
 # include/net-snmp/library/asn1.h
 ASN_INTEGER                             = 0x02
 ASN_OCTET_STR                           = 0x04
+ASN_OPAQUE_TAG2                         = 0x30
 ASN_APPLICATION                         = 0x40
+
+ASN_OPAQUE_FLOAT                        = ASN_OPAQUE_TAG2 + (ASN_APPLICATION | 8)
 
 # counter64 requires some extra work because it can't be reliably represented
 # by a single C data type
@@ -231,8 +249,13 @@ counter64._fields_ = [
 ASN_IPADDRESS                           = ASN_APPLICATION | 0
 ASN_COUNTER                             = ASN_APPLICATION | 1
 ASN_UNSIGNED                            = ASN_APPLICATION | 2
+ASN_GAUGE                               = ASN_APPLICATION | 2
 ASN_TIMETICKS                           = ASN_APPLICATION | 3
 ASN_COUNTER64                           = ASN_APPLICATION | 6
+
+# include/net-snmp/library/snmp-tc.h
+TV_TRUE                                 = 1
+TV_FALSE                                = 2
 
 # include/net-snmp/agent/watcher.h
 WATCHER_FIXED_SIZE                      = 0x01

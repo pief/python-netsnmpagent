@@ -124,6 +124,14 @@ simpleIpAddress OBJECT-TYPE
         "A 32-bits IPv4 address."
     ::= { simpleScalars 8 }
 
+simpleFloat OBJECT-TYPE
+    SYNTAX      Float
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "An opaque-encoded float value."
+    ::= { simpleScalars 9 }
+
 SimpleOctetString ::= TEXTUAL-CONVENTION
     DISPLAY-HINT    "1024t"
     STATUS          current
@@ -137,7 +145,7 @@ simpleOctetString OBJECT-TYPE
     STATUS      current
     DESCRIPTION
         "An UTF-8 encoded string value."
-    ::= { simpleScalars 9 }
+    ::= { simpleScalars 10 }
 
 simpleDisplayString OBJECT-TYPE
     SYNTAX      DisplayString
@@ -145,7 +153,7 @@ simpleDisplayString OBJECT-TYPE
     STATUS      current
     DESCRIPTION
         "An ASCII string value."
-    ::= { simpleScalars 10 }
+    ::= { simpleScalars 11 }
 
 ------------------------------------------------------------------------
 -- Tables

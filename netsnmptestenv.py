@@ -177,7 +177,7 @@ class netsnmpTestEnv(object):
 
 		data = self.snmpcmd("get", oid).split("=")[1]
 		if ":" in data:
-			(datatype, data) = data.split(":", 1)
+			(datatype, data) = data.rsplit(": ", 1) if ": " in data else (data.rstrip(":"),"")
 			datatype = datatype.strip()
 		else:
 			datatype = "STRING"

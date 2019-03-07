@@ -174,6 +174,36 @@ def setUp(self):
 		initval = 18446744073709551616,
 	)
 
+	# Test OIDs for Gauge32 scalar type
+	agent.Gauge32(
+		oidstr = "TEST-MIB::testGauge32NoInitval",
+	)
+
+	agent.Gauge32(
+		oidstr  = "TEST-MIB::testGauge32ZeroInitval",
+		initval = 0,
+	)
+
+	agent.Gauge32(
+		oidstr  = "TEST-MIB::testGauge32MinusOneInitval",
+		initval = -1,
+	)
+
+	agent.Gauge32(
+		oidstr  = "TEST-MIB::testGauge32OneInitval",
+		initval = 1,
+	)
+
+	agent.Gauge32(
+		oidstr  = "TEST-MIB::testGauge32MaxInitval",
+		initval = 4294967295,
+	)
+
+	agent.Gauge32(
+		oidstr  = "TEST-MIB::testGauge32MaxPlusOneInitval",
+		initval = 4294967296,
+	)
+
 	# Test OIDs for TimeTicks scalar type
 	settableTimeTicks = agent.TimeTicks(
 		oidstr = "TEST-MIB::testTimeTicksNoInitval",
@@ -222,6 +252,51 @@ def setUp(self):
 	agent.IpAddress(
 		oidstr = "TEST-MIB::testIpAddress1234Initval",
 		initval = "1.2.3.4"
+	)
+
+	# Test OIDs for TruthValue scalar type
+	settableTruthValue = agent.TruthValue(
+		oidstr = "TEST-MIB::testTruthValueNoInitval",
+	)
+
+	agent.TruthValue(
+		oidstr  = "TEST-MIB::testTruthValueFalseInitval",
+		initval = False,
+	)
+
+	agent.TruthValue(
+		oidstr  = "TEST-MIB::testTruthValueTrueInitval",
+		initval = True,
+	)
+
+	# Test OIDs for Float scalar type
+	settableFloat = agent.Float(
+		oidstr = "TEST-MIB::testFloatNoInitval",
+	)
+
+	agent.Float(
+		oidstr  = "TEST-MIB::testFloatZeroPointZeroInitval",
+		initval = 0.0,
+	)
+
+	agent.Float(
+		oidstr  = "TEST-MIB::testFloatZeroPointOneInitval",
+		initval = 0.1,
+	)
+
+	agent.Float(
+		oidstr  = "TEST-MIB::testFloatOnePointTwoInitval",
+		initval = 1.2,
+	)
+
+	agent.Float(
+		oidstr  = "TEST-MIB::testFloatMinusZeroPointOneInitval",
+		initval = -0.1,
+	)
+
+	agent.Float(
+		oidstr  = "TEST-MIB::testFloatMinusOnePointTwoInitval",
+		initval = -1.2,
 	)
 
 	# Test OIDs for OctetString scalar type
@@ -768,6 +843,90 @@ def test_GET_Counter64MaxPlusOneInitval_eq_zero():
 # Section 7.1.10)
 
 @timed(1)
+def test_GET_Gauge32WithoutInitval_eq_Zero():
+	""" GET(Gauge32()) == 0
+
+	This tests that the instantiation of a Gauge32 SNMP object without
+	specifying an initval resulted in a snmpget'able scalar variable of type
+	Gauge32 and value 0. """
+
+	global testenv
+
+	(data, datatype) = testenv.snmpget("TEST-MIB::testGauge32NoInitval.0")
+	eq_(datatype, "Gauge32")
+	eq_(int(data), 0)
+
+@timed(1)
+def test_GET_Gauge32ZeroInitval_eq_Zero():
+	""" GET(Gauge32(initval=0)) == 0
+
+	This tests that the instantiation of a Gauge32 SNMP object with an
+	initval of 0 resulted in a snmpget'able scalar variable of type Gauge32
+	and value 0. """
+
+	global testenv
+
+	(data, datatype) = testenv.snmpget("TEST-MIB::testGauge32ZeroInitval.0")
+	eq_(datatype, "Gauge32")
+	eq_(int(data), 0)
+
+@timed(1)
+def test_GET_Gauge32MinusOneInitval_eq_Max():
+	""" GET(Gauge32(initval=-1)) == 4294967295
+
+	This tests that the instantiation of a Gauge32 SNMP object with an
+	initval of -1 resulted in a snmpget'able scalar variable of type Gauge32
+	and value 4294967295. """
+
+	global testenv
+
+	(data, datatype) = testenv.snmpget("TEST-MIB::testGauge32MinusOneInitval.0")
+	eq_(datatype, "Gauge32")
+	eq_(int(data), 4294967295)
+
+@timed(1)
+def test_GET_Gauge32OneInitval_eq_One():
+	""" GET(Gauge32(initval=1)) == 1
+
+	This tests that the instantiation of a Gauge32 SNMP object with an
+	initval of 1 resulted in a snmpget'able scalar variable of type Gauge32
+	and value 1. """
+
+	global testenv
+
+	(data, datatype) = testenv.snmpget("TEST-MIB::testGauge32OneInitval.0")
+	eq_(datatype, "Gauge32")
+	eq_(int(data), 1)
+
+@timed(1)
+def test_GET_Gauge32MaxInitval_eq_max():
+	""" GET(Gauge32(initval=4294967295)) == 4294967295
+
+	This tests that the instantiation of a Gauge32 SNMP object with an
+	initval of 4294967295 resulted in a snmpget'able scalar variable of type
+	Gauge32 and value 4294967295. """
+
+	global testenv
+
+	(data, datatype) = testenv.snmpget("TEST-MIB::testGauge32MaxInitval.0")
+	eq_(datatype, "Gauge32")
+	eq_(int(data), 4294967295)
+
+@timed(1)
+def test_GET_Gauge32MaxPlusOneInitval_eq_zero():
+	""" GET(Gauge32(initval=4294967296)) == 0
+
+	This tests that the instantiation of a Gauge32 SNMP object with an
+	initval of 4294967296 resulted in a snmpget'able scalar variable of type
+	Gauge32 and value 0. """
+
+	global testenv
+
+	(data, datatype) = testenv.snmpget("TEST-MIB::testGauge32MaxPlusOneInitval.0")
+	eq_(datatype, "Gauge32")
+	eq_(int(data), 0)
+
+@timed(1)
 def test_GET_TimeTicksWithoutInitval_eq_Zero():
 	""" GET(TimeTicks()) == 0
 
@@ -932,6 +1091,132 @@ def test_GET_IpAddress1234Initval_eq_1_2_3_4():
 	(data, datatype) = testenv.snmpget("TEST-MIB::testIpAddress1234Initval.0")
 	eq_(datatype, "IpAddress")
 	eq_(data, "1.2.3.4")
+
+@timed(1)
+def test_GET_TruthValueWithoutInitval_eq_False():
+	""" GET(TruthValue()) == false(2)
+
+	This tests that the instantiation of a TruthValue SNMP object without
+	specifying an initval resulted in a snmpget'able scalar variable of type
+	INTEGER and value false(2). """
+
+	global testenv
+
+	(data, datatype) = testenv.snmpget("TEST-MIB::testTruthValueNoInitval.0")
+	eq_(datatype, "INTEGER")
+	eq_(data, "false(2)")
+
+@timed(1)
+def test_GET_TruthValueFalseInitval_eq_False():
+	""" GET(TruthValue(initval=False)) == false(2)
+
+	This tests that the instantiation of a TruthValue SNMP object with an
+	initval of False resulted in a snmpget'able scalar variable of type INTEGER
+	and value false(2). """
+
+	global testenv
+
+	(data, datatype) = testenv.snmpget("TEST-MIB::testTruthValueFalseInitval.0")
+	eq_(datatype, "INTEGER")
+	eq_(data, "false(2)")
+
+@timed(1)
+def test_GET_TruthValueTrueInitval_eq_True():
+	""" GET(TruthValue(initval=True)) == true(1)
+
+	This tests that the instantiation of a TruthValue SNMP object with an
+	initval of True resulted in a snmpget'able scalar variable of type INTEGER
+	and value true(1). """
+
+	global testenv
+
+	(data, datatype) = testenv.snmpget("TEST-MIB::testTruthValueTrueInitval.0")
+	eq_(datatype, "INTEGER")
+	eq_(data, "true(1)")
+
+@timed(1)
+def test_GET_FloatWithoutInitval_eq_ZeroPointZero():
+	""" GET(Float()) == 0.0
+
+	This tests that the instantiation of a Float SNMP object without
+	specifying an initval resulted in a snmpget'able scalar variable of type
+	"Opaque: Float" and value 0.0. """
+
+	global testenv
+
+	(data, datatype) = testenv.snmpget("TEST-MIB::testFloatNoInitval.0")
+	eq_(datatype, "Opaque: Float")
+	eq_(float(data), 0.0)
+
+@timed(1)
+def test_GET_FloatZeroPointZeroInitval_eq_ZeroPointZero():
+	""" GET(Float(initval=0.0)) == 0.0
+
+	This tests that the instantiation of a Float SNMP object with an
+	initval of 0.0 resulted in a snmpget'able scalar variable of type
+	"Opaque: Float" and value 0.0. """
+
+	global testenv
+
+	(data, datatype) = testenv.snmpget("TEST-MIB::testFloatZeroPointZeroInitval.0")
+	eq_(datatype, "Opaque: Float")
+	eq_(float(data), 0.0)
+
+@timed(1)
+def test_GET_FloatZeroPointOneInitval_eq_ZeroPointOne():
+	""" GET(Float(initval=0.1)) == 0.1
+
+	This tests that the instantiation of a Float SNMP object with an
+	initval of 0.1 resulted in a snmpget'able scalar variable of type
+	"Opaque: Float" and value 0.1. """
+
+	global testenv
+
+	(data, datatype) = testenv.snmpget("TEST-MIB::testFloatZeroPointOneInitval.0")
+	eq_(datatype, "Opaque: Float")
+	eq_(float(data), 0.1)
+
+@timed(1)
+def test_GET_FloatOnePointTwoInitval_eq_OnePointTwo():
+	""" GET(Float(initval=1.2)) == 1.2
+
+	This tests that the instantiation of a Float SNMP object with an
+	initval of 1.2 resulted in a snmpget'able scalar variable of type
+	"Opaque: Float" and value 1.2. """
+
+	global testenv
+
+	(data, datatype) = testenv.snmpget("TEST-MIB::testFloatOnePointTwoInitval.0")
+	eq_(datatype, "Opaque: Float")
+	eq_(float(data), 1.2)
+
+@timed(1)
+def test_GET_FloatMinusZeroPointOneInitval_eq_MinusZeroPointOne():
+	""" GET(Float(initval=-0.1)) == -0.1
+
+	This tests that the instantiation of a Float SNMP object with an
+	initval of -0.1 resulted in a snmpget'able scalar variable of type
+	"Opaque: Float" and value -0.1. """
+
+	global testenv
+
+	(data, datatype) = testenv.snmpget("TEST-MIB::testFloatMinusZeroPointOneInitval.0")
+	eq_(datatype, "Opaque: Float")
+	eq_(float(data), -0.1)
+
+@timed(1)
+def test_GET_FloatMinusOnePointTwoInitval_eq_MinusOnePointTwo():
+	""" GET(Float(initval=-1.2)) == -1.2
+
+	This tests that the instantiation of a Float SNMP object with an
+	initval of -1.2 resulted in a snmpget'able scalar variable of type
+	"Opaque: Float" and value -1.2. """
+
+	global testenv
+
+	(data, datatype) = testenv.snmpget("TEST-MIB::testFloatMinusOnePointTwoInitval.0")
+	eq_(datatype, "Opaque: Float")
+	eq_(float(data), -1.2)
 
 @timed(1)
 def test_GET_OctetStringWithoutInitval_eq_Empty():

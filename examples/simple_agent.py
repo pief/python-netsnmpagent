@@ -147,12 +147,16 @@ firstTable = agent.Table(
 		agent.DisplayString()
 	],
 	columns = [
+		# Columns begin with an index of 2 here because 1 is actually
+		# used for the single index column above.
+		# We must explicitly specify that the columns should be SNMPSETable.
 		(2, agent.DisplayString("Unknown place"), True),
 		(3, agent.Integer32(0), True)
 	],
 	counterobj = agent.Unsigned32(
 		oidstr = "SIMPLE-MIB::firstTableNumber"
 	),
+	# Allow adding new records
 	extendable = True
 )
 

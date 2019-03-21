@@ -19,7 +19,7 @@ IMPORTS
     agentxObjects
         FROM AGENTX-MIB;
 
--- Description and update information                                                                                                            
+-- Description and update information
 simpleMIB MODULE-IDENTITY
     LAST-UPDATED "201307070000Z"
     ORGANIZATION "N/A"

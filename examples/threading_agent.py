@@ -23,7 +23,7 @@
 # Note that this implementation does not address possible locking issues: if
 # a SNMP client's requests are processed while the data update thread is in the
 # midst of refreshing the SNMP objects, the client might receive partially
-# inconsistent data. 
+# inconsistent data.
 #
 # Use the included script run_threading_agent.sh to test this example.
 #

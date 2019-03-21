@@ -21,7 +21,7 @@ IMPORTS
     agentxObjects
         FROM AGENTX-MIB;
 
--- Description and update information                                                                                                            
+-- Description and update information
 testMIB MODULE-IDENTITY
     LAST-UPDATED "201404190000Z"
     ORGANIZATION "N/A"

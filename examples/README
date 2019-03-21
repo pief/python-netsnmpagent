@@ -9,7 +9,7 @@ This directory contains two example agents together with associated MIBs:
 - "threading_agent.py" should be looked at next. It registers just a
   single DisplayString SNMP variable but demonstrates how to use Python's
   threading module to separate the data update process from the SNMP request
-  processing so that both can execute independently. 
+  processing so that both can execute independently.
 
 For both examples, shell scripts are included that should make it a waltz to
 play with the agents. The scripts take care of everything required to set up a

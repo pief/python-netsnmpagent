@@ -52,11 +52,11 @@ except AttributeError:
 
 # include/net-snmp/library/callback.h
 
-# Callback major types 
+# Callback major types
 SNMP_CALLBACK_LIBRARY                   = 0
 SNMP_CALLBACK_APPLICATION               = 1
 
-# SNMP_CALLBACK_LIBRARY minor types 
+# SNMP_CALLBACK_LIBRARY minor types
 SNMP_CALLBACK_LOGGING                   = 4
 
 SNMPCallback = ctypes.CFUNCTYPE(
@@ -271,7 +271,7 @@ netsnmp_watcher_info._fields_ = [
 	("flags",               ctypes.c_int)
 	# net-snmp 5.7.x knows data_size_p here as well but we ignore it for
 	# backwards compatibility with net-snmp 5.4.x.
-] 
+]
 
 for f in [ libnsX.netsnmp_create_watcher_info ]:
 	f.argtypes = [

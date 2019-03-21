@@ -109,7 +109,7 @@ class netsnmpTestEnv(object):
 	@staticmethod
 	def snmpcmd(op, oid, data=None, datatype=None):
 		""" Executes a SNMP client operation in the net-snmp test environment.
-		    
+
 		    "op" is either "get", "set", "walk" or "table".
 		    "oid" is the OID to run the operation against.
 		    "data" is the data to set in case of a "set" operation.

@@ -30,7 +30,7 @@ writing a MIB as well, ie. a text file that specifies the structure, names
 and data types of the information within the MIB module.""",
 	author				= "Pieter Hollants",
 	author_email		= "pieter@hollants.com",
-	py_modules			= [ "netsnmpagent", "netsnmpapi" ],
+	py_modules			= [ "netsnmpagent", "netsnmpapi", "netsnmpvartypes" ],
 	license				= "LGPL-3.0",
 	url					= "https://github.com/pief/python-netsnmpagent",
 	classifiers			= [

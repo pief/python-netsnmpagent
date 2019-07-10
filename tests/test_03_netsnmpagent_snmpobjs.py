@@ -1369,6 +1369,36 @@ def test_GET_SET_OctetStringWithoutInterval_abcdef_eq_abcdef():
 	eq_(data, "abcdef")
 
 @timed(1)
+def test_SET_OctetStringWithNULBytes():
+	""" SET(OctetString(), 0x00110022) == 0x00110022
+
+	This tests that calling snmpset on a previously instantiated scalar
+	variable of type OctetString and the string "abcdef" as value (this was
+	confirmed by an earlier test) with the new value 0x00110022 results in
+	the netsnmpagent SNMP object returning "\\x00\\x11\\x00\\x22" as its
+	value, too. """
+
+	global testenv, settableOctetString
+
+	print(testenv.snmpset("TEST-MIB::testOctetStringNoInitval.0", "00110022", "x"))
+
+	eq_(settableOctetString.value(), "\x00\x11\x00\x22")
+
+@timed(1)
+def test_GET_SET_OctetStringWithNULBytes():
+	""" GET(SET(OctetString(), 0x00110022)) == 0x00110022
+
+	This tests that calling snmpget on the previously instantiated scalar
+	variable of type OctetString that has just been set to 0x00110022 also
+	returns this new variable when accessed through snmpget. """
+
+	global testenv
+
+	(data, datatype) = testenv.snmpget("TEST-MIB::testOctetStringNoInitval.0")
+	eq_(datatype, "Hex-STRING")
+	eq_(data, "00 11 00 22")
+
+@timed(1)
 def test_GET_DisplayStringWithoutInitval_eq_Empty():
 	""" GET(DisplayString()) == ""
 

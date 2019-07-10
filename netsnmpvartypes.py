@@ -225,10 +225,20 @@ class _String(_MaxSizeVarType):
 
 		super(_String, self).__init__(initval, MAX_STRING_SIZE)
 
-# Whereas an OctetString can contain UTF-8 encoded characters, a
-# DisplayString is restricted to ASCII characters only.
+# Whereas an OctetString can contain all byte values, a DisplayString is
+# restricted to ASCII characters only.
 class OctetString(_String):
-	pass
+	def __init__(self, initval = ""):
+		super(OctetString, self).__init__(initval)
+		self._data_size = len(b(initval))
+
+	def value(self):
+		val = self._cvar.raw
+		if hasattr(self, "_watcher"):
+			size = self._watcher.contents.data_size
+		else:
+			size = self._data_size
+		return u(val[:size])
 
 class DisplayString(_String):
 	pass

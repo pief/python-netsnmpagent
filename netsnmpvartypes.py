@@ -238,7 +238,7 @@ class OctetString(_String):
 			size = self._watcher.contents.data_size
 		else:
 			size = self._data_size
-		return u(val[:size])
+		return b(val[:size])
 
 class DisplayString(_String):
 	pass

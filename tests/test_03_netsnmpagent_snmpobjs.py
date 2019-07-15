@@ -1352,7 +1352,7 @@ def test_SET_OctetStringWithoutInterval_abcdef_eq_abcdef():
 
 	print(testenv.snmpset("TEST-MIB::testOctetStringNoInitval.0", "abcdef", "s"))
 
-	eq_(settableOctetString.value(), "abcdef")
+	eq_(settableOctetString.value(), b"abcdef")
 
 @timed(1)
 def test_GET_SET_OctetStringWithoutInterval_abcdef_eq_abcdef():
@@ -1382,7 +1382,7 @@ def test_SET_OctetStringWithNULBytes():
 
 	print(testenv.snmpset("TEST-MIB::testOctetStringNoInitval.0", "00110022", "x"))
 
-	eq_(settableOctetString.value(), "\x00\x11\x00\x22")
+	eq_(settableOctetString.value(), b"\x00\x11\x00\x22")
 
 @timed(1)
 def test_GET_SET_OctetStringWithNULBytes():

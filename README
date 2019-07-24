@@ -96,6 +96,10 @@ The Python API has not really been documented yet. For now, please see the
 example agents' source code for info on how to use the python-netsnmpagent
 module.
 
+NOTE: Since 2019-07-24 the OctetString interface has been changed to return a
+bytes() array instead of a String. This is to accomodate the fact that
+OctetStrings may contain NUL bytes, i.e. in the case of MAC addresses.
+
 
 TESTS
 
@@ -128,5 +132,8 @@ by Max "mk23" Kalika <max.kalika+projects@gmail.com>.
 
 Tobias Deiminger <tobias.deiminger@gmail.com> contributed fixes related to
 using IpAddress objects as table indices.
+
+Konrad Gräfe <konradgraefe@aol.com> fixed among other things the OctetString
+interface to return bytes() instead of a String so NUL bytes are accounted for.
 
 Additional smaller bugfixes were done by Anton Todorov <a.todorov@storpool.com>.

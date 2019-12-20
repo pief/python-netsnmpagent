@@ -140,6 +140,11 @@ simpleDisplayString = agent.DisplayString(
 	initval  = "Nice to meet you"
 )
 
+simpleEnumVal = agent.Integer32(
+	oidstr   = "SIMPLE-MIB::simpleEnumVal",
+	initval  = 1
+)
+
 # Create the first table
 firstTable = agent.Table(
 	oidstr  = "SIMPLE-MIB::firstTable",

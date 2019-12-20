@@ -155,6 +155,20 @@ simpleDisplayString OBJECT-TYPE
         "An ASCII string value."
     ::= { simpleScalars 11 }
 
+SimpleEnumVal ::= TEXTUAL-CONVENTION
+    STATUS          current
+    DESCRIPTION
+        "A EnumValue"
+    SYNTAX          Integer32 { Release(0), Debue(1), Testing(3), Stable(4) }
+
+simpleEnumVal OBJECT-TYPE
+    SYNTAX      SimpleEnumVal
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "An ASCII string value."
+    ::= { simpleScalars 12 }
+
 ------------------------------------------------------------------------
 -- Tables
 ------------------------------------------------------------------------

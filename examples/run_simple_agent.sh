@@ -88,6 +88,8 @@ echo "    snmpget -v 2c -c public -M+. localhost:5555 SIMPLE-MIB::simpleInteger.
 echo "    snmpset -v 2c -c simple -M+. localhost:5555 SIMPLE-MIB::simpleInteger.0 i 123"
 echo "    snmpset -v 2c -c simple -M+. localhost:5555 SIMPLE-MIB::simpleEnumVal.0 = Testing"
 echo "    snmpset -v 2c -c simple -M+. localhost:5555 SIMPLE-MIB::firstTableEnumVale.\\\"bb\\\" = Testing"
+echo "    snmpset -v 2c -c simple -M+. localhost:5555 SIMPLE-MIB::fourthTableRowValue.Testing = 192.168.1.118"
+
 echo ""
 
 # Workaround to have CTRL-C not generate any visual feedback (we don't do any

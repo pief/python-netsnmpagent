@@ -156,7 +156,8 @@ firstTable = agent.Table(
 		# used for the single index column above.
 		# We must explicitly specify that the columns should be SNMPSETable.
 		(2, agent.DisplayString("Unknown place"), True),
-		(3, agent.Integer32(0), True)
+		(3, agent.Integer32(0), True),
+		(4, agent.Integer32(0), True)
 	],
 	counterobj = agent.Unsigned32(
 		oidstr = "SIMPLE-MIB::firstTableNumber"
@@ -169,6 +170,7 @@ firstTable = agent.Table(
 firstTableRow1 = firstTable.addRow([agent.DisplayString("aa")])
 firstTableRow1.setRowCell(2, agent.DisplayString("Prague"))
 firstTableRow1.setRowCell(3, agent.Integer32(20))
+firstTableRow1.setRowCell(4, agent.Integer32(0))
 
 # Add the second table row
 firstTableRow2 = firstTable.addRow([agent.DisplayString("ab")])

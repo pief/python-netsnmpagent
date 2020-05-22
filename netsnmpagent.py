@@ -383,12 +383,11 @@ class netsnmpAgent(object):
 
 		return _cls_wrapper
 
-	def _prepareRegistration(self, oidstr, writable = True):
-		# Make sure the agent has not been start()ed yet
-		if self._status != netsnmpAgentStatus.REGISTRATION:
-			raise netsnmpAgentException("Attempt to register SNMP object " \
-			                            "after agent has been started!")
-
+	def _prepareOID(self, oidstr):
+		""" Convert OID to c_oid type.
+		    "oidstr" is the oid to read
+		    Return tuple c_oid array and c_size_t length
+		"""
 		if self.UseMIBFiles:
 			# We can't know the length of the internal OID representation
 			# beforehand, so we use a MAX_OID_LEN sized buffer for the call to
@@ -403,6 +402,10 @@ class netsnmpAgent(object):
 				ctypes.byref(oid_len)
 			) == 0:
 				raise netsnmpAgentException("read_objid({0}) failed!".format(oidstr))
+			
+			# trim trailing zeroes in oid array
+			trimOID = c_oid * oid_len.value
+			oid = trimOID( *oid[0:oid_len.value] )
 		else:
 			# Interpret the given oidstr as the oid itself.
 			try:
@@ -412,6 +415,22 @@ class netsnmpAgent(object):
 
 			oid = (c_oid * len(parts))(*parts)
 			oid_len = ctypes.c_size_t(len(parts))
+		
+		return (oid, oid_len)
+
+
+	def _prepareRegistration(self, oidstr, writable = True):
+		""" Prepares the registration of an SNMP object.
+
+		    "oidstr" is the OID to register the object at.
+		    "writable" indicates whether "snmpset" is allowed. """
+
+		# Make sure the agent has not been start()ed yet
+		if self._status != netsnmpAgentStatus.REGISTRATION:
+			raise netsnmpAgentException("Attempt to register SNMP object " \
+			                            "after agent has been started!")
+
+		(oid, oid_len) = self._prepareOID( oidstr )
 
 		# Do we allow SNMP SETting to this OID?
 		handler_modes = HANDLER_CAN_RWRITE if writable \
@@ -739,6 +758,187 @@ class netsnmpAgent(object):
 		# to do proper cleanup and cause issues such as double free()s so that
 		# one effectively has to rely on the OS to release resources.
 		#libnsa.shutdown_agent()
+
+	def send_trap(self, *args, **kwargs):
+		'''Send SNMP traps
+			To send simple trap:
+				send_trap(<trap>,<specific>)
+				send_trap(trap=<trap>,specific=<specific>)
+			
+			Trap data format:
+			trapData = [ {'oid':<varOid>,'var':<varValue>,'type':<varType>}, ]
+			
+			By default net-snmp lib add sysUpTime.instance with agent uptime.
+			Optional add 'uptime = <uptime>' to send_trap to use other uptime value
+
+			To send V2 trap:
+				send_trap(
+					oid = <trapOid>,
+					traps = trapData
+				)
+			To send V3 trap:
+				send_trap(
+					oid = <trapOID>,
+					traps = trapData	,
+					context = <context>
+				)
+		'''
+		
+		agent = self
+		
+		class snmp_pdu(object):
+			""" clas for handling SNMP PDU objects """
+			
+			pdu = None
+			
+			def __init__(self, pduType = SNMP_MSG_TRAP2):
+				"""create PDU object """
+				self.pdu = libnsX.snmp_pdu_create(SNMP_MSG_TRAP2)
+			
+			def __del__(self):
+				""" destructor """
+				if self.pdu:
+					self.free()
+			
+			def free(self):
+				""" free PDU struct """
+				if self.pdu:
+					libnsX.snmp_free_pdu(self.pdu)
+					self.pdu = None
+			
+			def variables(self):
+				""" function variables()
+				
+				    return netsnmp_variable_list pointer from PDU
+				"""
+				return self.pdu.contents.variables
+			
+			def _humanToASNtype(self, varType):
+				""" convert ASN type name to compatible for snmp_add_var()
+					type char
+					return single char
+				"""
+				if varType == None:
+					varType = '='
+				if len(varType) > 1:
+					varTypeL = varType.lower()
+					if varTypeL[0:3] == 'hex':
+						varType = 'x'
+					elif varTypeL[0:3] in ('obj','oid'):
+						varType = 'o'
+					elif varTypeL[0:4] == 'uinteger':
+						varType = '3'
+					elif varTypeL in ('gauge','unsigned32'):
+						varType = 'u'
+					elif varTypeL[0:2] == 'ip':
+						varType = 'a'
+					elif varTypeL[0:3] == 'dec':
+						varType = 'd'
+					elif varTypeL == 'counter64':
+						varType = 'C'
+					elif varTypeL in ('integer','integer32'):
+						varType = 'i'
+					elif varType[0] == 'B':
+						varType = 'b'
+				return varType[0]
+			
+			def add(self, varOID, varData, varType = '='):
+				"""add OID value to PDU list
+					varType can be any of the following chars:"
+						i for INTEGER, INTEGER32
+						u for UNSIGNED, GAUGE
+						3 for UINTEGER
+						c for COUNTER, COUNTER32
+						C for COUNTER64
+						s for STRING,OCTET_STR
+						x for HEX STRING
+						d for DECIMAL STRING
+						n for NULLOBJ
+						o for OBJID
+						t for TIMETICKS
+						a for IPADDRESS
+						b for BITS
+						= undocumented autodetect feature to get MIB 'SYNTAX' definition
+				"""
+				
+				varType = self._humanToASNtype(varType)
+				
+				(varOid, varOidLen) = agent._prepareOID(varOID)
+				ret = 255
+				while ret:
+					ret = libnsX.snmp_add_var(
+							self.pdu,
+							ctypes.cast(ctypes.byref(varOid), c_oid_p),
+							varOidLen.value,
+							ctypes.c_char(b(varType)),
+							ctypes.c_char_p('{0}'.format(varData))
+					)
+					if ret != 0:
+						if varType != '=':
+							varType = '='
+							print("ZDBG: ret={0}".format(ret))
+						else:
+							break
+				
+				return ret
+		
+		trap = kwargs.get('trap')
+		specific = kwargs.get('specific')
+		oid = kwargs.get('oid')
+		traps = kwargs.get('traps')
+		context = kwargs.get('context')
+		uptime = kwargs.get('uptime')
+		
+		if oid:
+			# send itrap SNMPv2 or SNMPv3
+			pdu = snmp_pdu()
+			
+			if uptime:
+				pdu.add('SNMPv2-MIB::sysUpTime.0', uptime, 't')
+			
+			result = pdu.add('SNMPv2-MIB::snmpTrapOID.0', oid)
+			if result != 0:
+				msg = "Failed to add {0} as snmpTrapOID!".format(oid)
+				raise netsnmpAgentException(msg)
+			else:
+				# add traps
+				if traps == None:
+					traps = []
+				for entry in traps:
+					if ('oid' in entry):
+						varOid = entry['oid']
+						if ('val' in entry):
+							varData = entry['val']
+							varType = None
+							if ('type' in entry):
+								varType = entry['type']
+							pdu.add(varOid, varData, varType)
+						else:
+							msg = "missing 'val' key in trap list!"
+							raise netsnmpAgentException(msg)
+					else:
+						msg = "missing 'oid' key in trap list!"
+						raise netsnmpAgentException(msg)
+						
+				variables = pdu.variables()
+				if context:
+					# SNMPv3 trap have context
+					# WARNING - I replaced commented code... I believe it's correct
+					###context = ctype.c_char_p(context)
+					###libnsa.send_v3trap(variables, context)
+					libnsa.send_v3trap(variables, b(context))
+				else:
+					# SNMPv2 trap
+					libnsa.send_v2trap(variables)
+		else:
+			# send easy trap
+			if trap and specific:
+				trap = ctypes.c_int(trap)
+				specific = ctypes.c_int(specific)
+			elif len(args) == 2 and type(args[0]) == int and type(args[1]) == int:
+				trap = ctypes.c_int(args[0])
+				specific = ctypes.c_int(args[1])
+			libnsa.send_easy_trap(trap, specific)
 
 class netsnmpAgentException(Exception):
 	pass

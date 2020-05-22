@@ -279,6 +279,18 @@ while (loop):
 	# With counters, you can also call increment() on them
 	simpleCounter32Context2.increment() # By 1
 	simpleCounter64Context2.increment(5) # By 5
+	
+	# Following agent.start(), an external client may modify the table entries.
+	# If so, the entire row becomes "stale" and subsequent "TableRow1.setRowCell()" to any
+	# column in the stored row will likely cause A Segment violation.
+	# e.g.: 
+	#      snmpset -v2c -c simple -M+. localhost:5555 SIMPLE-MIB::firstTable.1.2.2.97.97 s ZZZ
+	#      snmpset -v2c -c simple -M+. localhost:5555 SIMPLE-MIB::firstTable.1.2.2.97.97 s ZZZ
+	#
+	# As a workaround, Table.setRowColumn(row, col, data) was created to traverse rows from the table each time.
+	#firstTableRow1.setRowCell(3, agent.Integer32(555))
+	firstTable.setRowColumn(1, 3, agent.Integer32(555))
+
 
 print("{0}: Terminating.".format(prgname))
 agent.shutdown()

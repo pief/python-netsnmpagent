@@ -704,6 +704,28 @@ class netsnmpAgent(object):
 				if self._counterobj:
 					self._counterobj.update(0)
 
+			# Following agent.start(), an external client may modify the table entries (SNMPSET).
+			# If so, the entire row becomes "stale" and subsequent "TableRow1.setRowCell()" to any
+			# column in the stored row will likely cause A Segment violation.
+			# As a workaround, this method was created to traverse rows from the table each time.
+			def setRowColumn(self, rowIdx, colIdx, snmpobj):
+				row = self._dataset.contents.table.contents.first_row
+				rowNum = 1
+				if rowIdx > 1:
+					while bool(row) and rowNum < rowIdx:
+						row = row.contents.next
+						rowNum += 1
+
+				result = libnsX.netsnmp_set_row_column(
+					row,
+					colIdx,
+					snmpobj._asntype,
+					snmpobj.cref(),
+					snmpobj._data_size
+				)
+				if result != SNMPERR_SUCCESS:
+					raise netsnmpAgentException("netsnmp_set_row_column() failed with error code {0}!".format(result))
+
 		# Return an instance of the just-defined class to the agent
 		return Table(oidstr, indexes, columns, counterobj, extendable, context)
 

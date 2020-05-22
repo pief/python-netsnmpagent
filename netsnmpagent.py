@@ -893,7 +893,7 @@ class netsnmpAgent(object):
 							ctypes.cast(ctypes.byref(varOid), c_oid_p),
 							varOidLen.value,
 							ctypes.c_char(b(varType)),
-							ctypes.c_char_p('{0}'.format(varData))
+							ctypes.c_char_p(b('{0}'.format(varData)))
 					)
 					if ret != 0:
 						if varType != '=':

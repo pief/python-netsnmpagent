@@ -126,6 +126,16 @@ NETSNMP_DS_AGENT_X_SOCKET               = 1
 
 # include/net-snmp/library/snmp.h
 SNMP_ERR_NOERROR                        = 0
+SNMP_ERR_TOO_BIG                        = 1
+SNMP_ERR_NOSUCHNAME                     = 2
+SNMP_ERR_BADVALUE                       = 3
+SNMP_ERR_READONLY                       = 4
+SNMP_ERR_GENERR                         = 5
+SNMP_ERR_NOACCESS                       = 6
+SNMP_ERR_WRONGTYPE                      = 7
+SNMP_ERR_RESOURCEUNAVAILABLE            = 13
+SNMP_ERR_COMMITFAILED                   = 14
+SNMP_ERR_UNDOFAILED                     = 15
 
 for f in [ libnsa.init_snmp ]:
 	f.argtypes = [
@@ -188,6 +198,15 @@ HANDLER_CAN_RWRITE                      = (HANDLER_CAN_GETANDGETNEXT | \
 
 class netsnmp_mib_handler(ctypes.Structure): pass
 netsnmp_mib_handler_p = ctypes.POINTER(netsnmp_mib_handler)
+netsnmp_mib_handler._fields_ = [
+	("handler_name",	ctypes.c_char_p),
+	("myvoid", 			ctypes.c_void_p),
+	("flags", 			ctypes.c_int),
+	("access_method", 	ctypes.c_void_p),
+	("data_free", 		ctypes.c_void_p),
+	("next", 			netsnmp_mib_handler_p),
+	("prev", 			netsnmp_mib_handler_p),
+]
 
 class netsnmp_handler_registration(ctypes.Structure): pass
 netsnmp_handler_registration_p = ctypes.POINTER(netsnmp_handler_registration)
@@ -206,6 +225,95 @@ netsnmp_handler_registration._fields_ = [
 	("my_reg_void",         ctypes.c_void_p)
 ]
 
+class netsnmp_agent_request_info(ctypes.Structure): pass
+netsnmp_agent_request_info_p = ctypes.POINTER(netsnmp_agent_request_info)
+netsnmp_agent_request_info._fields_ = [
+	("mode",                ctypes.c_int),
+	("asp",                 ctypes.c_void_p),
+	("agent_data",          ctypes.c_void_p)
+]
+
+# include/net-snmp/types.h
+class netsnmp_vardata(ctypes.Union): pass
+netsnmp_vardata._fields_ = [
+	("integer",				ctypes.POINTER(ctypes.c_long)),
+	("string",				ctypes.c_char_p),
+	("objid",				c_oid_p),
+	("bitstring",			ctypes.POINTER(ctypes.c_ubyte)),
+	("counter64",			ctypes.POINTER(counter64)),
+	("floatVal",			ctypes.POINTER(ctypes.c_float)),
+	("doubleVal",			ctypes.POINTER(ctypes.c_double))
+]
+
+class netsnmp_variable_list(ctypes.Structure): pass
+netsnmp_variable_list_p = ctypes.POINTER(netsnmp_variable_list)
+netsnmp_variable_list_p_p = ctypes.POINTER(netsnmp_variable_list_p)
+netsnmp_variable_list._fields_ = [
+    ("next_variable",       netsnmp_variable_list_p),
+    ("name",                c_oid_p),
+    ("name_length",         ctypes.c_size_t),
+    ("type",                ctypes.c_ubyte),
+    ("val",                 netsnmp_vardata),
+    ("val_len",             ctypes.c_size_t),
+    ("name_loc",            c_oid * MAX_OID_LEN),
+    ("buf",                 ctypes.c_byte * 40),
+    ("data",                ctypes.c_void_p),
+    ("dataFreeHook",        ctypes.c_void_p),
+    ("index",               ctypes.c_int)
+]
+
+class netsnmp_request_info(ctypes.Structure): pass
+netsnmp_request_info_p = ctypes.POINTER(netsnmp_request_info)
+netsnmp_request_info._fields_ = [
+	("requestvb",           netsnmp_variable_list_p),
+	("parent_data",         ctypes.c_void_p),
+	("agent_req_info",      ctypes.c_void_p),
+	("range_end",           c_oid_p),
+	("range_end_len",       ctypes.c_size_t),
+	("delegated",           ctypes.c_int),
+	("processed",           ctypes.c_int),
+	("inclusive",           ctypes.c_int),
+	("status",              ctypes.c_int),
+	("index",               ctypes.c_int),
+	("repeat",              ctypes.c_int),
+	("orig_repeat",         ctypes.c_int),
+	("requestvb_start",     ctypes.c_void_p),
+	("next",                ctypes.c_void_p),
+	("prev",                ctypes.c_void_p),
+	("subtree",             ctypes.c_void_p)
+]
+
+SNMPNodeHandler = ctypes.CFUNCTYPE(
+    ctypes.c_int,                       # return type
+	netsnmp_mib_handler_p,              # netsnmp_mib_handler *handler
+	netsnmp_handler_registration_p,     # netsnmp_handler_registration *reginfo
+	netsnmp_agent_request_info_p,       # netsnmp_agent_request_info *reqinfo
+	netsnmp_request_info_p,             # netsnmp_request_info *requests
+)
+
+for f in [ libnsa.netsnmp_create_handler ]:
+	f.argtypes = [
+		ctypes.c_char_p,                # const char *name,
+		SNMPNodeHandler                 # Netsnmp_Node_Handler * handler_access_method);
+	]
+	f.restype = netsnmp_mib_handler_p
+
+for f in [ libnsa.netsnmp_inject_handler ]:
+	f.argtypes = [
+		netsnmp_handler_registration_p, # netsnmp_handler_registration *reginfo
+		netsnmp_mib_handler_p,          # netsnmp_mib_handler *handler
+	]
+	f.restype = ctypes.c_int
+
+for f in [ libnsa.netsnmp_call_next_handler ]:
+	f.argtypes = [
+		netsnmp_mib_handler_p,          # netsnmp_mib_handler *current,
+		netsnmp_handler_registration_p, # netsnmp_handler_registration *reginfo,
+		netsnmp_agent_request_info_p,   # netsnmp_agent_request_info *reqinfo,
+		netsnmp_request_info_p,         # netsnmp_request_info *requests);
+	]
+	f.restype = ctypes.c_int
+
 for f in [ libnsa.netsnmp_create_handler_registration ]:
 	f.argtypes = [
 		ctypes.c_char_p,                # const char *name
@@ -216,11 +324,20 @@ for f in [ libnsa.netsnmp_create_handler_registration ]:
 	]
 	f.restype = netsnmp_handler_registration_p
 
+for f in [ libnsa.netsnmp_request_set_error ]:
+    f.argtypes = [
+        netsnmp_request_info_p,         # netsnmp_request_info *request
+        ctypes.c_int                    # int error number
+    ]
+    f.restype = ctypes.c_int
+
 # include/net-snmp/library/asn1.h
 ASN_INTEGER                             = 0x02
 ASN_OCTET_STR                           = 0x04
+ASN_CONSTRUCTOR                         = 0x20
 ASN_OPAQUE_TAG2                         = 0x30
 ASN_APPLICATION                         = 0x40
+ASN_CONTEXT                             = 0x80
 
 ASN_OPAQUE_FLOAT                        = ASN_OPAQUE_TAG2 + (ASN_APPLICATION | 8)
 
@@ -295,11 +412,6 @@ for f in [ libnsX.netsnmp_register_watched_scalar ]:
 		netsnmp_watcher_info_p          # netsnmp_watcher_info *winfo
 	]
 	f.restype = ctypes.c_int
-
-# include/net-snmp/types.h
-class netsnmp_variable_list(ctypes.Structure): pass
-netsnmp_variable_list_p = ctypes.POINTER(netsnmp_variable_list)
-netsnmp_variable_list_p_p = ctypes.POINTER(netsnmp_variable_list_p)
 
 # include/net-snmp/varbind_api.h
 for f in [ libnsa.snmp_varlist_add_variable ]:
@@ -438,3 +550,121 @@ for f in [ libnsa.agent_check_and_process ]:
 		ctypes.c_int                    # int block
 	]
 	f.restype = ctypes.c_int
+
+# include/net-snmp/agent/agent_trap.h
+# void            send_easy_trap(int trap, int specific);
+for f in [ libnsa.send_easy_trap ]:
+	f.argtypes = [
+		ctypes.c_int,                  # int trap
+		ctypes.c_int                   # int specific
+	]
+	f.restype = None                   # void
+# void            send_v2trap(netsnmp_variable_list *vars);
+for f in [ libnsa.send_v2trap ]:
+	f.argtypes = [
+		netsnmp_variable_list_p        # netsnmp_variable_list *vars
+	]
+	f.restype = None                   # void
+# void            send_v3trap(netsnmp_variable_list *vars, char *context);
+for f in [ libnsa.send_v3trap ]:
+	f.argtypes = [
+		netsnmp_variable_list_p,       # netsnmp_variable_list *vars
+		ctypes.c_char_p                # char *context
+	]
+	f.restype = None                   # void
+
+# pdu definition
+c_ipaddr = (ctypes.c_ubyte * 4)
+c_ubyte_p = ctypes.POINTER(ctypes.c_ubyte)
+
+# include/net-snmp/types.h
+class netsnmp_pdu(ctypes.Structure): pass
+netsnmp_pdu_p = ctypes.POINTER(netsnmp_pdu)
+netsnmp_pdu._fields_ = [
+	("version",               ctypes.c_long), # snmp version
+	("command",               ctypes.c_int), # Type of this PDU
+	("reqid",                 ctypes.c_long), # Request id
+	("msgid",                 ctypes.c_long), # Message id for V3 messages
+	("transid",               ctypes.c_long), # Unique ID for incoming transactions
+	("sessid",                ctypes.c_long), # Session id for AgentX messages
+	("errstat",               ctypes.c_long), # Error status
+	("errindex",              ctypes.c_long), # Error index
+	("time",                  ctypes.c_ulong), # uptime
+	("flags",                 ctypes.c_ulong), #
+	("securityModel",         ctypes.c_int), #
+	# noAuthNoPriv, authNoPriv, authPriv
+	("securityLevel",         ctypes.c_int), #
+	("msgParseModel",         ctypes.c_int), #
+	# Transport-specific opaque data.  This replaces the IP-centric address
+	("transport_data",        ctypes.c_void_p ), #
+	("transport_data_length", ctypes.c_int ), #
+	# The actual transport domain.  This SHOULD NOT BE FREE()D.
+	("tDomain",               c_oid_p), #
+	("tDomainLen",            ctypes.c_size_t ), #
+	("variables",             netsnmp_variable_list_p ), #
+	# SNMPv1 & SNMPv2c fields
+	("community",             c_ubyte_p ), # community for outgoing requests.
+	("community_len",         ctypes.c_size_t ), #
+	# Trap information
+	("enterprise",            c_oid_p), # System OID
+	("enterprise_length",     ctypes.c_size_t ), #
+	("trap_type",             ctypes.c_long ), # trap type
+	("specific_type",         ctypes.c_long ), # specific type
+	("agent address",         c_ipaddr ), # This is ONLY used for v1 TRAPs
+	# SNMPv3 fields
+	("contextEngineID",       c_ubyte_p ), # context snmpEngineID
+	("contextEngineIDLen",    ctypes.c_size_t ), # Length of contextEngineID
+	("contextName",           ctypes.c_char_p), # authoritative contextName
+	("contextNameLen",        ctypes.c_size_t ), # Length of contextName
+	("securityEngineID",      c_ubyte_p ), # authoritative snmpEngineID for security
+	("securityEngineIDLen",   ctypes.c_size_t ), # Length of securityEngineID
+	("securityName",          ctypes.c_char_p ), # on behalf of this principal
+	("securityNameLen",       ctypes.c_size_t ), # Length of securityName
+	# AgentX fields (also uses SNMPv1 community field)
+	("priority",              ctypes.c_int ), #
+	("range_subid",           ctypes.c_int ), #
+	("securityStateRef",      ctypes.c_void_p), #
+]
+
+# include/net-snmp/snmp.h
+SNMP_MSG_TRAP                           = ASN_CONTEXT | ASN_CONSTRUCTOR | 0x4
+SNMP_MSG_TRAP2                          = ASN_CONTEXT | ASN_CONSTRUCTOR | 0x7
+
+# include/net-snmp/pdu_api.h
+#netsnmp_pdu    *snmp_pdu_create(int type);
+for f in [ libnsX.snmp_pdu_create ]:
+	f.argtypes = [
+		ctypes.c_int
+	]
+	f.restype = netsnmp_pdu_p
+
+#void            snmp_free_pdu( netsnmp_pdu *pdu);
+for f in [ libnsX.snmp_free_pdu ]:
+	f.argumets = [
+		netsnmp_pdu_p
+	]
+	f.restype = None
+
+# int snmp_add_var(netsnmp_pdu *pdu,
+#                  const oid * name, size_t name_length, char type, const char *value)
+for f in [ libnsX.snmp_add_var ]:
+	f.arguments = [
+		netsnmp_pdu_p,   # netsnmp_pdu *pdu
+		c_oid_p,         # const oid *name
+		ctypes.c_size_t, # size_t name_length
+		ctypes.c_char,   # char type('=' to get type from OID tree)
+		ctypes.c_char_p  # const char *value
+		
+	]
+	f.restype = ctypes.c_int
+
+
+MODE_GET                                = 160 # SNMP_MSG_GET
+MODE_GET_NEXT                           = 161 # SNMP_MSG_GET_NEXT
+MODE_SET_BEGIN                          = -1  # SNMP_MSG_INTERNAL_SET_BEGIN
+MODE_SET_RESERVE1                       = 0   # SNMP_MSG_INTERNAL_SET_RESERVE1
+MODE_SET_RESERVE2                       = 1   # SNMP_MSG_INTERNAL_SET_RESERVE2
+MODE_SET_ACTION                         = 2   # SNMP_MSG_INTERNAL_SET_ACTION
+MODE_SET_COMMIT                         = 3   # SNMP_MSG_INTERNAL_SET_COMMIT
+MODE_SET_FREE                           = 4   # SNMP_MSG_INTERNAL_SET_FREE
+MODE_SET_UNDO                           = 5   # SNMP_MSG_INTERNAL_SET_UNDO

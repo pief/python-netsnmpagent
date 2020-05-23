@@ -25,6 +25,13 @@ def u(s):
 
 c_sizet_p = ctypes.POINTER(ctypes.c_size_t)
 
+
+def oid2Str(oid, oidLen):
+	oidStr = ""
+	for idx in range(oidLen):
+		oidStr += "." + str(oid[idx])
+	return oidStr
+
 # Make libnetsnmpagent available via Python's ctypes module. We do this globally
 # so we can define C function prototypes
 
@@ -346,11 +353,11 @@ for f in [ libnsa.netsnmp_create_handler_registration ]:
 	f.restype = netsnmp_handler_registration_p
 
 for f in [ libnsa.netsnmp_request_set_error ]:
-    f.argtypes = [
-        netsnmp_request_info_p,         # netsnmp_request_info *request
-        ctypes.c_int                    # int error number
-    ]
-    f.restype = ctypes.c_int
+	f.argtypes = [
+		netsnmp_request_info_p,         # netsnmp_request_info *request
+		ctypes.c_int                    # int error number
+	]
+	f.restype = ctypes.c_int
 
 # include/net-snmp/library/asn1.h
 ASN_INTEGER                             = 0x02

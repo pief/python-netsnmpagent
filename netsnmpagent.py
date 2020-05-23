@@ -372,16 +372,25 @@ class netsnmpAgent(object):
 			setattr(self, vartype_cls.__name__, cls_wrapper)
 
 	def _generateVarTypeClassWrapper(self, vartype_cls, default_initval):
-		def _cls_wrapper(initval = default_initval, oidstr = None, writable = True, context = ""):
+		def _cls_wrapper(initval = default_initval, oidstr = None, writable = True, context = "", callback = None):
 			# Get instance of VarType-inheriting class
 			cls_inst = vartype_cls(initval)
 
 			# If an oidstr has been provided, this is a standalone scalar
 			# variable, i.e. it is not used inside a table.
 			if oidstr:
+				cls_inst._callback_handler = None
+				if callback != None:
+					# We defined a Python function that needs a ctypes conversion so it can
+					# be called by C code such as net-snmp. That's what SNMPNodeHandler() is
+					# used for. However we also need to store the reference in "self" as it
+					# will otherwise be lost at the exit of this function so that net-snmp's
+					# attempt to call it would end in nirvana...
+					cls_inst._callback_handler = _build_callback_handler(callback)
+
 				# Prepare the netsnmp_handler_registration structure.
-				handler_reginfo = self._prepareRegistration(oidstr, writable)
-				handler_reginfo.contents.contextName = b(context)
+				cls_inst.handler_reginfo = self._prepareRegistration(oidstr, writable)
+				cls_inst.handler_reginfo.contents.contextName = b(context)
 
 				# Create the netsnmp_watcher_info structure.
 				cls_inst._watcher = libnsX.netsnmp_create_watcher_info(
@@ -399,11 +408,14 @@ class netsnmpAgent(object):
 
 				# Register handler and watcher with net-snmp.
 				result = libnsX.netsnmp_register_watched_scalar(
-					handler_reginfo,
+					cls_inst.handler_reginfo,
 					cls_inst._watcher
 				)
 				if result != 0:
 					raise netsnmpAgentException("Error registering variable with net-snmp!")
+
+				if cls_inst._callback_handler is not None:
+					_inject_custom_handler(cls_inst._callback_handler, cls_inst.handler_reginfo)
 
 				# Finally, we keep track of all registered SNMP objects for the
 				# getRegistered() method.
@@ -442,7 +454,12 @@ class netsnmpAgent(object):
 		else:
 			# Interpret the given oidstr as the oid itself.
 			try:
-				parts = [c_oid(long(x) if sys.version_info <= (3,) else int(x)) for x in oidstr.split('.')]
+				# The error on this line was annoying
+				#parts = [c_oid(long(x) if sys.version_info <= (3,) else int(x)) for x in oidstr.split('.')]
+				if sys.version_info <= (3,):
+					def long(obj):
+						return int(obj)
+				parts = [c_oid(long(x)) for x in oidstr.split('.')]
 			except ValueError:
 				raise netsnmpAgentException("Invalid OID (not using MIB): {0}".format(oidstr))
 

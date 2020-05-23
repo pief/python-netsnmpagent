@@ -483,7 +483,7 @@ class netsnmpAgent(object):
 
 		return handler_reginfo
 
-	def Table(self, oidstr, indexes, columns, counterobj = None, extendable = False, context = ""):
+	def Table(self, oidstr, indexes, columns, counterobj = None, extendable = False, context = "", callback = None):
 		agent = self
 
 		# Define a Python class to provide access to the table.

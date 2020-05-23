@@ -96,6 +96,27 @@ snmp_log_message._fields_ = [
 	("msg",                 ctypes.c_char_p)
 ]
 
+# counter64 requires some extra work because it can't be reliably represented
+# by a single C data type
+class counter64(ctypes.Structure):
+	@property
+	def value(self):
+		return self.high << 32 | self.low
+
+	@value.setter
+	def value(self, val):
+		self.high = val >> 32
+		self.low  = val & 0xFFFFFFFF
+
+	def __init__(self, initval=0):
+		ctypes.Structure.__init__(self, 0, 0)
+		self.value = initval
+counter64_p = ctypes.POINTER(counter64)
+counter64._fields_ = [
+	("high",                ctypes.c_ulong),
+	("low",                 ctypes.c_ulong)
+]
+
 # include/net-snmp/library/snmp_api.h
 SNMPERR_SUCCESS                         = 0
 
@@ -340,27 +361,6 @@ ASN_APPLICATION                         = 0x40
 ASN_CONTEXT                             = 0x80
 
 ASN_OPAQUE_FLOAT                        = ASN_OPAQUE_TAG2 + (ASN_APPLICATION | 8)
-
-# counter64 requires some extra work because it can't be reliably represented
-# by a single C data type
-class counter64(ctypes.Structure):
-	@property
-	def value(self):
-		return self.high << 32 | self.low
-
-	@value.setter
-	def value(self, val):
-		self.high = val >> 32
-		self.low  = val & 0xFFFFFFFF
-
-	def __init__(self, initval=0):
-		ctypes.Structure.__init__(self, 0, 0)
-		self.value = initval
-counter64_p = ctypes.POINTER(counter64)
-counter64._fields_ = [
-	("high",                ctypes.c_ulong),
-	("low",                 ctypes.c_ulong)
-]
 
 # include/net-snmp/library/snmp_impl.h
 ASN_IPADDRESS                           = ASN_APPLICATION | 0

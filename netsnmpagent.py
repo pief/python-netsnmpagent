@@ -45,15 +45,48 @@ netsnmpAgentStatus = enum(
 	"RECONNECTING",     # Got disconnected, trying to reconnect
 )
 
+def _build_callback_handler(callback):
+	""" Helper function to create callback handler for the net-snmp API """
+
+	def callback_with_next_handler(handler_p, *args, **kwargs):
+		"""
+		Since we are injecting our custom callback _before_ the default helper
+		handlers provided by net-snmp, we need to ensure that when it finishes,
+		it calls the other remaining handlers. This helper function does just
+		that, returning early if the custom handler returned with an error.
+		"""
+		ret = callback(handler_p, *args, **kwargs)
+		if ret != SNMP_ERR_NOERROR:
+			return ret
+
+		if handler_p[0].next is not None:
+			ret = libnsa.netsnmp_call_next_handler(handler_p, *args, **kwargs)
+
+		return ret
+
+	return SNMPNodeHandler(callback_with_next_handler)
+
+
+def _inject_custom_handler(handler, registration_info):
+	"""
+	Helper function to inject a custom handler at the top of the callback
+	chain for the given registration info
+	"""
+	custom_handler = libnsa.netsnmp_create_handler(ctypes.c_char_p(b"custom_handler"), handler)
+
+	if libnsa.netsnmp_inject_handler(registration_info, custom_handler) != SNMPERR_SUCCESS:
+		raise netsnmpAgentException("Error injecting custom callback handler!")
+
+
 class netsnmpAgent(object):
 	""" Implements an SNMP agent using the net-snmp libraries. """
 
 	def __init__(self, **args):
 		"""Initializes a new netsnmpAgent instance.
-		
+
 		"args" is a dictionary that can contain the following
 		optional parameters:
-		
+
 		- AgentName     : The agent's name used for registration with net-snmp.
 		- MasterSocket  : The transport specification of the AgentX socket of
 		                  the running snmpd instance to connect to (see the
@@ -491,11 +524,17 @@ class netsnmpAgent(object):
 							"error code {0}!".format(result)
 						)
 
+				self._callback_handler = None
+				if callback != None:
+					# We defined a Python function that needs a ctypes conversion so it can
+					# be called by C code such as net-snmp. That's what SNMPNodeHandler() is
+					# used for. However we also need to store the reference in "self" as it
+					# will otherwise be lost at the exit of this function so that net-snmp's
+					# attempt to call it would end in nirvana...
+					self._callback_handler = _build_callback_handler(callback)
+
 				# Register handler and table_data_set with net-snmp.
-				self._handler_reginfo = agent._prepareRegistration(
-					oidstr,
-					extendable
-				)
+				self._handler_reginfo = agent._prepareRegistration(oidstr, extendable)
 				self._handler_reginfo.contents.contextName = b(context)
 				result = libnsX.netsnmp_register_table_data_set(
 					self._handler_reginfo,
@@ -507,6 +546,9 @@ class netsnmpAgent(object):
 						"Error code {0} while registering table with "
 						"net-snmp!".format(result)
 					)
+
+				if self._callback_handler is not None:
+					_inject_custom_handler(self._callback_handler, self._handler_reginfo)
 
 				# Finally, we keep track of all registered SNMP objects for the
 				# getRegistered() method.
@@ -614,7 +656,7 @@ class netsnmpAgent(object):
 					# get*_table_entries() in apps/snmptable.c for details).
 					# All code below assumes eg. that the OID output format was
 					# not changed.
-					
+
 					# snprint_objid() below requires a _full_ OID whereas the
 					# table row contains only the current row's identifer.
 					# Unfortunately, net-snmp does not have a ready function to

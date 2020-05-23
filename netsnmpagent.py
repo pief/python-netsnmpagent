@@ -454,7 +454,12 @@ class netsnmpAgent(object):
 		else:
 			# Interpret the given oidstr as the oid itself.
 			try:
-				parts = [c_oid(long(x) if sys.version_info <= (3,) else int(x)) for x in oidstr.split('.')]
+				# The error on this line was annoying
+				#parts = [c_oid(long(x) if sys.version_info <= (3,) else int(x)) for x in oidstr.split('.')]
+				if sys.version_info <= (3,):
+					def long(obj):
+						return int(obj)
+				parts = [c_oid(long(x)) for x in oidstr.split('.')]
 			except ValueError:
 				raise netsnmpAgentException("Invalid OID (not using MIB): {0}".format(oidstr))
 

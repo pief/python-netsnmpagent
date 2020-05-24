@@ -428,6 +428,11 @@ class netsnmpAgent(object):
 
 		return _cls_wrapper
 
+	def getRawOid(self, mibOid):
+		(oid, oid_len) = self._prepareOID(mibOid)
+		rawOid = oid2Str(oid, int(oid_len.value))
+		return rawOid
+
 	def _prepareOID(self, oidstr):
 		""" Convert OID to c_oid type.
 		    "oidstr" is the oid to read
@@ -469,7 +474,7 @@ class netsnmpAgent(object):
 		return (oid, oid_len)
 
 
-	def _prepareRegistration(self, oidstr, writable = True):
+	def _prepareRegistration(self, oidstr, writable = True, callback = None):
 		""" Prepares the registration of an SNMP object.
 
 		    "oidstr" is the OID to register the object at.

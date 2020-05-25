@@ -497,7 +497,7 @@ class netsnmpAgent(object):
 		# left to net-snmp.
 		handler_reginfo = libnsa.netsnmp_create_handler_registration(
 			b(oidstr),
-			None,
+			callback,
 			oid,
 			oid_len,
 			handler_modes
@@ -555,9 +555,13 @@ class netsnmpAgent(object):
 					# attempt to call it would end in nirvana...
 					self._callback_handler = _build_callback_handler(callback)
 
-				# Register handler and table_data_set with net-snmp.
 				self._handler_reginfo = agent._prepareRegistration(oidstr, extendable)
 				self._handler_reginfo.contents.contextName = b(context)
+				
+				# We need to inject the callback_handler before registering the table_data_set
+				if self._callback_handler is not None:
+					_inject_custom_handler(self._callback_handler, self._handler_reginfo)
+				
 				result = libnsX.netsnmp_register_table_data_set(
 					self._handler_reginfo,
 					self._dataset,
@@ -569,9 +573,6 @@ class netsnmpAgent(object):
 						"net-snmp!".format(result)
 					)
 
-				if self._callback_handler is not None:
-					_inject_custom_handler(self._callback_handler, self._handler_reginfo)
-
 				# Finally, we keep track of all registered SNMP objects for the
 				# getRegistered() method.
 				agent._objs[context][oidstr] = self
@@ -581,7 +582,8 @@ class netsnmpAgent(object):
 				if counterobj:
 					counterobj.update(0)
 				self._counterobj = counterobj
-
+				
+				
 			def addRow(self, idxobjs):
 				dataset = self._dataset
 
@@ -772,13 +774,17 @@ class netsnmpAgent(object):
 			# If so, the entire row becomes "stale" and subsequent "TableRow1.setRowCell()" to any
 			# column in the stored row will likely cause A Segment violation.
 			# As a workaround, this method was created to traverse rows from the table each time.
-			def setRowColumn(self, rowIdx, colIdx, snmpobj):
+			def _getRow(self, rowIdx):
 				row = self._dataset.contents.table.contents.first_row
 				rowNum = 1
 				if rowIdx > 1:
 					while bool(row) and rowNum < rowIdx:
 						row = row.contents.next
 						rowNum += 1
+				return row
+
+			def setRowColumn(self, rowIdx, colIdx, snmpobj):
+				row = self._getRow(rowIdx)
 
 				result = libnsX.netsnmp_set_row_column(
 					row,

@@ -474,7 +474,7 @@ class netsnmpAgent(object):
 		return (oid, oid_len)
 
 
-	def _prepareRegistration(self, oidstr, writable = True, callback = None):
+	def _prepareRegistration(self, oidstr, writable = True, callback_handler = None):
 		""" Prepares the registration of an SNMP object.
 
 		    "oidstr" is the OID to register the object at.
@@ -497,7 +497,7 @@ class netsnmpAgent(object):
 		# left to net-snmp.
 		handler_reginfo = libnsa.netsnmp_create_handler_registration(
 			b(oidstr),
-			callback,
+			None,	# the callback_handler would go here
 			oid,
 			oid_len,
 			handler_modes

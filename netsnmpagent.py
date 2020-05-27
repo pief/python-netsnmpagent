@@ -681,56 +681,8 @@ class netsnmpAgent(object):
 					# All code below assumes eg. that the OID output format was
 					# not changed.
 
-					# snprint_objid() below requires a _full_ OID whereas the
-					# table row contains only the current row's identifer.
-					# Unfortunately, net-snmp does not have a ready function to
-					# get the full OID. The following code was modelled after
-					# similar code in netsnmp_table_data_build_result().
-					fulloid = ctypes.cast(
-						ctypes.create_string_buffer(
-							MAX_OID_LEN * ctypes.sizeof(c_oid)
-						),
-						c_oid_p
-					)
-
-					# Registered OID
-					rootoidlen = self._handler_reginfo.contents.rootoid_len
-					for i in range(0, rootoidlen):
-						fulloid[i] = self._handler_reginfo.contents.rootoid[i]
-
-					# Entry
-					fulloid[rootoidlen] = 1
-
-					# Fake the column number. Unlike the table_data and
-					# table_data_set handlers, we do not have one here. No
-					# biggie, using a fixed value will do for our purposes as
-					# we'll do away with anything left of the first dot below.
-					fulloid[rootoidlen + 1] = 2
-
-					# Index data
-					indexoidlen = row.contents.index_oid_len
-					for i in range(0, indexoidlen):
-						fulloid[rootoidlen + 2 + i] = row.contents.index_oid[i]
-
-					# Convert the full OID to its string representation
-					oidcstr = ctypes.create_string_buffer(MAX_OID_LEN)
-					libnsa.snprint_objid(
-						oidcstr,
-						MAX_OID_LEN,
-						fulloid,
-						rootoidlen + 2 + indexoidlen
-					)
-
-					# And finally do away with anything left of the first dot
-					# so we keep the row index only
-					indices = oidcstr.value.split(b".", 1)[1]
-
-					# If it's a string, remove the double quotes. If it's a
-					# string containing an integer, make it one
-					try:
-						indices = int(indices)
-					except ValueError:
-						indices = u(indices.replace(b'"', b''))
+					indices = self._getIndices(row)
+					#print("in value(), indices={}".format(indices))
 
 					# Finally, iterate over all columns for this row and add
 					# stored data, if present
@@ -770,21 +722,80 @@ class netsnmpAgent(object):
 				if self._counterobj:
 					self._counterobj.update(0)
 
+
+			# Return the indices of the specified row as a dotted string.
+			def _getIndices(self, row):
+				# snprint_objid() below requires a _full_ OID whereas the
+				# table row contains only the current row's identifer.
+				# Unfortunately, net-snmp does not have a ready function to
+				# get the full OID. The following code was modelled after
+				# similar code in netsnmp_table_data_build_result().
+				fulloid = ctypes.cast(
+					ctypes.create_string_buffer(
+						MAX_OID_LEN * ctypes.sizeof(c_oid)
+					),
+					c_oid_p
+				)
+
+				# Registered OID
+				rootoidlen = self._handler_reginfo.contents.rootoid_len
+				for i in range(0, rootoidlen):
+					fulloid[i] = self._handler_reginfo.contents.rootoid[i]
+
+				# Entry
+				fulloid[rootoidlen] = 1
+
+				# Fake the column number. Unlike the table_data and
+				# table_data_set handlers, we do not have one here. No
+				# biggie, using a fixed value will do for our purposes as
+				# we'll do away with anything left of the first dot below.
+				fulloid[rootoidlen + 1] = 2
+
+				# Index data
+				indexoidlen = row.contents.index_oid_len
+				for i in range(0, indexoidlen):
+					fulloid[rootoidlen + 2 + i] = row.contents.index_oid[i]
+
+				# Convert the full OID to its string representation
+				oidcstr = ctypes.create_string_buffer(MAX_OID_LEN)
+				libnsa.snprint_objid(
+					oidcstr,
+					MAX_OID_LEN,
+					fulloid,
+					rootoidlen + 2 + indexoidlen
+				)
+
+				# And finally do away with anything left of the first dot
+				# so we keep the row index only
+				indices = oidcstr.value.split(b".", 1)[1]
+
+				# If it's a string, remove the double quotes. If it's a
+				# string containing an integer, make it one
+				try:
+					indices = int(indices)
+				except ValueError:
+					indices = u(indices.replace(b'"', b''))
+
+				return indices
+
 			# Following agent.start(), an external client may modify the table entries (SNMPSET).
 			# If so, the entire row becomes "stale" and subsequent "TableRow1.setRowCell()" to any
 			# column in the stored row will likely cause A Segment violation.
 			# As a workaround, this method was created to traverse rows from the table each time.
-			def _getRow(self, rowIdx):
+			def _getRow(self, indices = []):
 				row = self._dataset.contents.table.contents.first_row
-				rowNum = 1
-				if rowIdx > 1:
-					while bool(row) and rowNum < rowIdx:
-						row = row.contents.next
-						rowNum += 1
+				matchStr = 	'.'.join(str(x) for x in indices)
+				rowIndices = self._getIndices(row)
+				
+				while bool(row) and matchStr != rowIndices:
+					row = row.contents.next
+					rowIndices = self._getIndices(row)
+
+				#print("in _getRow(), matchStr={0}, rowIndices={1}".format(matchStr, rowIndices))
 				return row
 
-			def setRowColumn(self, rowIdx, colIdx, snmpobj):
-				row = self._getRow(rowIdx)
+			def setRowColumn(self, indices, colIdx, snmpobj):
+				row = self._getRow(indices)
 
 				result = libnsX.netsnmp_set_row_column(
 					row,

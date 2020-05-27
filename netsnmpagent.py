@@ -722,7 +722,6 @@ class netsnmpAgent(object):
 				if self._counterobj:
 					self._counterobj.update(0)
 
-
 			# Return the indices of the specified row as a dotted string.
 			def _getIndices(self, row):
 				# snprint_objid() below requires a _full_ OID whereas the
@@ -791,7 +790,6 @@ class netsnmpAgent(object):
 					row = row.contents.next
 					rowIndices = self._getIndices(row)
 
-				#print("in _getRow(), matchStr={0}, rowIndices={1}".format(matchStr, rowIndices))
 				return row
 
 			def setRowColumn(self, indices, colIdx, snmpobj):
@@ -806,6 +804,16 @@ class netsnmpAgent(object):
 				)
 				if result != SNMPERR_SUCCESS:
 					raise netsnmpAgentException("netsnmp_set_row_column() failed with error code {0}!".format(result))
+
+			def deleteRow(self, indices):
+				row = self._getRow(indices)
+				if bool(row):
+					libnsX.netsnmp_table_dataset_remove_and_delete_row(
+						self._dataset,
+						row
+					)
+					if self._counterobj:
+						self._counterobj.update(self._counterobj.value() - 1)
 
 		# Return an instance of the just-defined class to the agent
 		return Table(oidstr, indexes, columns, counterobj, extendable, context)

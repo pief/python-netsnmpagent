@@ -137,3 +137,9 @@ Konrad Gräfe <konradgraefe@aol.com> fixed among other things the OctetString
 interface to return bytes() instead of a String so NUL bytes are accounted for.
 
 Additional smaller bugfixes were done by Anton Todorov <a.todorov@storpool.com>.
+
+Support for callbacks (including table row/col) and sending traps added by John 
+Bize <jbize@godswind.org>.  Also addressed issue of "stale row data" after a 
+remote snmpset.  Send Trap implementation was based on code from Anton Todorov 
+(https://github.com/storpool)  The callbacks implementation was based on code 
+from Ian Chamberlain (https://github.com/ian-h-chamberlain).

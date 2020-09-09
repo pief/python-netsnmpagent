@@ -242,3 +242,39 @@ class OctetString(_String):
 
 class DisplayString(_String):
 	pass
+
+
+class Bits(OctetString):
+	# RFC 2578 - 7.1.4 The BITS construct
+	def __init__(self, initval=None):
+		super().__init__(Bits._to_bytes(initval))
+
+	@staticmethod
+	def _reverse(data):
+		"""
+		Reverse bits in byte
+		"""
+		return (((data * 0x0802 & 0x22110) | (data * 0x8020 & 0x88440)) * 0x10101 >> 16) & 0xff
+
+	@staticmethod
+	def _to_bytes(value):
+		"""
+		Convert integer value to bytes according to SNMP BITS format
+		"""
+		if value is None:
+			return b''
+		num_bytes = ((value.bit_length() + 7) // 8)
+		return bytes(Bits._reverse(byte) for byte in value.to_bytes(num_bytes, byteorder='little'))
+
+	@staticmethod
+	def _from_bytes(data):
+		"""
+		Convert SNMP BITS data to integer
+		"""
+		return int.from_bytes(bytes(Bits._reverse(byte) for byte in data), byteorder='little')
+
+	def update(self, val):
+		super().update(Bits._to_bytes(val))
+
+	def value(self):
+		return Bits._from_bytes(super().value())

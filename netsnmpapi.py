@@ -219,6 +219,7 @@ for f in [ libnsa.netsnmp_create_handler_registration ]:
 # include/net-snmp/library/asn1.h
 ASN_INTEGER                             = 0x02
 ASN_OCTET_STR                           = 0x04
+ASN_OBJECT_ID                           = 0x06
 ASN_OPAQUE_TAG2                         = 0x30
 ASN_APPLICATION                         = 0x40
 

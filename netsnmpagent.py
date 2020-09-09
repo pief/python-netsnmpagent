@@ -45,6 +45,26 @@ netsnmpAgentStatus = enum(
 	"RECONNECTING",     # Got disconnected, trying to reconnect
 )
 
+
+class VarList:
+    def __init__(self):
+        self.variables = netsnmp_variable_list_p()
+
+    def __del__(self):
+        libnsa.snmp_free_varbind(self.variables)
+
+    def add_variable(self, name, value):
+        oid = read_objid(name)
+
+        if not libnsa.snmp_varlist_add_variable(
+                ctypes.byref(self.variables),
+                oid, len(oid),
+                value._asntype,
+                value.cref(), value._data_size,
+        ):
+            raise netsnmpAgentException("snmp_varlist_add_variable() failed!")
+
+
 class netsnmpAgent(object):
 	""" Implements an SNMP agent using the net-snmp libraries. """
 
@@ -717,6 +737,62 @@ class netsnmpAgent(object):
 		# to do proper cleanup and cause issues such as double free()s so that
 		# one effectively has to rely on the OS to release resources.
 		#libnsa.shutdown_agent()
+
+	def send_trap(self, trap, specific=None, varlist=None, context=None, uptime=None):
+		"""
+		Send SNMP Trap
+
+		To send SNMPv1 trap
+			send_trap(<trap>, <specific>)
+
+			where <trap> and <specific> are numbers
+
+		To send SNMPv2 or SNMPv3 trap
+			send_trap(<trap>, varlist=<varlist>)
+
+			where <trap> is OID and varlist is optinal list of variables
+
+			for SNMPv3 trap, also <context> can be specified
+
+		Varlist format is
+			{
+				<var_oid>: <var_value>
+			}
+
+			where <var_oid> is string representation of variable OID and value is typed value. It can be directly agent
+			variable or specific variable type instance e.g.
+
+			var_value = agent.TimeTicks(1)
+		"""
+
+		if isinstance(trap, int):
+			# send SNMPv1 trap
+			libnsa.send_easy_trap(ctypes.c_int(trap), ctypes.c_int(specific))
+		else:
+			# send SNMPv2 or SNMPv3 trap
+			variables = VarList()
+
+			if uptime:
+				if not isinstance(uptime, netsnmpvartypes.TimeTicks):
+					uptime = netsnmpvartypes.TimeTicks(uptime)
+				# SNMPv2-MIB::sysUpTime.0
+				variables.add_variable(".1.3.6.1.2.1.1.3.0", uptime)
+
+			# SNMPv2-MIB::snmpTrapOID.0
+			variables.add_variable(".1.3.6.1.6.3.1.1.4.1.0", netsnmpvartypes.ObjectId(trap))
+
+			# add variable list
+			if varlist:
+				for var_name, var_value in varlist.items():
+					variables.add_variable(var_name, var_value)
+
+			if context:
+				# SNMPv3 trap have context
+				libnsa.send_v3trap(variables.variables, b(context))
+			else:
+				# SNMPv2 trap
+				libnsa.send_v2trap(variables.variables)
+
 
 class netsnmpAgentException(Exception):
 	pass

@@ -389,29 +389,7 @@ class netsnmpAgent(object):
 			raise netsnmpAgentException("Attempt to register SNMP object " \
 			                            "after agent has been started!")
 
-		if self.UseMIBFiles:
-			# We can't know the length of the internal OID representation
-			# beforehand, so we use a MAX_OID_LEN sized buffer for the call to
-			# read_objid() below
-			oid = (c_oid * MAX_OID_LEN)()
-			oid_len = ctypes.c_size_t(MAX_OID_LEN)
-
-			# Let libsnmpagent parse the OID
-			if libnsa.read_objid(
-				b(oidstr),
-				ctypes.cast(ctypes.byref(oid), c_oid_p),
-				ctypes.byref(oid_len)
-			) == 0:
-				raise netsnmpAgentException("read_objid({0}) failed!".format(oidstr))
-		else:
-			# Interpret the given oidstr as the oid itself.
-			try:
-				parts = [c_oid(long(x) if sys.version_info <= (3,) else int(x)) for x in oidstr.split('.')]
-			except ValueError:
-				raise netsnmpAgentException("Invalid OID (not using MIB): {0}".format(oidstr))
-
-			oid = (c_oid * len(parts))(*parts)
-			oid_len = ctypes.c_size_t(len(parts))
+		oid = read_objid(oidstr)
 
 		# Do we allow SNMP SETting to this OID?
 		handler_modes = HANDLER_CAN_RWRITE if writable \
@@ -425,7 +403,7 @@ class netsnmpAgent(object):
 			b(oidstr),
 			None,
 			oid,
-			oid_len,
+			len(oid),
 			handler_modes
 		)
 

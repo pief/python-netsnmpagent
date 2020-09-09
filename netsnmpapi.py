@@ -438,3 +438,35 @@ for f in [ libnsa.agent_check_and_process ]:
 		ctypes.c_int                    # int block
 	]
 	f.restype = ctypes.c_int
+
+
+def read_objid(objid_str):
+	"""
+    python wrapper for libnetsnmpagent read_objid function
+
+    Convert string OID array with correct length
+    """
+
+	# We can't know the length of the internal OID representation
+	# beforehand, so we use a MAX_OID_LEN sized buffer for the call to
+	# read_objid() below
+	oid = (c_oid * MAX_OID_LEN)()
+	oid_len = ctypes.c_size_t(MAX_OID_LEN)
+
+	# Let libsnmpagent parse the OID
+	if libnsa.read_objid(
+			b(objid_str),
+			ctypes.cast(ctypes.byref(oid), c_oid_p),
+			ctypes.byref(oid_len)
+	) == 0:
+		raise Exception("read_objid({0}) failed!".format(objid_str))
+
+	# trim oid array to correct length
+	return (c_oid * oid_len.value)(*(oid[0:oid_len.value]))
+
+
+def format_objid(oid):
+	"""
+    Format objid as string
+    """
+	return ".".join([str(o) for o in oid])

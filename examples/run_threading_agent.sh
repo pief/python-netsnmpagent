@@ -1,3 +1,4 @@
+#!/bin/bash
 #
 # python-netsnmpagent example agent with threading
 #

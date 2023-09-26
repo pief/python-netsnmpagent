@@ -242,3 +242,37 @@ class OctetString(_String):
 
 class DisplayString(_String):
 	pass
+
+
+class ObjectId(_VarType):
+	def __init__(self, initval=""):
+		self._asntype = ASN_OBJECT_ID
+		self._ctype = c_oid_p
+		self._flags = WATCHER_MAX_SIZE
+		self._max_size = MAX_OID_LEN * ctypes.sizeof(c_oid)
+		self._cvar = ctypes.cast(ctypes.create_string_buffer(self._max_size), c_oid_p)
+		self._data_size = self._max_size
+		self.update(initval)
+
+	def update(self, val):
+		if isinstance(val, (list, tuple)):
+			cvar = (c_oid * len(val))(*val)
+		elif isinstance(val, ctypes.Array):
+			cvar = val
+		else:
+			cvar = read_objid(val)
+
+		self._data_size = min(ctypes.sizeof(cvar), self._max_size)
+		if hasattr(self, "_watcher"):
+			self._watcher.contents.data_size = self._data_size
+		ctypes.memmove(self._cvar, cvar, self._data_size)
+
+	def value(self):
+		if hasattr(self, "_watcher"):
+			size = self._watcher.contents.data_size
+		else:
+			size = self._data_size
+		return format_objid(self._cvar[:(size // ctypes.sizeof(c_oid))])
+
+	def cref(self, **kwargs):
+		return self._cvar

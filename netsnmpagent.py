@@ -674,14 +674,12 @@ class netsnmpAgent(object):
 				return retdict
 
 			def clear(self):
-				row = self._dataset.contents.table.contents.first_row
-				while bool(row):
-					nextrow = row.contents.next
+				table = self._dataset.contents.table.contents
+				while table.first_row:
 					libnsX.netsnmp_table_dataset_remove_and_delete_row(
 						self._dataset,
-						row
+						table.first_row
 					)
-					row = nextrow
 				if self._counterobj:
 					self._counterobj.update(0)
 

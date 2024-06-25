@@ -41,6 +41,7 @@
 import sys, os, signal
 import optparse
 import pprint
+import time
 
 # Make sure we use the local copy, not a system-wide one
 sys.path.insert(0, os.path.dirname(os.getcwd()))
@@ -264,6 +265,7 @@ signal.signal(signal.SIGHUP, HupHandler)
 # handler above changes the "loop" variable.
 print("{0}: Serving SNMP requests, send SIGHUP to dump SNMP object state, press ^C to terminate...".format(prgname))
 
+timer_start = 0
 loop = True
 while (loop):
 	# Block and process SNMP requests, if available
@@ -279,6 +281,17 @@ while (loop):
 	# With counters, you can also call increment() on them
 	simpleCounter32Context2.increment() # By 1
 	simpleCounter64Context2.increment(5) # By 5
+
+	if time.monotonic() - timer_start >= 20:
+		timer_start = time.monotonic()
+		simpleUnsignedRO.update(simpleUnsignedRO.value() + 1)
+		agent.send_trap(
+			trap='SIMPLE-MIB::simpleUnsignedROChange',
+			varlist={
+				'SNMPv2-MIB::sysDescr.0': agent.DisplayString('System'),
+				'SIMPLE-MIB::simpleUnsignedRO.0': simpleUnsignedRO,
+			}
+		)
 
 print("{0}: Terminating.".format(prgname))
 agent.shutdown()

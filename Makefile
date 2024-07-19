@@ -13,7 +13,7 @@ VERSION := $(shell git describe)
 ifeq ($(shell echo $(VERSION) | sed 's,^[[:digit:]]\+\.[[:digit:]]\+\(\.[[:digit:]]\+\)\?,,'),)
 	TAGGED := 1
 else
-	VERSION := $(shell echo $(VERSION) | sed 's,-,_next,;s,-,_,')
+	VERSION := $(shell echo $(VERSION) | sed 's,-,+next,')
 endif
 
 all: help

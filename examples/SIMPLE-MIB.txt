@@ -155,6 +155,20 @@ simpleDisplayString OBJECT-TYPE
         "An ASCII string value."
     ::= { simpleScalars 11 }
 
+SimpleEnumVal ::= TEXTUAL-CONVENTION
+    STATUS          current
+    DESCRIPTION
+        "A EnumValue"
+    SYNTAX          Integer32 { Release(0), Debue(1), Testing(2), Stable(3) }
+
+simpleEnumVal OBJECT-TYPE
+    SYNTAX      SimpleEnumVal
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "An ASCII string value."
+    ::= { simpleScalars 12 }
+
 ------------------------------------------------------------------------
 -- Tables
 ------------------------------------------------------------------------
@@ -215,6 +229,14 @@ firstTableRowValue OBJECT-TYPE
     DESCRIPTION
         "A firstTableRow's value."
     ::= { firstTableRow 3 }
+
+firstTableEnumVale OBJECT-TYPE
+    SYNTAX      SimpleEnumVal
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "A firstTableEnumVale's value."
+    ::= { firstTableRow 4 }
 
 secondTableNumber OBJECT-TYPE
     SYNTAX      Unsigned32
@@ -330,6 +352,62 @@ thirdTableRowValue OBJECT-TYPE
         "A thirdTableRow's value."
     ::= { thirdTableRow 3 }
 
+fourthTableNumber OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "The number of rows in fourthTable."
+    ::= { simpleTables 7 }
+
+fourthTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF FourthTableRow
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "The fourth simple table"
+    ::= { simpleTables 8 }
+
+fourthTableRow OBJECT-TYPE
+    SYNTAX      FourthTableRow
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "A particular fourthTable row."
+    INDEX { fourthTableRowIndex }
+    ::= { fourthTable 1 }
+
+FourthTableRow ::=
+    SEQUENCE {
+        fourthTableRowIndex  SimpleEnumVal,
+        fourthTableRowDesc   DisplayString,
+        fourthTableRowValue  IpAddress
+    }
+
+fourthTableRowIndex OBJECT-TYPE
+    SYNTAX      SimpleEnumVal
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "The index column used to generate IpAddress indices into
+        fourthTable."
+    ::= { fourthTableRow 1 }
+
+fourthTableRowDesc OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "A fourthTableRow's description."
+    ::= { fourthTableRow 2 }
+
+fourthTableRowValue OBJECT-TYPE
+    SYNTAX      IpAddress
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "A fourthTableRow's value."
+    ::= { fourthTableRow 3 }
 ------------------------------------------------------------------------
 -- Notifications
 ------------------------------------------------------------------------

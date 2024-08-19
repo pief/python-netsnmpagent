@@ -140,6 +140,11 @@ simpleDisplayString = agent.DisplayString(
 	initval  = "Nice to meet you"
 )
 
+simpleEnumVal = agent.Integer32(
+	oidstr   = "SIMPLE-MIB::simpleEnumVal",
+	initval  = 1
+)
+
 # Create the first table
 firstTable = agent.Table(
 	oidstr  = "SIMPLE-MIB::firstTable",
@@ -151,7 +156,8 @@ firstTable = agent.Table(
 		# used for the single index column above.
 		# We must explicitly specify that the columns should be SNMPSETable.
 		(2, agent.DisplayString("Unknown place"), True),
-		(3, agent.Integer32(0), True)
+		(3, agent.Integer32(0), True),
+		(4, agent.Integer32(0), True)
 	],
 	counterobj = agent.Unsigned32(
 		oidstr = "SIMPLE-MIB::firstTableNumber"
@@ -164,6 +170,7 @@ firstTable = agent.Table(
 firstTableRow1 = firstTable.addRow([agent.DisplayString("aa")])
 firstTableRow1.setRowCell(2, agent.DisplayString("Prague"))
 firstTableRow1.setRowCell(3, agent.Integer32(20))
+firstTableRow1.setRowCell(4, agent.Integer32(0))
 
 # Add the second table row
 firstTableRow2 = firstTable.addRow([agent.DisplayString("ab")])
@@ -226,6 +233,38 @@ thirdTableRow2.setRowCell(3, agent.IpAddress("192.168.0.2"))
 
 # Add the third table row
 thirdTableRow3 = thirdTable.addRow([agent.IpAddress("192.168.0.3")])
+
+# Create the fourth table
+fourthTable = agent.Table(
+	oidstr     = "SIMPLE-MIB::fourthTable",
+	indexes    = [
+		agent.Integer32()
+	],
+	columns    = [
+		(2, agent.DisplayString("Broadcast"), True),
+		(3, agent.IpAddress("192.168.0.255"), True)
+	],
+	counterobj = agent.Unsigned32(
+		oidstr = "SIMPLE-MIB::fourthTableNumber"
+	),
+	# Allow adding new records
+	extendable = True
+)
+
+# Add the first table row
+fourthTableRow1 = fourthTable.addRow([agent.Integer32(0)])
+fourthTableRow1.setRowCell(2, agent.DisplayString("Host 1"))
+fourthTableRow1.setRowCell(3, agent.IpAddress("192.168.0.1"))
+
+# Add the second table row
+fourthTableRow2 = fourthTable.addRow([agent.Integer32(1)])
+fourthTableRow2.setRowCell(2, agent.DisplayString("Host 2"))
+fourthTableRow2.setRowCell(3, agent.IpAddress("192.168.0.2"))
+
+# Add the second table row
+fourthTableRow3 = fourthTable.addRow([agent.Integer32(2)])
+fourthTableRow3.setRowCell(2, agent.DisplayString("Host 3"))
+fourthTableRow3.setRowCell(3, agent.IpAddress("192.168.0.3"))
 
 # Finally, we tell the agent to "start". This actually connects the
 # agent to the master agent.
